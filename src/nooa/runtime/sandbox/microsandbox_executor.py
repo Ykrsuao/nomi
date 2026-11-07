@@ -76,6 +76,8 @@ class SandboxedExecutor:
     ) -> None:
         self._agent = agent
         self._config = config
+        if config.workspace:
+            Path(config.workspace).mkdir(parents=True, exist_ok=True)
         self._cell_timeout = cell_timeout
         self._framework_builtins = framework_builtins or {}
         self._restrictions = restrictions

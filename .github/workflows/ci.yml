@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      macos_sandbox:
+        description: Run real microVM tests on a self-hosted Apple Silicon Mac
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -113,6 +118,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Sync without sandbox
         run: uv sync --all-extras --no-extra sandbox
+      - name: Install ripgrep
+        run: brew install ripgrep
       - name: Native CodeAct, shell, storage and ACP
         run: |
           uv run --no-sync pytest -q -m "not integration and not stress and not sandbox" \
@@ -136,7 +143,10 @@ jobs:
 
   macos-sandbox-ipc:
     name: macOS microsandbox and ACP
-    runs-on: macos-15
+    # GitHub-hosted macOS cannot expose nested virtualization. Real VM tests
+    # run only when explicitly dispatched to a capable self-hosted ARM64 Mac.
+    if: github.event_name == 'workflow_dispatch' && inputs.macos_sandbox
+    runs-on: [self-hosted, macOS, ARM64]
     timeout-minutes: 30
     defaults:
       run:

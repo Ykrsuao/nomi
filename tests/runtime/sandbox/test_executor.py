@@ -14,6 +14,7 @@ import enum
 import os
 import sys
 import tempfile
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -687,8 +688,9 @@ async def test_workspace_is_created_if_missing():
         )
         try:
             assert os.path.isdir(ws)  # created at executor construction
-            res = await _run(ex, f"open({os.path.join(ws, 'f.txt')!r}, 'w').write('ok')")
+            res = await _run(ex, "open('f.txt', 'w').write('ok')")
             assert res.success, res.error
+            assert Path(ws, "f.txt").read_text(encoding="utf-8") == "ok"
         finally:
             await ex.aclose()
 

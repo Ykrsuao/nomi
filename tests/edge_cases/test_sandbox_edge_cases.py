@@ -45,6 +45,8 @@ def _ret(result: Any = None, call_id: str = "cret") -> ToolCall:
 
 # Fail-open for CI hosts without Landlock/seccomp; network stays on so parent-side
 # FakeLLM traffic is unrelated to worker filesystem/network policy.
+pytestmark = pytest.mark.sandbox
+
 _SANDBOX = SandboxConfig(require=False, network=True, filesystem=False)
 _CODEACT = CodeActStrategy(
     config=CodeActConfig(

@@ -35,7 +35,10 @@ def _sandbox_codeact():
         for factory in (CodeActStrategy, PurePythonStrategy)
         for mode in ("method", "parameter", "format", "capture")
     ]
-    + [(_sandbox_codeact, mode) for mode in ("method", "parameter", "format")],
+    + [
+        pytest.param(_sandbox_codeact, mode, marks=pytest.mark.sandbox)
+        for mode in ("method", "parameter", "format")
+    ],
 )
 async def test_prefill_request_and_warning(strategy_type, mode):
     """Check the real REPL, developer warning, and first model request together."""
