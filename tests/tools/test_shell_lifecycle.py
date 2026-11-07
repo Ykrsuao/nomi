@@ -8,6 +8,7 @@ import os
 import shlex
 import signal
 import sys
+import time
 import urllib.request
 import weakref
 
@@ -29,21 +30,26 @@ async def test_fresh_shell_server_survives_discard_and_scope_close(tmp_path):
         shell_ref = weakref.ref(shell.session)
         assert shell.session._keep_background_on_close
         code = (
-            "import http.server,os; "
-            "s=http.server.HTTPServer(('127.0.0.1',0),http.server.SimpleHTTPRequestHandler); "
-            "open('server.info','w').write(str(os.getpid())+' '+str(s.server_port)); "
+            "import http.server,os,socketserver; "
+            "s=socketserver.TCPServer(('127.0.0.1',0),http.server.SimpleHTTPRequestHandler); "
+            "open('server.info','w').write(str(os.getpid())+' '+str(s.server_address[1])); "
             "s.serve_forever()"
         )
         _, _, status = await shell.session.run(
             f"{shlex.quote(sys.executable)} -u -c {shlex.quote(code)} >server.log 2>&1 &"
         )
         assert status == 0
-        for _ in range(100):
+        # Service ownership is the contract here; HTTPServer's reverse-DNS
+        # lookup and a two-second startup race are unrelated to that contract.
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
             if (tmp_path / "server.info").exists():
                 pid, port = map(int, (tmp_path / "server.info").read_text().split())
                 return port
             await asyncio.sleep(0.02)
-        raise AssertionError("Server did not start")
+        log = tmp_path / "server.log"
+        diagnostic = log.read_text(errors="replace") if log.exists() else "server.log missing"
+        raise AssertionError(f"Server did not start: {diagnostic}")
 
     try:
         async with preserve_background_services():
