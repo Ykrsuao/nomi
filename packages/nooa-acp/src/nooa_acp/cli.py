@@ -25,7 +25,13 @@ if TYPE_CHECKING:
     default=None,
     help="Override the configured NOOA LLM client type.",
 )
-def command(model: str, client_type: str | None) -> None:
+@click.option(
+    "--sandbox/--no-sandbox",
+    envvar="NOOA_SANDBOX",
+    default=False,
+    help="Execute CodeAct Python in a microsandbox microVM.",
+)
+def command(model: str, client_type: str | None, sandbox: bool) -> None:
     """Serve the NOOA coding agent over ACP on standard input/output."""
     from nooa.secrets import load_secrets_into_env
     from nooa.unifiedllm import get_llm_client
@@ -38,7 +44,8 @@ def command(model: str, client_type: str | None) -> None:
         overrides = {"api_key": nvidia_api_key} if nvidia_api_key else {}
         return get_llm_client(model, client_type=client_type, **overrides)
 
-    asyncio.run(serve(llm_factory))
+    operation = serve(llm_factory, sandbox=True) if sandbox else serve(llm_factory)
+    asyncio.run(operation)
 
 
 def main() -> None:

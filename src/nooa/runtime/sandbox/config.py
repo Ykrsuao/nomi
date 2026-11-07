@@ -3,17 +3,17 @@
 """Configuration surface for the sandboxed cell-execution backend.
 
 ``SandboxConfig`` declares *intent* — which guardrails to enforce and how. The
-parent resolves it into a concrete :class:`ResolvedSpec` (expanding the
-workspace and system paths into Landlock rules, deciding the seccomp/rlimit
-values) which the worker applies to itself after fork, before any cell runs.
+adapter maps authorized host paths into the microVM. The guest applies
+read-only bind mounts, a filesystem jail, network restrictions and resource
+limits before any cell runs. No host process is forked.
 
 Every guardrail is independently configurable and each maps to an irrevocable
-kernel mechanism (see ``guards.py``):
+guest mechanism (see ``guest_policy.py``):
 
 * timeout  -> parent hard-kill (reuses ``CodeActConfig.cell_timeout``)
 * memory   -> ``RLIMIT_AS``          (``max_memory_mb``)
 * cpu      -> ``RLIMIT_CPU``         (``max_cpu_seconds``)
-* files    -> Landlock path rules    (``filesystem``/``workspace``/``allow``/``deny``)
+* files    -> guest mount rules      (``filesystem``/``workspace``/``allow``)
 * network  -> seccomp ``socket()``   (``network``)
 """
 
@@ -50,7 +50,7 @@ class SandboxConfig(BaseModel):
     # --- guardrail 3: filesystem ------------------------------------------
     filesystem: bool = Field(
         default=True,
-        description="Enforce Landlock filesystem confinement (default-deny).",
+        description="Enforce guest filesystem confinement with explicitly authorized paths.",
     )
     workspace: str | None = Field(
         default=None,
@@ -103,10 +103,26 @@ class SandboxConfig(BaseModel):
     )
 
     # --- process / lifecycle ----------------------------------------------
-    # Only "fork" is supported: the worker init inherits the live agent, the
-    # CurrentCall and the return_result closure, none of which pickle for "spawn".
-    start_method: Literal["fork"] = Field(
-        default="fork", description="multiprocessing start method for the worker (fork only)."
+    # Keep the old spelling readable in saved configurations. Execution always
+    # uses microsandbox; this field never selects a multiprocessing backend.
+    start_method: Literal["microsandbox", "fork"] = Field(
+        default="microsandbox",
+        description="Microsandbox execution; fork is accepted only as a legacy configuration value.",
+    )
+    image: str | None = Field(
+        default=None, description="Guest OCI image; defaults to the host's exact Python version."
+    )
+    vm_memory_mb: int = Field(
+        default=1024,
+        ge=128,
+        description="MicroVM RAM in MiB, distinct from worker allocation headroom.",
+    )
+    cpus: int = Field(default=1, ge=1, description="MicroVM virtual CPU count.")
+    prepare_environment: bool = Field(
+        default=True, description="Prepare and cache guest dependencies before executing any cells."
+    )
+    startup_timeout_s: float = Field(
+        default=300.0, gt=0, description="Bound for image preparation and guest initialization."
     )
     recovery: Literal["restart_empty", "disabled"] = Field(
         default="restart_empty",

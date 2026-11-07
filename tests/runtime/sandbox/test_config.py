@@ -7,6 +7,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from nooa._platform import is_native_windows
 from nooa.config import CodeActConfig
 from nooa.runtime.sandbox.config import (
     FileRule,
@@ -97,9 +98,9 @@ def test_context_block_includes_active_guards():
         cell_timeout=60.0,
     )
     assert "60s" in block
-    assert "512 MB" in block
+    assert "512 MiB" in block
     assert "30s of CPU" in block
-    assert "/w" in block
+    assert ("/workspace" if is_native_windows() else "/w") in block
     assert "Network: disabled" in block
 
 

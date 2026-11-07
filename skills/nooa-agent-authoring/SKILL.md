@@ -49,8 +49,8 @@ To configure a model, get the user's permission and follow
 interactive wizard. For registry semantics, reply budgets, reasoning-level
 configuration and caching, use
 [nooa-model-configuration](../nooa-model-configuration/SKILL.md).
-On Windows, run nooa inside WSL 2; native Windows stops at `import nooa`
-unless `NOOA_SKIP_PLATFORM_CHECK=1` is set.
+Native Windows runs directly. Shell commands use PowerShell on Windows and
+bash on Linux/macOS; microsandbox is initialized only for sandbox execution.
 For images, audio, video, PDFs, and CodeAct `show()`, use
 [nooa-media](../nooa-media/SKILL.md). Configure each model's `media_inputs`
 with the formats your provider accepts.

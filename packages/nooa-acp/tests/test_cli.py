@@ -16,8 +16,9 @@ def stubbed_serve(monkeypatch):
     """Capture the llm_factory the command builds instead of serving."""
     captured = {}
 
-    def fake_serve(llm_factory):
+    def fake_serve(llm_factory, **options):
         captured["llm_factory"] = llm_factory
+        captured["options"] = options
         return "coroutine-placeholder"
 
     monkeypatch.setattr("nooa_acp.server.serve", fake_serve)
@@ -64,6 +65,20 @@ def test_explicit_flag_overrides_the_environment(monkeypatch, stubbed_serve):
     assert result.exit_code == 0, result.output
     stubbed_serve["llm_factory"]()
     assert requested["name"] == "anthropic/claude-sonnet-4-5"
+
+
+def test_sandbox_flag_reaches_server(monkeypatch, stubbed_serve):
+    monkeypatch.delenv("NOOA_SANDBOX", raising=False)
+    result = click.testing.CliRunner().invoke(command, ["--model", "fake-model", "--sandbox"])
+    assert result.exit_code == 0, result.output
+    assert stubbed_serve["options"] == {"sandbox": True}
+
+
+def test_no_sandbox_overrides_environment(monkeypatch, stubbed_serve):
+    monkeypatch.setenv("NOOA_SANDBOX", "true")
+    result = click.testing.CliRunner().invoke(command, ["--model", "fake-model", "--no-sandbox"])
+    assert result.exit_code == 0, result.output
+    assert stubbed_serve["options"] == {}
 
 
 def _console_script() -> str:

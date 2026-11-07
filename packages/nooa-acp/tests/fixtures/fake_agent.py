@@ -21,12 +21,20 @@ def llm_factory() -> FakeLLMClient:
     if "--blocking" in sys.argv:
         return FakeLLMClient.with_tool_call(
             "execute_python",
-            {"code": "await asyncio.Event().wait()"},
+            {
+                "code": ("self.message('Sandbox ready')\n" if "--sandbox" in sys.argv else "")
+                + "await asyncio.Event().wait()"
+            },
         )
     return FakeLLMClient.with_tool_call(
         "execute_python",
         {
             "code": (
+                "import sys\nself.message('Interpreter platform: ' + sys.platform)\n"
+                if "--sandbox" in sys.argv
+                else ""
+            )
+            + (
                 "self.message('NOOA ACP smoke test passed.')\n"
                 "return_result(Done(explanation='smoke test complete'))"
             )
@@ -34,4 +42,4 @@ def llm_factory() -> FakeLLMClient:
     )
 
 
-asyncio.run(serve(llm_factory))
+asyncio.run(serve(llm_factory, sandbox="--sandbox" in sys.argv))

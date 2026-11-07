@@ -4,7 +4,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from typing import ClassVar
 
 import pytest
@@ -117,7 +116,7 @@ async def test_stale_match_broker_error_survives_as_actionable_surrogate(tmp_pat
     from nooa.runtime.sandbox.worker import ParentToolError, _raise_broker_error
 
     path = tmp_path / "example.txt"
-    path.write_text("current\n")
+    path.write_bytes(b"current\n")
     match = Match("example.txt", 1, 1, "captured\n", resolved_path=path)
     shell = ShellTools(cwd=str(tmp_path))
 
@@ -134,7 +133,12 @@ async def test_stale_match_broker_error_survives_as_actionable_surrogate(tmp_pat
         )
         assert response["ok"] is False
         assert response["error_type"] == "StaleMatchError"
-        for text in [str(path), "captured lines 1-1", "No file was changed", "recompute the Match"]:
+        for text in [
+            repr(str(path)),
+            "captured lines 1-1",
+            "No file was changed",
+            "recompute the Match",
+        ]:
             assert text in response["error"]
         with pytest.raises(ParentToolError) as caught:
             _raise_broker_error(response)
@@ -300,15 +304,13 @@ def test_non_string_formatter_result_uses_safe_fallback(invalid_result: object) 
     assert dto.error.diagnostic == "ValueError: original failure"
 
 
-def test_worker_uses_formatter_captured_before_cell_module_mutation() -> None:
+async def test_worker_uses_formatter_captured_before_cell_module_mutation() -> None:
     import nooa.errors.formatting as formatting
-    from nooa.runtime.sandbox.worker import _run_one
+    from nooa.runtime.sandbox.guest import _run_one
 
     original = formatting.format_error_for_llm
-    loop = asyncio.new_event_loop()
     try:
-        dto = _run_one(
-            loop,
+        dto = await _run_one(
             {},
             {
                 "code": (
@@ -322,7 +324,6 @@ def test_worker_uses_formatter_captured_before_cell_module_mutation() -> None:
         )
     finally:
         formatting.format_error_for_llm = original
-        loop.close()
 
     assert dto.error is not None
     assert dto.error.type_name == "RuntimeError"

@@ -32,8 +32,8 @@ release/commit; use absolute installation references from a diagnostic handoff.
   masked input. Persisting a pasted key requires separate consent; check whether
   a project secrets file shadows the user file.
 
-**Windows:** run Connect inside WSL 2. Native Windows refuses `nooa` unless
-`NOOA_SKIP_PLATFORM_CHECK=1` is set; with it, `nooa connect` works and is tested.
+**Windows:** Connect runs natively, including file-backed registry and secrets
+locking. No platform override or WSL environment is required.
 
 ## Run Connect through the headless skill
 

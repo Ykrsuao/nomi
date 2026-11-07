@@ -175,11 +175,18 @@ def _secret_lock(path):
     directory, not on the secrets file itself, because writes replace the
     secrets file with a new one.
     """
-    import fcntl
     from pathlib import Path
 
     path = Path(path).resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
+    if os.name == "nt":
+        from filelock import FileLock
+
+        with FileLock(str(path.with_name(f".{path.name}.lock")), mode=0o600):
+            yield path
+        return
+    import fcntl
+
     with path.with_name(f".{path.name}.lock").open("a") as lock:
         os.chmod(lock.name, 0o600)
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)

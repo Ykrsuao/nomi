@@ -31,7 +31,7 @@ import time
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-from nooa._platform import require_posix
+from nooa._platform import is_native_windows
 from nooa.agentdoc import TruncatingStringIO
 
 logger = logging.getLogger(__name__)
@@ -99,6 +99,13 @@ class BashSession:
         stdout, stderr, code = await session.run("cd src && pwd")  # cd persists!
         await session.close()
     """
+
+    def __new__(cls, *args, **kwargs):
+        if cls is BashSession and is_native_windows():
+            from nooa.tools._powershell_session import PowerShellSession
+
+            return PowerShellSession(*args, **kwargs)
+        return super().__new__(cls)
 
     def __init__(
         self,
@@ -221,7 +228,6 @@ class BashSession:
         """Start the bash subprocess with a dedicated control fd."""
         if self._started:
             return
-        require_posix("The bash session (ShellTools, RepoTools, skills that run shell commands)")
 
         self._start_count += 1
         env = os.environ.copy()

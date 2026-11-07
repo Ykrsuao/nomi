@@ -55,6 +55,7 @@ class _RecordingClient:
         self.updates: list[tuple[str, object]] = []
         self.tool_started = asyncio.Event()
         self.commands_updated = asyncio.Event()
+        self.sandbox_ready = asyncio.Event()
 
     async def session_update(self, session_id: str, update: object, **kwargs) -> None:
         self.updates.append((session_id, update))
@@ -62,6 +63,8 @@ class _RecordingClient:
             self.tool_started.set()
         if isinstance(update, AvailableCommandsUpdate):
             self.commands_updated.set()
+        if isinstance(update, AgentMessageChunk) and update.content.text == "Sandbox ready":
+            self.sandbox_ready.set()
 
 
 def _write_protocol_skill(workspace: Path) -> None:
@@ -320,3 +323,48 @@ async def test_cancelling_a_shell_command_reports_it_as_cancellation(tmp_path):
     rendered = "".join(str(update) for _, update in client.updates)
     assert "Cancelled by user." in rendered
     assert "CancelledError" not in rendered
+
+
+@pytest.mark.sandbox
+async def test_acp_sandbox_subprocess_runs_python_in_linux_guest(tmp_path):
+    client = _RecordingClient()
+    fixture = Path(__file__).parent / "fixtures" / "fake_agent.py"
+    async with spawn_agent_process(
+        client, sys.executable, str(fixture), "--sandbox", cwd=tmp_path
+    ) as (connection, process):
+        await connection.initialize(PROTOCOL_VERSION)
+        session = await connection.new_session(str(tmp_path))
+        result = await asyncio.wait_for(
+            connection.prompt(session.session_id, [text_block("run smoke test")]), timeout=180
+        )
+        assert result.stop_reason == "end_turn"
+        assert any(
+            isinstance(update, AgentMessageChunk)
+            and update.content.text == "Interpreter platform: linux"
+            for _, update in client.updates
+        )
+        assert any(
+            isinstance(update, AgentMessageChunk)
+            and update.content.text == "NOOA ACP smoke test passed."
+            for _, update in client.updates
+        )
+        await connection.close_session(session.session_id)
+
+
+@pytest.mark.sandbox
+async def test_acp_sandbox_subprocess_cancels_running_guest(tmp_path):
+    client = _RecordingClient()
+    fixture = Path(__file__).parent / "fixtures" / "fake_agent.py"
+    async with spawn_agent_process(
+        client, sys.executable, str(fixture), "--sandbox", "--blocking", cwd=tmp_path
+    ) as (connection, process):
+        await connection.initialize(PROTOCOL_VERSION)
+        session = await connection.new_session(str(tmp_path))
+        pending = asyncio.create_task(
+            connection.prompt(session.session_id, [text_block("wait forever")])
+        )
+        await asyncio.wait_for(client.sandbox_ready.wait(), timeout=180)
+        await connection.cancel(session.session_id)
+        result = await asyncio.wait_for(pending, timeout=30)
+        assert result.stop_reason == "cancelled"
+        await connection.close_session(session.session_id)

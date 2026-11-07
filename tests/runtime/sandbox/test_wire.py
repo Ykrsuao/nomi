@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""The worker->parent pipe is msgpack: nothing the worker sends is ever unpickled."""
+"""Guest-to-host frames are msgpack: guest values are never unpickled."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ import decimal
 import enum
 import os
 import pathlib
-import threading
 import types
 import uuid
 from dataclasses import dataclass, field
@@ -22,7 +21,6 @@ import pytest
 from pydantic import BaseModel
 
 from nooa import Agent, hidden
-from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
 from nooa.events import _NO_RETURN
 from nooa.runtime.sandbox import wire
 from nooa.runtime.sandbox.config import SandboxConfig
@@ -271,22 +269,7 @@ def test_undeclared_return_value_becomes_serialization_error():
     assert accepted.returned_value == Detail(n=1)
 
 
-# --- executor, parent side (no worker forked) -------------------------------------
-class _FakeConn:
-    def __init__(self, raw: bytes = b"") -> None:
-        self._raw = raw
-        self.sent: list[dict[str, Any]] = []
-
-    def poll(self, timeout: float | None = None) -> bool:
-        return True
-
-    def recv_bytes(self) -> bytes:
-        return self._raw
-
-    def send(self, obj: dict[str, Any]) -> None:
-        self.sent.append(obj)
-
-
+# --- executor, parent side (no VM required) --------------------------------------
 class _Target:
     value = 41
 
@@ -294,32 +277,34 @@ class _Target:
         return n + 1
 
 
-def _bare_executor(conn: _FakeConn) -> SandboxedExecutor:
-    ex = object.__new__(SandboxedExecutor)
-    ex._conn = conn  # type: ignore[assignment]
-    ex._proc = types.SimpleNamespace(is_alive=lambda: True)  # type: ignore[assignment]
-    ex._config = SandboxConfig(require=False)
-    ex._cell_timeout = None
-    ex._max_error = DEFAULT_TRUNCATION_CONFIG.capture.max_error
+def _bare_executor() -> SandboxedExecutor:
+    ex = SandboxedExecutor(_Target(), SandboxConfig(require=False), cell_timeout=None)
     ex._codec = wire.Codec()
-    ex._agent = _Target()
     return ex
 
 
 @pytest.mark.parametrize("raw", [b"\xc1", CODEC.dumps([1, 2])], ids=["corrupt", "non-dict"])
-def test_recv_retires_worker_on_malformed_message(raw):
-    ex = _bare_executor(_FakeConn(raw))
-    loop = asyncio.new_event_loop()
+async def test_recv_retires_worker_on_malformed_message(raw):
+    from nooa.runtime.sandbox.protocol import frame
+
+    async def events():
+        yield types.SimpleNamespace(event_type="stdout", data=frame(raw))
+
+    ex = _bare_executor()
+    ex._stream = events()
+    ex._messages = asyncio.Queue()
     try:
-        with pytest.raises(WorkerDiedError, match="malformed message"):
-            ex._recv_until_result(1, None, loop)
+        await ex._read_events()
+        failure = await ex._messages.get()
+        assert isinstance(failure, WorkerDiedError)
+        assert "malformed message" in str(failure)
+        assert ex._worker_failure is failure
     finally:
-        loop.close()
+        await ex.aclose()
 
 
-def test_refused_payload_is_answered_as_tool_error_without_dispatch():
-    conn = _FakeConn()
-    ex = _bare_executor(conn)
+async def test_refused_payload_is_answered_as_tool_error_without_dispatch():
+    ex = _bare_executor()
     msg = {
         "type": "tool_call",
         "kind": "setattr",
@@ -327,8 +312,7 @@ def test_refused_payload_is_answered_as_tool_error_without_dispatch():
         "tool_call_id": 7,
         "payload": CODEC.dumps(Detail(n=1)),
     }
-    ex._service_tool_call(msg, asyncio.new_event_loop())
-    (response,) = conn.sent
+    response = await ex._service_tool_call(msg)
     assert response["type"] == "tool_result" and response["tool_call_id"] == 7
     assert response["ok"] is False
     assert response["error_type"] == "CellSerializationError"
@@ -344,20 +328,28 @@ def test_refused_payload_is_answered_as_tool_error_without_dispatch():
         {"kind": "call", "path": ["add_one"], "payload": CODEC.dumps([1])},
         {"kind": "call", "path": ["add_one"], "payload": CODEC.dumps((1, {}))},
         {"kind": "bogus", "path": ["add_one"]},
+        {"kind": "introspect", "path": ["doc"]},
+        {"kind": "introspect", "path": ["doc"], "payload": CODEC.dumps([1])},
     ],
-    ids=["payload-missing", "path-not-str", "not-args-kwargs", "args-not-tuple", "unknown-kind"],
+    ids=[
+        "payload-missing",
+        "path-not-str",
+        "not-args-kwargs",
+        "args-not-tuple",
+        "unknown-kind",
+        "introspection-payload-missing",
+        "introspection-not-args-kwargs",
+    ],
 )
-def test_malformed_broker_requests_are_answered_as_tool_errors(msg):
-    conn = _FakeConn()
-    ex = _bare_executor(conn)
-    ex._service_tool_call({"type": "tool_call", "tool_call_id": 1, **msg}, asyncio.new_event_loop())
-    assert conn.sent[0]["ok"] is False
-    assert "malformed" in conn.sent[0]["error"]
+async def test_malformed_broker_requests_are_answered_as_tool_errors(msg):
+    ex = _bare_executor()
+    response = await ex._service_tool_call({"type": "tool_call", "tool_call_id": 1, **msg})
+    assert response["ok"] is False
+    assert "malformed" in response["error"]
 
 
-def test_decoded_call_payload_reaches_the_agent():
-    conn = _FakeConn()
-    ex = _bare_executor(conn)
+async def test_decoded_call_payload_reaches_the_agent():
+    ex = _bare_executor()
     msg = {
         "type": "tool_call",
         "kind": "call",
@@ -365,13 +357,5 @@ def test_decoded_call_payload_reaches_the_agent():
         "tool_call_id": 2,
         "payload": CODEC.dumps(((41,), {})),
     }
-    loop = asyncio.new_event_loop()
-    thread = threading.Thread(target=loop.run_forever, daemon=True)
-    thread.start()
-    try:
-        ex._service_tool_call(msg, loop)
-    finally:
-        loop.call_soon_threadsafe(loop.stop)
-        thread.join(timeout=5)
-        loop.close()
-    assert conn.sent[0]["ok"] is True and conn.sent[0]["result"] == 42
+    response = await ex._service_tool_call(msg)
+    assert response["ok"] is True and response["result"] == 42

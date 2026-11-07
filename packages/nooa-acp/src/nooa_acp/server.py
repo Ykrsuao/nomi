@@ -60,10 +60,16 @@ from nooa_cli.sessions import (
     SessionStore,
 )
 
+from nooa.config import CodeActConfig
 from nooa.errors import GenerationError
 from nooa.mcp import MCPManager, MCPTool
+from nooa.runtime.sandbox.config import SandboxConfig
 from nooa.slash_dispatch import CoercionError
-from nooa.strategies.codeact import MAX_ITERATIONS_MESSAGE, OUTPUT_TOKENS_EXHAUSTED_MESSAGE
+from nooa.strategies.codeact import (
+    MAX_ITERATIONS_MESSAGE,
+    OUTPUT_TOKENS_EXHAUSTED_MESSAGE,
+    CodeActStrategy,
+)
 from nooa.unifiedllm import UnifiedLLM
 from nooa_acp._runtime import (
     SessionBusyError,
@@ -117,8 +123,16 @@ class _ACPSession:
 
 
 class CodingACPAdapter:
-    def __init__(self, llm_factory: Callable[[], UnifiedLLM]) -> None:
+    def __init__(
+        self,
+        llm_factory: Callable[[], UnifiedLLM],
+        *,
+        sandbox: bool = False,
+        sandbox_config: SandboxConfig | None = None,
+    ) -> None:
         self._llm_factory = llm_factory
+        self._sandbox = sandbox
+        self._sandbox_config = sandbox_config or SandboxConfig()
         self._client: Client | None = None
         self._sessions: SessionRuntimePool[_ACPSession] = SessionRuntimePool()
 
@@ -422,7 +436,16 @@ class CodingACPAdapter:
                     # connect path already offers for an unreachable server —
                     # instead of failing session/new with an opaque error.
                     registration_warnings.append(f"MCP server {name!r} was not registered: {exc}")
-            dispatcher = InteractiveSessionDispatcher(agent)
+            coding_strategy = None
+            if self._sandbox:
+                coding_strategy = CodeActStrategy(
+                    config=CodeActConfig(
+                        cell_timeout=1800.0,
+                        execution_backend="sandbox",
+                        sandbox=self._sandbox_config.model_copy(update={"workspace": str(root)}),
+                    )
+                )
+            dispatcher = InteractiveSessionDispatcher(agent, strategy=coding_strategy)
             bridge = ACPEventBridge(agent, self._client, handle.id)
             commands = CodingSlashCommandRegistry(agent)
             value = _ACPSession(
@@ -608,8 +631,8 @@ class CodingACPAdapter:
         await self._sessions.close()
 
 
-async def serve(llm_factory: Callable[[], UnifiedLLM]) -> None:
-    adapter = CodingACPAdapter(llm_factory)
+async def serve(llm_factory: Callable[[], UnifiedLLM], *, sandbox: bool = False) -> None:
+    adapter = CodingACPAdapter(llm_factory, sandbox=sandbox)
     try:
         # session/close is registered by the router as unstable. initialize()
         # advertises the close capability, so without this flag the agent

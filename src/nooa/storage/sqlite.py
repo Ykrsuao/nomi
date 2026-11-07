@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Literal, Self
 
 from pydantic import ValidationError as PydanticValidationError
 
-from nooa._platform import require_posix
+from nooa._platform import is_native_windows
 from nooa.context_blocks import Event, EventBase, EventStatus, Metadata
 from nooa.context_blocks.events import _EVENT_REGISTRY
 from nooa.events import (
@@ -686,12 +686,19 @@ def _acquire_session_lock(lock_path: str) -> int:
     Taking the lock only to test whether a session is free still rewrites
     the record with this process's pid and host.
     """
-    require_posix("File-backed SQLite storage (its session lock uses fcntl)")
-    import fcntl
-
-    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
+    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o644)
     try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        if is_native_windows():
+            import msvcrt
+
+            # Lock away from the owner record so competing processes can still
+            # read its PID. Locking past EOF does not extend the file.
+            os.lseek(fd, 2**31 - 1, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
         os.close(fd)
         owner_pid = _read_lock_pid(lock_path)
@@ -718,10 +725,16 @@ def _acquire_session_lock(lock_path: str) -> int:
 
 def _release_session_lock(fd: int) -> None:
     """Release and close a lock fd returned by ``_acquire_session_lock``."""
-    import fcntl
-
     try:
-        fcntl.flock(fd, fcntl.LOCK_UN)
+        if is_native_windows():
+            import msvcrt
+
+            os.lseek(fd, 2**31 - 1, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_UN)
     finally:
         os.close(fd)
 

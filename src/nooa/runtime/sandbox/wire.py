@@ -60,19 +60,32 @@ def type_key(cls: type) -> str:
 class Codec:
     """Encode any value the worker can express; decode only into ``types``."""
 
-    def __init__(self, types: Mapping[str, type] | None = None) -> None:
+    def __init__(self, types: Mapping[str, type] | None = None, *, path_transform=None) -> None:
         self.types = dict(types or {})
+        self.path_transform = path_transform
 
     def dumps(self, value: Any) -> bytes:
         return msgpack.packb(value, default=self._encode, strict_types=True)
 
     def loads(self, data: bytes) -> Any:
         try:
-            return msgpack.unpackb(data, ext_hook=self._decode, strict_map_key=False)
+            value = msgpack.unpackb(data, ext_hook=self._decode, strict_map_key=False)
+            return self._map_paths(value) if self.path_transform else value
         except CellSerializationError:
             raise
         except Exception as exc:  # noqa: BLE001 - corrupt or forged stream
             raise CellSerializationError(f"malformed sandbox message ({exc})") from exc
+
+    def _map_paths(self, value):
+        if isinstance(value, str):
+            return self.path_transform(value)
+        if isinstance(value, dict):
+            return {self._map_paths(key): self._map_paths(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [self._map_paths(item) for item in value]
+        if isinstance(value, tuple):
+            return tuple(self._map_paths(item) for item in value)
+        return value
 
     def _ext(self, code: int, payload: Any) -> msgpack.ExtType:
         return msgpack.ExtType(code, self.dumps(payload))

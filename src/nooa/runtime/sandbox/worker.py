@@ -1,31 +1,15 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Sandbox worker: the locked-down child process that runs cells.
-
-Lifecycle inside the child (all before the op loop, so no cell ever runs
-unguarded):
-
-1. Build the persistent cell namespace from the forked agent (module globals,
-   framework builtins, ``self`` -> :class:`ParentAgentProxy`).
-2. ``install_guards`` — apply the irrevocable OS guardrails to this process.
-3. Serve ``run`` / ``ping`` / ``shutdown`` requests over the pipe, executing each
-   cell with :func:`run_cell_source` and streaming ``self.*`` calls back to the
-   parent via the broker.
-"""
+"""Guest namespace construction and host-agent capability proxies."""
 
 from __future__ import annotations
 
 import asyncio
-import os
 import threading
 import weakref
-from multiprocessing.connection import Connection
-from typing import Any, cast
+from typing import Any, Protocol, cast
 
-from nooa.errors.formatting import IPythonErrorFormatter
 from nooa.runtime.sandbox import wire
-from nooa.runtime.sandbox.cell_core import run_cell_source
-from nooa.runtime.sandbox.serialization import ResultDTO, dto_to_wire, result_to_dto
 
 # Private state (the broker, and thus the parent pipe) for every proxy handed to
 # the cell is kept OUT of the object's ``__dict__``, in this module-private
@@ -40,9 +24,12 @@ _PROXY_STATE: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 _NO_PAYLOAD = object()
 _CODEC = wire.Codec()
 
+
 # Capture a dedicated formatter before untrusted cell code runs. In particular,
 # mutating the module-level default formatter cannot forge worker diagnostics.
-_WORKER_ERROR_FORMATTER = IPythonErrorFormatter().format
+class Connection(Protocol):
+    def send_bytes(self, data: bytes) -> None: ...
+    def recv(self) -> Any: ...
 
 
 class ParentToolError(RuntimeError):
@@ -116,6 +103,9 @@ class ChildBroker:
         """Return ``(value, is_proxy)``: the picklable value, or a nested-proxy marker."""
         resp = self._rpc({"type": "tool_call", "kind": "attr", "path": path})
         return resp.get("result"), bool(resp.get("proxy"))
+
+    def describe_attr(self, path: list[str]) -> dict[str, Any]:
+        return self._rpc({"type": "tool_call", "kind": "attr", "path": path})
 
     def set_attr(self, path: list[str], value: Any) -> None:
         """Assign ``value`` at ``path`` on the parent's live agent (``self.x = value``)."""
@@ -219,7 +209,10 @@ def _resolve_child_attr(broker: ChildBroker, local_obj: Any, path: list[str], na
     try:
         local_attr = getattr(local_obj, name)
     except AttributeError:
-        value, is_proxy = broker.get_attr(new_path)
+        response = broker.describe_attr(new_path)
+        if response.get("callable"):
+            return _BrokerCallable(broker, new_path, bool(response.get("is_async")))
+        value, is_proxy = response.get("result"), response.get("proxy")
         return _NestedProxy(broker, new_path, None) if is_proxy else value
     if callable(local_attr) and not isinstance(local_attr, type):
         return _BrokerCallable(broker, new_path, _is_async_callable(local_attr))
@@ -244,8 +237,7 @@ class _NestedProxy:
         broker, path, local = _PROXY_STATE[self]
         if local is None:
             # Unknown local shape: assume callable-or-value, resolved by the parent.
-            value, is_proxy = broker.get_attr([*path, name])
-            return _NestedProxy(broker, [*path, name], None) if is_proxy else value
+            return _resolve_child_attr(broker, None, path, name)
         return _resolve_child_attr(broker, local, path, name)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -349,6 +341,12 @@ def _introspect_wrapper(fn: Any, proxy: ParentAgentProxy, agent: Any) -> Any:
     """Wrap ``doc``/``methods``/``variables`` so ``doc(self)`` works on the proxy."""
 
     def wrapper(obj: Any = proxy, *args: Any, **kwargs: Any) -> Any:
+        if obj is proxy and agent is None:
+            broker, _ = _PROXY_STATE[proxy]
+            return broker._rpc(
+                {"type": "tool_call", "kind": "introspect", "path": [fn.__name__]},
+                (args, kwargs),
+            ).get("result")
         return fn(agent if obj is proxy else obj, *args, **kwargs)
 
     return wrapper
@@ -359,6 +357,8 @@ def build_namespace(
     framework_builtins: dict[str, Any],
     proxy: ParentAgentProxy,
     restrictions: Any,
+    *,
+    module_globals: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the worker's persistent cell namespace, mirroring actor exec_globals."""
     import typing as _typing
@@ -387,7 +387,9 @@ def build_namespace(
     )
     from nooa.strategies.pure_python import PurePythonStrategy
 
-    ns: dict[str, Any] = freeze_module_state(filter_mro_module_globals(type(agent)))
+    ns: dict[str, Any] = freeze_module_state(
+        filter_mro_module_globals(type(agent)) if module_globals is None else module_globals
+    )
     ns.update(
         {
             "self": proxy,
@@ -426,85 +428,3 @@ def build_namespace(
     effective = restrictions or RestrictionsConfig()
     ns = _strip_blocked_modules(ns, effective.blocked_modules)
     return ns
-
-
-def worker_main(conn: Connection, init: dict[str, Any]) -> None:  # pragma: no cover - child
-    """Child entrypoint: build namespace, install guards, serve requests."""
-    from nooa.runtime.sandbox.guards import install_guards
-
-    send_lock = threading.RLock()
-    try:
-        broker = ChildBroker(conn, send_lock)
-        proxy = ParentAgentProxy(broker, init["agent"])
-        namespace = build_namespace(
-            init["agent"], init.get("framework_builtins") or {}, proxy, init.get("restrictions")
-        )
-        # Guards go on AFTER the (trusted) namespace build and BEFORE the op loop,
-        # so every cell — and nothing else — runs under the full lock-down.
-        install_guards(init["spec"])
-    except BaseException as exc:  # noqa: BLE001 - report and exit; parent fails closed
-        try:
-            wire.send(conn, {"type": "fatal", "error": f"{type(exc).__name__}: {exc}"})
-        except Exception:
-            pass
-        os._exit(3)
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        while True:
-            try:
-                request = conn.recv()  # parent -> worker: the parent is trusted
-            except (EOFError, OSError):
-                return
-            op = request.get("op")
-            req_id = request.get("id")
-            if op == "shutdown":
-                return
-            if op == "ping":
-                wire.send(conn, {"type": "response", "id": req_id, "ok": True})
-                continue
-            if op == "run":
-                dto = _run_one(
-                    loop,
-                    namespace,
-                    request,
-                    max_error=init.get("max_error"),
-                    tail_chars=init.get("error_tail"),
-                )
-                wire.send(
-                    conn,
-                    {"type": "response", "id": req_id, "ok": True, "result": dto_to_wire(dto)},
-                )
-                continue
-            wire.send(
-                conn,
-                {"type": "response", "id": req_id, "ok": False, "error": f"unknown op {op!r}"},
-            )
-    finally:
-        loop.close()
-
-
-def _run_one(
-    loop: asyncio.AbstractEventLoop,
-    namespace: dict[str, Any],
-    request: dict[str, Any],
-    _serialize: Any = result_to_dto,
-    _error_formatter: Any = _WORKER_ERROR_FORMATTER,
-    *,
-    max_error: int | None = None,
-    tail_chars: int | None = None,
-) -> ResultDTO:
-    result = loop.run_until_complete(
-        run_cell_source(
-            request["code"],
-            namespace,
-            execution_count=int(request.get("execution_count", 1)),
-        )
-    )
-    return _serialize(
-        result,
-        error_formatter=_error_formatter,
-        max_error=max_error,
-        tail_chars=tail_chars,
-    )

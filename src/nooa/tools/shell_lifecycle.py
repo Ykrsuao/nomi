@@ -8,12 +8,17 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
 
-    from nooa.tools._bash_session import BashSession
+
+class OwnedShell(Protocol):
+    _keep_background_on_close: bool
+
+    async def close(self) -> None: ...
+
 
 logger = logging.getLogger(__name__)
 _current_scope: ContextVar[BackgroundServiceScope | None] = ContextVar(
@@ -29,10 +34,10 @@ class BackgroundServiceScope:
     """
 
     def __init__(self) -> None:
-        self._sessions: dict[int, BashSession] = {}
+        self._sessions: dict[int, OwnedShell] = {}
         self._closed = False
 
-    def adopt(self, session: BashSession) -> None:
+    def adopt(self, session: OwnedShell) -> None:
         """Include a shell constructed before entering the invocation scope."""
         if self._closed:
             raise RuntimeError("Background service scope has already closed")

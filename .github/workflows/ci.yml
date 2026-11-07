@@ -2,9 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, microsandbox-platform-tests]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -29,6 +34,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -44,14 +50,16 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ripgrep
       - name: Unit tests (no live API calls)
         run: uv run pytest -q -m "not integration and not stress and not sandbox"
-      # Sandbox containment tests fork a real worker to exercise the OS-level
-      # sandbox (Landlock, seccomp, RLIMIT, cell timeouts, broker-pipe
-      # boundary). They need no credentials and skipif-degrade on kernels
-      # without the relevant capabilities, so ubuntu-latest runs them for
-      # real. Kept out of the unit-test step because forking a worker is
-      # heavier than a unit test. See #78.
+      - name: Install microsandbox runtime
+        run: uv sync --all-extras
+      - name: Check Linux microVM runtime
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod a+rw /dev/kvm; fi
+          uv run --no-sync msb doctor
+      # The executor tests use real microVMs; legacy guard-helper tests remain
+      # separate checks of the compatibility utilities. No provider keys are used.
       - name: Sandbox containment tests
-        run: uv run pytest -q -m sandbox
+        run: uv run --no-sync pytest -q -m sandbox --maxfail=3
 
   python-313-error-compat:
     runs-on: ubuntu-latest
@@ -81,28 +89,100 @@ jobs:
             tests/strategies/test_strategies_coverage.py \
             tests/test_event_backend_roundtrip.py
 
+  macos-native:
+    name: macOS native Python ${{ matrix.python-version }}
+    runs-on: macos-15
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    permissions:
+      contents: read
+    env:
+      NOOA_MODEL_METADATA_REFRESH: "False"
+      LITELLM_LOCAL_MODEL_COST_MAP: "True"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Sync without sandbox
+        run: uv sync --all-extras --no-extra sandbox
+      - name: Native CodeAct, shell, storage and ACP
+        run: |
+          uv run --no-sync pytest -q -m "not integration and not stress and not sandbox" \
+            tests/strategies \
+            tests/runtime/sandbox/test_config.py \
+            tests/runtime/sandbox/test_wire.py \
+            tests/runtime/sandbox/test_error_serialization.py \
+            tests/runtime/test_producers.py \
+            tests/tools/test_shell_timeout_contract.py \
+            tests/tools/test_shell_lifecycle.py \
+            tests/storage/test_sqlite_public_options.py \
+            tests/test_secrets.py \
+            packages/nooa-acp/tests \
+            --junitxml=artifacts/macos-native.xml
+      - name: Upload macOS native results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-native-${{ matrix.python-version }}
+          path: artifacts/
+
   macos-sandbox-ipc:
-    runs-on: macos-latest
+    name: macOS microsandbox and ACP
+    runs-on: macos-15
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
       - name: Sync
-        run: uv sync --all-extras --no-extra sandbox
-      # macOS cannot enforce Linux Landlock/seccomp guardrails, but the process
-      # boundary, broker, serialization, and CodeAct recovery paths are portable.
-      # Capability-marked containment checks skip individually.
-      - name: macOS sandbox process and error transport
+        run: uv sync --all-extras
+      - name: Check Apple Silicon and microVM runtime
         run: |
-          uv run pytest -q -m sandbox \
-            tests/runtime/sandbox/test_executor.py \
-            tests/runtime/sandbox/test_codeact_sandbox.py
+          mkdir -p artifacts
+          test "$(uname -m)" = arm64
+          uv run --no-sync msb doctor 2>&1 | tee artifacts/microsandbox-doctor.log
+      # These tests execute Python in Linux guests and check state, file/network
+      # permissions, resources, error transport, cancellation and ACP stdio.
+      # A runner without usable virtualization fails instead of skipping them.
+      - name: Real macOS microVM and ACP tests
+        run: |
+          uv run --no-sync pytest -q -m sandbox --maxfail=1 \
+            tests/runtime/sandbox/test_bootstrap.py \
+            tests/runtime/sandbox/test_microsandbox_backend.py \
+            tests/runtime/sandbox/test_codeact_sandbox.py \
+            tests/runtime/sandbox/test_executor.py::test_declared_data_types_cross_the_boundary_both_ways \
+            tests/runtime/sandbox/test_executor.py::test_numpy_values_cross_the_boundary_both_ways \
+            packages/nooa-acp/tests/test_protocol.py \
+            --junitxml=artifacts/macos-sandbox.xml
+      - name: Report remaining sandboxes
+        if: always()
+        run: |
+          mkdir -p artifacts
+          uv run --no-sync msb ls 2>&1 | tee artifacts/microsandbox-cleanup.log
+      - name: Upload macOS sandbox results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-microsandbox
+          path: artifacts/
 
   build:
     runs-on: ubuntu-latest
@@ -240,22 +320,13 @@ jobs:
           # reachable from the checked-out PR merge commit instead.
           ./gitleaks git --config .gitleaks.toml --redact --no-banner --log-opts="HEAD" .
 
-  # Native Windows is unsupported (see src/nooa/_platform.py), but with
-  # NOOA_SKIP_PLATFORM_CHECK=1 the pure-Python core and `nooa connect` are kept
-  # working: install the wheels as a user would, import every distribution, run
-  # a scripted agent (Predict + in-process CodeAct), save a model with the real
-  # CLI (output redirected), and check that POSIX-only features and the default
-  # refusal fail with the WSL 2 message. The test suite itself needs POSIX.
+  # Verify installed wheels on native Windows, without a platform override or VM.
   windows-core-smoke:
     runs-on: windows-latest
     timeout-minutes: 20
     permissions:
       contents: read
     env:
-      # Native Windows is refused at import by default; CI opts in to test the
-      # pure-Python core and `nooa connect`. windows_smoke.py also checks that
-      # the refusal (without this variable) is one clean line.
-      NOOA_SKIP_PLATFORM_CHECK: "1"
       # Fail instead of skipping when nooa.exe or nooa-cli is missing.
       NOOA_SMOKE_STRICT: "1"
     defaults:

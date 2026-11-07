@@ -20,7 +20,7 @@ This is new and we would like it exercised. If something breaks, please say so.
 uv add nooa-acp                 # or: uv add "nooa[acp]"
 ```
 
-> **Windows:** use [WSL 2](https://learn.microsoft.com/windows/wsl/install). Native Windows is not supported; see the [main README](https://github.com/NVIDIA-NeMo/labs-OO-Agents#installation).
+> **Windows:** ACP runs natively, including stdio transport, durable sessions and PowerShell tools. No WSL environment or platform override is required. See the [main README](https://github.com/NVIDIA-NeMo/labs-OO-Agents#installation).
 
 There is no default model. Set `NOOA_MODEL` or pass `--model`, or the command
 exits with a usage error.
@@ -91,6 +91,36 @@ without a client does nothing. Launch it this way to wire up an ACP client
 other than Zed, or to watch the diagnostics it writes to stderr while a client
 drives it. `--model` accepts any LiteLLM model name or configured NOOA alias.
 
+## Sandbox execution
+
+Pass `--sandbox` to run CodeAct's generated Python in a microsandbox microVM.
+Install both extras with `uv add "nooa[acp,sandbox]"`. From the repository root
+on Windows, launch the ACP server with:
+
+```powershell
+uv run --project . --extra acp --extra sandbox nooa-acp --model my-alias --sandbox
+```
+
+Add `--sandbox` to the command arguments in your ACP client, or set
+`NOOA_SANDBOX=true` in the server's environment. `--no-sandbox` explicitly
+overrides that environment setting; native execution is the default and works
+on Windows with PowerShell tools.
+
+The adapter creates a separate strategy for each ACP session and sets
+`SandboxConfig.workspace` to that session's repository root. On Windows, the
+guest sees this root at `/workspace`. Default guest permissions allow read-write
+access to the workspace and read-only access to interpreter files, with internet
+sockets blocked. Framework callers can customize image, resources, network and
+extra file rules through
+`CodingACPAdapter(llm_factory, sandbox=True, sandbox_config=SandboxConfig(...))`;
+the workspace is always resolved from the ACP session.
+
+ACP transport, model requests, workspace skill imports and brokered `self.*`
+tools run on the host. The microVM isolates generated Python's direct
+operations. Cancelling a running cell or closing its session tears down the VM.
+The real stdio tests cover guest execution and cancellation using simulated
+model responses.
+
 ## Opening a repository runs code from it
 
 **Creating a session imports Python from the workspace, before you send a
@@ -114,7 +144,8 @@ Three paths load workspace code at `session/new` and `session/load`:
   import for later sessions on other workspaces.
 
 The agent runs as you, in a process holding your model credentials. There is no
-consent prompt on these paths.
+consent prompt on these paths. Workspace imports happen on the host in both
+execution modes.
 
 **Open repositories you would run.** For anything else, use an OS-level sandbox,
 or start a separate server per workspace with credentials scoped to that task.
@@ -122,10 +153,11 @@ or start a separate server per workspace with credentials scoped to that task.
 ## How it behaves
 
 ACP uses standard input and output for JSON-RPC. Diagnostics are written to
-standard error. The agent can execute generated Python and shell commands, so
-use an OS-level sandbox for untrusted tasks. Generated code shares the agent's
-process environment, including model credentials; launch it with only the
-credentials and network access that the session may use.
+standard error. Without `--sandbox`, generated Python shares the agent's process
+environment, including model credentials. With `--sandbox`, generated Python
+runs in the microVM under the configured guest permissions. Shell commands and
+other brokered tools still execute on the host under the agent's permissions;
+launch the server with credentials and host access scoped to the session.
 Cancellation stops cooperative local work immediately. An in-flight provider
 request may finish in the background when its client does not support
 transport-level aborts. Slash commands run on the agent's event loop so they

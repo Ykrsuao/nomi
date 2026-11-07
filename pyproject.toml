@@ -83,6 +83,7 @@ nooa-bench = { workspace = true }
 # Extra index URLs to search for packages (in addition to PyPI)
 # Ignore packages uploaded less than 7 days ago to mitigate supply-chain attacks
 exclude-newer = "2026-10-21T00:00:00Z"
+exclude-newer-package = { microsandbox = "2026-11-07T23:59:59Z" }
 # Newer LiteLLM/OpenInference releases export opaque provider reasoning state
 # in OTLP spans, and mcp 2.x stops raising MCP tool-level errors. Hold them
 # until NOOA is adapted; mcp 1.30 carries the 1.x security fix.
@@ -142,7 +143,8 @@ viewer = [
 ]
 # trace_explorer is now nooa.trace_explorer (internal, no extra deps)
 sandbox = [
-    "openshell",
+    "cloudpickle>=3.1,<4",
+    "microsandbox>=0.7.13,<0.8",
 ]
 # mcp lives at nooa.mcp; install with `uv sync --extra mcp`
 # (kept optional so glibc<2.28 hosts can `uv sync` without pulling
@@ -273,7 +275,7 @@ markers = [
     "integration: marks tests as integration tests that make real API calls (run with '-m integration')",
     "provider_compat_ollama: marks live Ollama provider compatibility tests",
     "provider_compat_vllm: marks live vLLM provider compatibility tests",
-    "sandbox: marks tests that fork a real sandbox worker to exercise OS-level containment (run with '-m sandbox'); no credentials needed, but heavier than unit tests",
+    "sandbox: marks real microVM and native guard-helper containment tests (run with '-m sandbox'); no credentials needed, but heavier than unit tests",
     "stress: marks tests as stress/load tests that simulate high concurrency (run with '-m stress')",
 ]
 filterwarnings = [

@@ -18,7 +18,7 @@ import asyncio
 import os
 import signal
 
-from nooa._platform import require_posix
+from nooa._platform import is_native_windows
 
 
 async def after(delay: float) -> None:
@@ -86,21 +86,61 @@ async def monitor(cmd: str):
     group is killed, even if its leader has already exited, to prevent
     orphaned children.
 
-    POSIX-only (process groups); on native Windows the first iteration
-    raises :class:`~nooa._platform.PosixOnlyFeatureError`.
+    Native Windows uses PowerShell and a Job Object for process-tree ownership;
+    Linux/macOS use the host shell and a process group.
     """
-    require_posix("monitor() (process-group cleanup uses os.killpg)")
-    proc = await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.STDOUT,
-        start_new_session=True,
-    )
+    job = None
+    if is_native_windows():
+        import base64
+        import subprocess
+
+        from nooa.tools._windows_process import WindowsJob, powershell_executable
+
+        bootstrap = (
+            "[Console]::InputEncoding=[Text.UTF8Encoding]::new($false); "
+            "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); "
+            "$OutputEncoding=[Console]::OutputEncoding; "
+            "& ([ScriptBlock]::Create([Console]::In.ReadToEnd())) | Out-Default"
+        )
+        proc = await asyncio.create_subprocess_exec(
+            powershell_executable(),
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-InputFormat",
+            "Text",
+            "-OutputFormat",
+            "Text",
+            "-EncodedCommand",
+            base64.b64encode(bootstrap.encode("utf-16-le")).decode(),
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+        try:
+            job = WindowsJob(proc.pid)
+            proc.stdin.write(cmd.encode("utf-8"))
+            await proc.stdin.drain()
+            proc.stdin.close()
+        except BaseException:
+            if job:
+                job.close()
+            proc.kill()
+            await proc.wait()
+            raise
+    else:
+        proc = await asyncio.create_subprocess_shell(
+            cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            start_new_session=True,
+        )
     assert proc.stdout is not None
     completed = False
     try:
         async for line in proc.stdout:
-            yield line.decode("utf-8", errors="replace").rstrip("\n")
+            yield line.decode("utf-8", errors="replace").rstrip("\r\n")
         await proc.wait()
         completed = True
     finally:
@@ -108,7 +148,10 @@ async def monitor(cmd: str):
         # status alone must not suppress cleanup of an interrupted stream.
         if not completed:
             try:
-                os.killpg(proc.pid, signal.SIGKILL)
+                if job:
+                    job.terminate()
+                else:
+                    os.killpg(proc.pid, signal.SIGKILL)
             except (ProcessLookupError, OSError):
                 if proc.returncode is None:
                     try:
@@ -116,3 +159,5 @@ async def monitor(cmd: str):
                     except ProcessLookupError:
                         pass
             await proc.wait()
+        if job:
+            job.close()

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """End-to-end tests for the sandboxed process executor.
 
-These fork a real worker and exercise the full pipeline: persistent namespace,
+These start a real microVM and exercise the full pipeline: persistent namespace,
 ``self.*`` tool brokering (sync + async), ``return_result`` signal marshaling,
 the serialization boundary, and each guardrail enforced *inside a real cell*
 (the paired leak is shown at the guard level in ``test_guards.py``).
@@ -815,18 +815,16 @@ async def test_worker_error_uses_executor_error_budget():
         await ex.aclose()
 
 
-async def test_require_true_raises_when_unavailable(monkeypatch):
-    from nooa.runtime.sandbox import executor as ex_mod
-    from nooa.runtime.sandbox.guards import Capabilities
-
-    fake = Capabilities(linux=True, landlock_abi=0, seccomp=False, rlimit=True)
-    monkeypatch.setattr(ex_mod, "_CAPS_CACHE", fake)
+@pytest.mark.parametrize("require", [False, True])
+async def test_missing_sdk_fails_before_cell_execution(monkeypatch, require):
     from nooa.runtime.sandbox.errors import SandboxUnavailable
 
-    with pytest.raises(SandboxUnavailable):
-        SandboxedExecutor(
-            _ToolAgent(),
-            SandboxConfig(require=True, filesystem=True, network=False),
-            cell_timeout=5.0,
-        )
-    ex_mod._CAPS_CACHE = None
+    monkeypatch.setitem(sys.modules, "microsandbox", None)
+    ex = _executor(SandboxConfig(require=require), cell_timeout=5.0)
+    before = list(_side_effects)
+    try:
+        with pytest.raises(SandboxUnavailable, match=r"Install nooa\[sandbox\]"):
+            await ex.run_cell("_side_effects.append('unsafe host fallback')")
+        assert _side_effects == before
+    finally:
+        await ex.aclose()

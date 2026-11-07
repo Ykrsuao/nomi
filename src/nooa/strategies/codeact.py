@@ -519,7 +519,13 @@ class CodeActStrategy(CompositeStrategy):
         """Render the active sandbox constraints as an agent-facing context block."""
         from nooa.runtime.sandbox.context_block import render_sandbox_block
 
-        return render_sandbox_block(self.config.sandbox, cell_timeout=self.config.cell_timeout)
+        call = getattr(runtime, "current_call", None)
+        executor = getattr(call, "_sandbox_executor", None)
+        return render_sandbox_block(
+            self.config.sandbox,
+            cell_timeout=self.config.cell_timeout,
+            degraded=executor.degraded_guards if executor else (),
+        )
 
     async def execution_context(self, runtime: RuntimeServices) -> str:
         """Generate execution context block showing available imports and types.
@@ -845,7 +851,7 @@ Standard Python builtins and agent instance (`self`) are available."""
         # ``_call`` is referenced by prefill/introspection cells (doc(_call.return_type));
         # inject it alongside the framework builtins so the worker namespace has it.
         framework_builtins = {**builtins, "_call": call}
-        return SandboxedExecutor(
+        executor = SandboxedExecutor(
             runtime.agent,
             self.config.sandbox,
             cell_timeout=self.config.cell_timeout,
@@ -853,7 +859,10 @@ Standard Python builtins and agent instance (`self`) are available."""
             restrictions=self.config.restrictions,
             max_error=runtime.truncation_config.capture.max_error,
             error_tail=runtime.truncation_config.capture.tail,
+            truncation_config=runtime.truncation_config,
         )
+        call._sandbox_executor = executor
+        return executor
 
     async def _close_sandbox(self, session: "CodeActSession") -> None:
         """Tear down the session's sandbox worker, if any."""

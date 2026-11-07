@@ -178,9 +178,11 @@ class Capabilities:
 
 def probe_capabilities() -> Capabilities:
     """Probe the host once for every enforcement mechanism the sandbox uses."""
+    is_linux = platform.system() == "Linux"
+    if not is_linux:
+        return Capabilities(linux=False, landlock_abi=0, seccomp=False, rlimit=False)
     import resource
 
-    is_linux = platform.system() == "Linux"
     return Capabilities(
         linux=is_linux,
         landlock_abi=landlock_abi() if is_linux else 0,

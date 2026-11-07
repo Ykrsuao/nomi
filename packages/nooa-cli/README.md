@@ -13,7 +13,7 @@ uv add "nooa-cli[datascience]"
 
 `nooa-cli` automatically pulls in matching `nemo-oo-agents` (the core framework). The `[datascience]` extra adds libraries the LLM can use in REPL-generated code.
 
-> **Windows:** use [WSL 2](https://learn.microsoft.com/windows/wsl/install). Native Windows is not supported; see the [main README](https://github.com/NVIDIA-NeMo/labs-OO-Agents#installation).
+> **Windows:** the CLI runs natively. Host shell commands use PowerShell; sandbox execution uses the optional microsandbox runtime. See the [main README](https://github.com/NVIDIA-NeMo/labs-OO-Agents#installation).
 
 ## Usage
 

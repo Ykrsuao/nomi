@@ -38,6 +38,7 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Annotated, Any
 
+from nooa._platform import is_native_windows
 from nooa.agentdoc import hidden, spec
 from nooa.skill import Skill
 from nooa.tools._bash_session import BashSession
@@ -403,6 +404,8 @@ class ShellTools(Skill):
     """
     Persistent shell + file ops, with grep that hands you editable Match objects.
 
+    Commands use PowerShell on native Windows, and bash on Linux/macOS.
+
     For shell commands and file operations:
     Always use these four methods rather than Python builtins:
         run(command, stdin=, timeout=, cwd=)  — shell command (cd/env persist)
@@ -569,12 +572,18 @@ class ShellTools(Skill):
         """
         timeout = self.default_timeout if timeout is None else timeout
         session = await self._get_session()
-        run_cmd = self._with_stdin(self._in_directory(command, cwd), stdin)
-        stdout, stderr, code, timed_out = await session.run_with_timeout_flag(
-            run_cmd, timeout=timeout
-        )
+        if is_native_windows():
+            stdout, stderr, code, timed_out = await session.run_with_timeout_flag(
+                command, timeout=timeout, stdin=stdin, cwd=cwd
+            )
+        else:
+            run_cmd = self._with_stdin(self._in_directory(command, cwd), stdin)
+            stdout, stderr, code, timed_out = await session.run_with_timeout_flag(
+                run_cmd, timeout=timeout
+            )
         # Track cwd changes for read/replace/write_file path resolution
-        pwd_out, _, _, _ = await session.run_with_timeout_flag("pwd", timeout=5.0)
+        pwd_command = "(Get-Location).Path" if is_native_windows() else "pwd"
+        pwd_out, _, _, _ = await session.run_with_timeout_flag(pwd_command, timeout=5.0)
         if pwd_out.strip():
             self.cwd = Path(pwd_out.strip())
 
@@ -645,10 +654,17 @@ class ShellTools(Skill):
         """
         timeout = self.default_timeout if timeout is None else timeout
         session = await self._get_session()
-        run_cmd = self._with_stdin(self._in_directory(command, cwd), stdin)
+        run_cmd = (
+            command
+            if is_native_windows()
+            else self._with_stdin(self._in_directory(command, cwd), stdin)
+        )
+        native_options = {"stdin": stdin, "cwd": cwd} if is_native_windows() else {}
         timed_out = False
         exit_code = 0
-        async for stream_name, chunk in session.run_stream(run_cmd, timeout=timeout):
+        async for stream_name, chunk in session.run_stream(
+            run_cmd, timeout=timeout, **native_options
+        ):
             if stream_name == "__done__":
                 parts = chunk.split(",")
                 exit_code = int(parts[0])
@@ -729,7 +745,8 @@ class ShellTools(Skill):
         args += ["--", pattern, *(paths or ["."])]
         rg_cmd = " ".join(shlex.quote(a) for a in args)
         # Find rg: try PATH, then common overlay/venv locations
-        rg_cmd = "PATH=/opt/harbor/cpython312/bin:/opt/harbor/bin:$PATH " + rg_cmd
+        if not is_native_windows():
+            rg_cmd = "PATH=/opt/harbor/cpython312/bin:/opt/harbor/bin:$PATH " + rg_cmd
 
         session = await self._get_session()
         try:

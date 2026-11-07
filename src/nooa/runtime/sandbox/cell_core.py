@@ -18,20 +18,21 @@ from __future__ import annotations
 
 import ast
 import contextlib
-import io
 import linecache
 import types
 from collections.abc import Callable
 from typing import Any, cast
 
+from nooa.agentdoc import FileBackedTruncatingStringIO, TruncatingStringIO
 from nooa.events import _NO_RETURN, ExecutionResult, ExecutionSignal
 
 
-class _HookedBuffer(io.StringIO):
+class _HookedBuffer:
     """StringIO that also forwards each write to an optional streaming hook."""
 
-    def __init__(self, hook: Callable[[str], None] | None = None):
-        super().__init__()
+    def __init__(self, hook=None, *, limit=50_000, tail_chars=None, file_backed=False):
+        kind = FileBackedTruncatingStringIO if file_backed else TruncatingStringIO
+        self._buffer = kind(limit=limit, tail_chars=tail_chars)
         self._hook = hook
 
     def write(self, s: str) -> int:  # type: ignore[override]
@@ -40,7 +41,17 @@ class _HookedBuffer(io.StringIO):
                 self._hook(s)
             except Exception:
                 pass
-        return super().write(s)
+        return self._buffer.write(s)
+
+    def getvalue(self):
+        return self._buffer.getvalue()
+
+    def flush(self):
+        return self._buffer.flush()
+
+    @property
+    def was_truncated(self):
+        return self._buffer.was_truncated
 
 
 def _has_top_level_return(tree: ast.Module) -> bool:
@@ -77,6 +88,8 @@ async def run_cell_source(
     execution_count: int = 1,
     stdout_hook: Callable[[str], None] | None = None,
     stderr_hook: Callable[[str], None] | None = None,
+    capture_config=None,
+    max_attachments=100,
 ) -> ExecutionResult:
     """Execute ``code`` in ``namespace`` with REPL semantics; never raises.
 
@@ -86,11 +99,23 @@ async def run_cell_source(
     across cells (the worker's long-lived REPL state).
     """
     from nooa.agentdoc._format_observation import _truncation_reasons
+    from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
     from nooa.runtime.media_capture import _media_buffer_var, _MediaBuffer
 
-    stdout_buf = _HookedBuffer(stdout_hook)
-    stderr_buf = _HookedBuffer(stderr_hook)
-    media_buffer = _MediaBuffer(max_attachments=100)
+    capture = capture_config or DEFAULT_TRUNCATION_CONFIG.capture
+    stdout_buf = _HookedBuffer(
+        stdout_hook,
+        limit=capture.max_stdout,
+        tail_chars=capture.tail,
+        file_backed=capture.file_backed,
+    )
+    stderr_buf = _HookedBuffer(
+        stderr_hook,
+        limit=capture.max_stderr,
+        tail_chars=capture.tail,
+        file_backed=capture.file_backed,
+    )
+    media_buffer = _MediaBuffer(max_attachments=max_attachments)
     media_token = _media_buffer_var.set(media_buffer)
     truncation_reasons: set[str] = set()
     truncation_token = _truncation_reasons.set(truncation_reasons)
@@ -101,6 +126,10 @@ async def run_cell_source(
     cell_filename = f"Cell In[{execution_count}]"
 
     def build_result(*, error=None, signal=None) -> ExecutionResult:
+        if stdout_buf.was_truncated:
+            truncation_reasons.add("max_string")
+        if stderr_buf.was_truncated:
+            truncation_reasons.add("max_string")
         return ExecutionResult(
             stdout=stdout_buf.getvalue(),
             stderr=stderr_buf.getvalue(),
