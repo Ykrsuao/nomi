@@ -20,6 +20,7 @@ from nooa.tools._windows_process import WindowsJob, powershell_executable
 _BOOTSTRAP = r"""
 [Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+$ProgressPreference = 'SilentlyContinue'
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -38,19 +39,31 @@ $client = [Net.Sockets.TcpClient]::new('127.0.0.1', PORT)
 $control = [IO.StreamWriter]::new($client.GetStream(), [Text.UTF8Encoding]::new($false))
 $control.AutoFlush = $true
 $control.WriteLine('TOKEN')
+# Keep persistent user variables in a separate runspace. In particular, an
+# ordinary assignment to $inputFile or $control must never alter cleanup/IPC.
+$userRunspace = [RunspaceFactory]::CreateRunspace($Host)
+$userRunspace.Open()
+$userRunspace.SessionStateProxy.Path.SetLocation((Get-Location).Path) | Out-Null
+$userRunspace.SessionStateProxy.SetVariable('OutputEncoding', [Console]::OutputEncoding)
+$userRunspace.SessionStateProxy.SetVariable('ErrorActionPreference', 'Stop')
+$userRunspace.SessionStateProxy.SetVariable('ProgressPreference', 'SilentlyContinue')
+$userRunspace.SessionStateProxy.SetVariable('PSNativeCommandUseErrorActionPreference', $false)
 while ($null -ne ($line = $commandReader.ReadLine())) {
     $request = ConvertFrom-Json $line
     if ($request.op -eq 'close') { break }
     $script = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($request.code))
-    $savedLocation = (Get-Location).Path
-    $global:LASTEXITCODE = 0
+    $savedLocation = $userRunspace.SessionStateProxy.Path.CurrentLocation.Path
+    $userRunspace.SessionStateProxy.SetVariable('LASTEXITCODE', 0)
     $rc = 0
     $ErrorActionPreference = 'Stop'
     $inputFile = [IO.Path]::GetTempFileName()
     $inputStream = $null
     $inputReader = $null
+    $userShell = $null
     try {
-        if ($request.cwd) { Set-Location -LiteralPath $request.cwd }
+        if ($request.cwd) {
+            $userRunspace.SessionStateProxy.Path.SetLocation([string]$request.cwd) | Out-Null
+        }
         if ($null -ne $request.input) {
             [IO.File]::WriteAllBytes($inputFile, [Convert]::FromBase64String($request.input))
         }
@@ -60,21 +73,43 @@ while ($null -ne ($line = $commandReader.ReadLine())) {
         [void][NooaInputHandle]::SetStdHandle(-10, $handle)
         $inputReader = [IO.StreamReader]::new($inputStream, [Text.UTF8Encoding]::new($false))
         [Console]::SetIn($inputReader)
-        . ([ScriptBlock]::Create($script)) | Out-Default
-        if (-not $?) { $rc = 1 } elseif ($global:LASTEXITCODE) { $rc = $global:LASTEXITCODE }
+        $userShell = [PowerShell]::Create()
+        $userShell.Runspace = $userRunspace
+        [void]$userShell.AddScript($script, $false)
+        # Let Out-Default route native stderr without treating it as a script
+        # failure. In Windows PowerShell, the hosted error stream also applies
+        # ErrorActionPreference=Stop to native stderr before Invoke returns.
+        $userShell.Commands.Commands[0].MergeMyResults(
+            [System.Management.Automation.Runspaces.PipelineResultTypes]::Error,
+            [System.Management.Automation.Runspaces.PipelineResultTypes]::Output
+        )
+        [void]$userShell.AddCommand('Out-Default')
+        [void]$userShell.Invoke()
+        $nativeExitCode = $userRunspace.SessionStateProxy.GetVariable('LASTEXITCODE')
+        if ($userShell.Streams.Error.Count) {
+            $rc = 1
+            foreach ($record in $userShell.Streams.Error) {
+                [Console]::Error.WriteLine($record.ToString())
+            }
+        } elseif ($nativeExitCode) { $rc = $nativeExitCode }
+        elseif ($userShell.HadErrors) { $rc = 1 }
     } catch {
         [Console]::Error.WriteLine($_.ToString())
         $rc = 1
     } finally {
         [void][NooaInputHandle]::SetStdHandle(-10, $originalInput)
         [Console]::SetIn($commandReader)
+        if ($userShell) { $userShell.Dispose() }
         if ($inputReader) { $inputReader.Dispose() }
         if ($inputStream) { $inputStream.Dispose() }
         [IO.File]::Delete($inputFile)
-        if ($request.cwd) { Set-Location -LiteralPath $savedLocation }
+        if ($request.cwd) {
+            $userRunspace.SessionStateProxy.Path.SetLocation($savedLocation) | Out-Null
+        }
     }
-    $control.WriteLine((@{code=$rc;cwd=(Get-Location).Path} | ConvertTo-Json -Compress))
+    $control.WriteLine((@{code=$rc;cwd=$userRunspace.SessionStateProxy.Path.CurrentLocation.Path} | ConvertTo-Json -Compress))
 }
+$userRunspace.Dispose()
 $control.Dispose()
 $client.Dispose()
 """
@@ -147,6 +182,8 @@ class PowerShellSession:
                 "-NoLogo",
                 "-NoProfile",
                 "-NonInteractive",
+                "-OutputFormat",
+                "Text",
                 "-EncodedCommand",
                 encoded,
                 stdin=asyncio.subprocess.PIPE,

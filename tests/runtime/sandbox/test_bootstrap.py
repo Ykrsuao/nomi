@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import importlib
 import subprocess
 import sys
 import types
@@ -54,6 +55,51 @@ def test_user_model_is_reconstructed_with_its_validation(monkeypatch):
         assert result.returncode == 0, result.stderr.decode(errors="replace")
     finally:
         executor.close_sync()
+
+
+@pytest.mark.parametrize("transport", ["interpreter", "microvm"])
+async def test_local_helper_dependency_loads_in_fresh_interpreter(tmp_path, monkeypatch, transport):
+    from nooa.runtime.sandbox.paths import PathMap
+
+    sources = {
+        "review_leaf": "def value():\n    return 42\n",
+        "review_helper": "from review_leaf import value\ndef helper():\n    return value()\n",
+        "review_agent": "from review_helper import helper\nclass Service: pass\n",
+    }
+    source_dir = tmp_path / "source"
+    source_dir.mkdir()
+    for name, source in sources.items():
+        (source_dir / f"{name}.py").write_text(source, encoding="utf-8")
+        monkeypatch.delitem(sys.modules, name, raising=False)
+    monkeypatch.syspath_prepend(str(source_dir))
+    module = importlib.import_module("review_agent")
+    executor = SandboxedExecutor(
+        module.Service(), SandboxConfig(workspace=str(tmp_path / "workspace")), cell_timeout=5
+    )
+    try:
+        if transport == "microvm":
+            result = await executor.run_cell("helper()")
+            assert result.error is None, result.error
+            assert result.returned_value == 42
+            return
+        executor._paths = PathMap([])
+        executor._guest_allow = []
+        payload = dumps_namespace(executor._bootstrap(), modules=executor._modules())
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import cloudpickle,sys; data=cloudpickle.loads(sys.stdin.buffer.read()); assert data['globals']['helper']() == 42",
+            ],
+            input=payload,
+            capture_output=True,
+            timeout=15,
+        )
+        assert result.returncode == 0, result.stderr.decode(errors="replace")
+    finally:
+        await executor.aclose()
+        for name in sources:
+            sys.modules.pop(name, None)
 
 
 async def test_codeact_v2_bootstrap_does_not_capture_host_task(monkeypatch):

@@ -11,6 +11,49 @@ import pytest
 from nooa.tracing import probe_otlp_endpoint
 
 
+class TestAutomaticViewerProbe:
+    @pytest.mark.parametrize(
+        ("endpoint", "configured_timeout", "expected_timeout"),
+        [
+            (None, None, 0.1),
+            (None, "0.35", 0.35),
+            ("http://viewer:5001/v1/traces", None, 2.0),
+            ("http://viewer:5001/v1/traces", "0.35", 0.35),
+        ],
+    )
+    def test_agent_startup_bounds_optional_viewer_probe(
+        self, monkeypatch, endpoint, configured_timeout, expected_timeout
+    ):
+        """An absent optional viewer must not add seconds to agent startup."""
+        import nooa.agent as agent_module
+        import nooa.tracing as tracing
+        from nooa import Agent
+        from nooa.unifiedllm import FakeLLMClient
+
+        for name, value in (
+            ("OTLP_ENDPOINT", endpoint),
+            ("OTLP_PROBE_TIMEOUT", configured_timeout),
+        ):
+            if value is None:
+                monkeypatch.delenv(name, raising=False)
+            else:
+                monkeypatch.setenv(name, value)
+        monkeypatch.setattr(agent_module, "_auto_tracing_attempted", False)
+        timeouts = []
+
+        def unavailable(req, timeout):
+            timeouts.append(timeout)
+            raise TimeoutError("viewer unavailable")
+
+        with patch("urllib.request.urlopen", side_effect=unavailable):
+            Agent(llm=FakeLLMClient())
+            Agent(llm=FakeLLMClient())
+
+        assert timeouts == [expected_timeout]
+        assert tracing._enabled is False
+        assert tracing._probe_failed is True
+
+
 class TestProbeOtlpEndpoint:
     def test_returns_true_when_server_responds_200(self):
         mock_response = MagicMock()

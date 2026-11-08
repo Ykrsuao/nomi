@@ -154,8 +154,13 @@ def _filesystem_jail(settings):
         "lib64",
     ):
         (root / name).mkdir(mode=0o000)
-    available = [rule for rule in rules if Path(rule.path).exists()]
-    for rule in sorted(available, key=lambda item: len(Path(item.path).parts)):
+    available = sorted(
+        (rule for rule in rules if Path(rule.path).exists()),
+        key=lambda item: len(Path(item.path).parts),
+    )
+    # Prepare traversal permissions before bind mounting anything. A chmod on
+    # a mounted ancestor would otherwise change the source workspace itself.
+    for rule in available:
         source = Path(rule.path)
         target = root / source.relative_to("/")
         if not target.exists():
@@ -164,11 +169,6 @@ def _filesystem_jail(settings):
                 target.mkdir(mode=0o111)
             else:
                 target.touch(mode=0o000)
-        mount(str(source), str(target), 1 << 12)
-        if not rule.write:
-            mount(None, str(target), 1 << 12 | 1 << 5 | 1)
-    for rule in available:
-        target = root / Path(rule.path).relative_to("/")
         for parent in target.parents:
             if parent == root:
                 break
@@ -176,6 +176,11 @@ def _filesystem_jail(settings):
                 os.chmod(parent, 0o111)
             except OSError:
                 pass
+    for rule in available:
+        target = root / Path(rule.path).relative_to("/")
+        mount(rule.path, str(target), 1 << 12)
+        if not rule.write:
+            mount(None, str(target), 1 << 12 | 1 << 5 | 1)
     os.chroot(root)
     os.chdir(settings["workspace"] or "/")
 

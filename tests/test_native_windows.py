@@ -115,3 +115,89 @@ async def test_native_stdin_preserves_bytes_and_temporary_cwd(tmp_path):
         assert shell.cwd == tmp_path
     finally:
         await shell.close()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="native PowerShell")
+@pytest.mark.parametrize("executable", ["pwsh", "powershell.exe"])
+async def test_native_shell_user_variables_cannot_change_control_state(
+    tmp_path, monkeypatch, executable
+):
+    import shutil
+
+    from nooa.tools import _powershell_session
+
+    path = shutil.which(executable)
+    if path is None:
+        pytest.skip(f"{executable} is not installed")
+    monkeypatch.setattr(_powershell_session, "powershell_executable", lambda: path)
+    target = tmp_path / "keep-me.txt"
+    target.write_text("keep this file", encoding="utf-8")
+    shell = _powershell_session.PowerShellSession(cwd=tmp_path)
+    try:
+        quoted = str(target).replace("'", "''")
+        result = await shell.run(f"$inputFile = '{quoted}'; Write-Output 'assigned'")
+        assert result == ("assigned\r\n", "", 0)
+        assert target.read_text(encoding="utf-8") == "keep this file"
+        result = await shell.run(
+            "$rc = 7; $control = 'user control'; $request = 'user request'; "
+            "$commandReader = 'user reader'; $inputReader = 'user input'; "
+            "$inputStream = 'user stream'; $originalInput = 'user handle'; "
+            "function Get-ReviewValue { $rc }; Write-Output 'stored'"
+        )
+        assert result == ("stored\r\n", "", 0)
+        result = await shell.run("Get-ReviewValue; Write-Output $control; Test-Path $inputFile")
+        assert result[0].splitlines() == ["7", "user control", "True"]
+        assert result[1:] == ("", 0)
+        failed = await shell.run("Write-Error 'expected failure'")
+        assert failed[2] == 1 and "expected failure" in failed[1]
+        native = await shell.run(f"& '{sys.executable}' -c 'import sys; sys.exit(7)'")
+        assert native[2] == 7, native
+        assert await shell.run("Write-Output 'recovered'") == ("recovered\r\n", "", 0)
+    finally:
+        await shell.close()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="native PowerShell")
+@pytest.mark.parametrize("executable", ["pwsh", "powershell.exe"])
+@pytest.mark.parametrize("returncode", [0, 7])
+async def test_native_shell_preserves_native_exit_code_with_stderr(
+    tmp_path, monkeypatch, executable, returncode
+):
+    import shutil
+
+    from nooa.tools import _powershell_session
+
+    path = shutil.which(executable)
+    if path is None:
+        pytest.skip(f"{executable} is not installed")
+    monkeypatch.setattr(_powershell_session, "powershell_executable", lambda: path)
+    shell = _powershell_session.PowerShellSession(cwd=tmp_path)
+    try:
+        python = str(sys.executable).replace("'", "''")
+        result = await shell.run(
+            f"& '{python}' -c 'import sys; print(42); "
+            f"print(43, file=sys.stderr); sys.exit({returncode})'; Write-Output 'continued'"
+        )
+        assert result[0].splitlines() == ["42", "continued"]
+        assert "43" in result[1]
+        assert result[2] == returncode, result
+        assert await shell.run("Write-Output 'recovered'") == ("recovered\r\n", "", 0)
+    finally:
+        await shell.close()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="native PowerShell")
+async def test_native_search_anchors_handle_single_quotes(tmp_path):
+    from nooa.tools.shell_tools import ShellTools
+
+    target = tmp_path / "a'b.txt"
+    target.write_text("quoted\n", encoding="utf-8")
+    shell = ShellTools(cwd=str(tmp_path))
+    try:
+        result = await shell.run('rg -n quoted "a\'b.txt"')
+        assert result.returncode == 0
+        assert result.matches is not None and len(result.matches) == 1
+        await shell.replace(result.matches[0], "updated\n")
+        assert target.read_text(encoding="utf-8") == "updated\n"
+    finally:
+        await shell.close()

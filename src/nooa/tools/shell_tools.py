@@ -743,9 +743,11 @@ class ShellTools(Skill):
         if fixed:
             args.append("-F")
         args += ["--", pattern, *(paths or ["."])]
-        rg_cmd = " ".join(shlex.quote(a) for a in args)
-        # Find rg: try PATH, then common overlay/venv locations
-        if not is_native_windows():
+        if is_native_windows():
+            rg_cmd = "& " + " ".join("'" + arg.replace("'", "''") + "'" for arg in args)
+        else:
+            rg_cmd = " ".join(shlex.quote(a) for a in args)
+            # Find rg: try PATH, then common overlay/venv locations.
             rg_cmd = "PATH=/opt/harbor/cpython312/bin:/opt/harbor/bin:$PATH " + rg_cmd
 
         session = await self._get_session()

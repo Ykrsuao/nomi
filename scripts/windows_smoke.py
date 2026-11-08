@@ -98,6 +98,16 @@ async def check_host(directory):
         assert (await shell.run(command)).stdout.strip() == "ready"
         command = "Write-Output ($value * 2)" if sys.platform == "win32" else "echo $((value * 2))"
         assert (await shell.run(command)).stdout.strip() == "42"
+        if sys.platform == "win32":
+            executable = sys.executable.replace("'", "''")
+            for returncode in (0, 7):
+                result = await shell.run(
+                    f"& '{executable}' -c 'import sys; print(43, file=sys.stderr); "
+                    f"sys.exit({returncode})'; Write-Output 'continued'"
+                )
+                assert result.stdout.strip() == "continued", result
+                assert result.stderr.strip() == "43", result
+                assert result.returncode == returncode, result
     finally:
         await shell.close()
     command = "Write-Output 'line'" if sys.platform == "win32" else "printf 'line\\n'"

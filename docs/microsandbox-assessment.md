@@ -1,6 +1,6 @@
 # NOOA 沙箱替换与原生 Windows 支持
 
-更新日期：2026-11-07。实现保留 `CodeActConfig.execution_backend` 的 `inprocess` / `sandbox` 两种使用方式。
+更新日期：2026-11-08。实现保留 `CodeActConfig.execution_backend` 的 `inprocess` / `sandbox` 两种使用方式。
 
 ## 实现与运行
 
@@ -34,6 +34,41 @@ Windows 授权 workspace 在 guest 中使用 `/workspace`，额外 allow 路径�
 - ACP：94 项普通回归测试通过，3 项既有 xfail；另有 2 项真实 stdio + WHP microVM 测试通过，覆盖 Linux guest 内执行 Python、运行中取消和 session 关闭。模型响应使用 FakeLLM；测试后 `msb ls` 确认无残留沙箱。
 - 新核心模块的类型检查及 Ruff 检查已通过。
 - 本机未实际运行 macOS；macOS 保留原 host 路径，并通过同一 microsandbox adapter 使用 Linux guest。
+
+## 环境缓存与启动诊断
+
+环境快照按基础镜像、固定 uv 版本和依赖版本列表生成缓存键，不包含工作区路径，因此相同环境可由多个工作区共享。新快照存入 `nooa-runtime` 组，用 `Snapshot.open("nooa-runtime:nooa-runtime-<hash>")` 查找；旧版 `nooa-prepare-*` 组中同名、同镜像的快照也可直接复用。
+
+在当前 `MSB_HOME`（默认 `~/.microsandbox`）中按环境键加文件锁，覆盖查找、依赖安装和快照发布全过程，避免不同进程同时创建同一环境。等待锁会让出事件循环，取消或退出会释放锁。只把 `FileNotFoundError` 视作缓存未命中，权限和损坏错误正常上报；每次查询当前存储，避免返回已经删除或来自其他存储目录的旧缓存对象。
+
+ACP 可通过 `NOOA_STARTUP_TIMING=1` 在 stderr 记录导入、配置及会话准备各阶段的墙钟和 CPU 耗时，不记录模型配置或请求内容。自动探测默认本地 tracing viewer 的超时缩短为 0.1 秒；显式配置端点保留原有默认值，`OTLP_PROBE_TIMEOUT` 仍可覆盖。新的进程不等于开机冷启动，首次启动性能还需区分操作系统和安全软件的缓存影响。
+
+## 补审修复
+
+本轮修复此前提交中确认的八项问题，并为实际触发路径补充回归测试：
+
+- Windows 用户脚本放入独立的持久 PowerShell runspace，防止 `$inputFile`、`$control` 等同名变量改变清理和通信；每条命令单独创建执行对象。原生 stderr 交给 `Out-Default` 输出，保留命令的真实退出码及后续语句执行，避免 Windows PowerShell 把普通诊断输出当作终止错误。
+- CodeActV2 的 `python_cell_state()` 在 guest 中重建，仅传输入名称，不再序列化捕获宿主 `CurrentCall` 和 asyncio task 的闭包。
+- bootstrap 按值携带本地 helper 模块及其本地依赖链，并在启动解释器时设置 guest 工作目录。
+- 文件隔离先建立目录结构和遍历权限，再挂载授权路径，避免对已经挂载的 workspace 祖先目录执行 `chmod`。
+- 路径转换保留嵌套 NamedTuple 的类型和字段访问。
+- VM 销毁失败时保留句柄以便重试；取消等待关闭的调用不会丢失仍在运行的清理任务。
+- 沙箱测试使用映射后的路径和 guest 当前目录，兼容 Windows 与 POSIX；不可见文件允许返回 `FileNotFoundError`，同时验证内容未泄露。
+- Windows 搜索锚点按 PowerShell 规则引用参数，支持带单引号的文件名及后续替换。
+
+扩展验证还发现 CPU 硬限额终止 worker 与宿主轮询之间存在竞态：限额已执行，但 SDK 的 `-1` 退出码不足以还原原因。guest 启动器现在通过 `wait4` 记录最终 CPU 用量和终止信号，宿主据此区分 CPU 超额与其他进程终止；原有限额保持不变。回归用例将轮询间隔设为 60 秒且禁用 cell 墙钟超时，直接验证内核限额这条路径。
+
+提交前复查的本地验证结果：
+
+| 环境与范围 | 结果 |
+|---|---|
+| Windows / Python 3.13.12：原生 shell、环境缓存、wire、清理、viewer 探测及 ACP | 202 passed，3 项既有 xfail |
+| WSL Linux / Python 3.12.3：环境缓存、wire、清理、tracing、shell 及 ACP | 520 passed，3 项既有 xfail |
+| Windows WHP：bootstrap、真实 VM、CodeAct、文件/网络/资源限额、数据边界及 ACP stdio/取消 | 25 passed（其中 4 项为不启动 VM 的 bootstrap 检查） |
+| Linux root：真实 mount namespace / chroot 中的嵌套授权权限回归 | 1 passed |
+| 启用启动计时后的 ACP 子进程协议 | 2 passed |
+
+Ruff lint、format、SPDX 和 `git diff --check` 通过。Windows 安装包 smoke 检查同时覆盖原生 stderr 与退出码回归。远端 CI 状态以对应提交的 Actions 记录为准；macOS 的验证边界仍如下。
 
 ## macOS CI 与实际 VM 验证
 

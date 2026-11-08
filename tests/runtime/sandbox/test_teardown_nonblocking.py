@@ -77,3 +77,36 @@ def test_close_sync_waits_for_vm_cleanup_without_a_running_loop():
     ex.close_sync()
     assert vm.calls == 1 and vm.destroyed
     assert ex._vm is None and ex._closed
+
+
+async def test_failed_destroy_can_be_retried():
+    class FlakyVM(_SlowVM):
+        async def destroy(self, *, force, timeout):
+            self.calls += 1
+            if self.calls == 1:
+                raise TimeoutError("temporary runtime failure")
+            self.destroyed = True
+
+    ex = SandboxedExecutor(_Agent(), SandboxConfig(), cell_timeout=10)
+    vm = FlakyVM()
+    ex._vm = vm
+    with pytest.raises(TimeoutError):
+        await ex.aclose()
+    assert ex._vm is vm
+    await ex.aclose()
+    assert vm.calls == 2 and vm.destroyed
+    assert ex._vm is None
+
+
+async def test_cancelled_close_shares_inflight_cleanup_with_next_close():
+    ex = SandboxedExecutor(_Agent(), SandboxConfig(), cell_timeout=10)
+    vm = _SlowVM()
+    ex._vm = vm
+    closing = asyncio.create_task(ex.aclose())
+    while vm.calls == 0:
+        await asyncio.sleep(0)
+    closing.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await closing
+    await ex.aclose()
+    assert vm.destroyed and vm.calls == 1

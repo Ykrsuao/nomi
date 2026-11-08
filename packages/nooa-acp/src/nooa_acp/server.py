@@ -77,6 +77,7 @@ from nooa_acp._runtime import (
     SessionRuntimeClosedError,
     SessionRuntimePool,
 )
+from nooa_acp._startup import mark, phase
 from nooa_acp.dispatcher import InteractiveSessionDispatcher
 from nooa_acp.event_bridge import ACPEventBridge
 
@@ -146,6 +147,7 @@ class CodingACPAdapter:
         client_info: Implementation | None = None,
         **kwargs: Any,
     ) -> InitializeResponse:
+        mark("initialize")
         del protocol_version, client_capabilities, client_info, kwargs
         try:
             package_version = version("nooa-acp")
@@ -184,25 +186,29 @@ class CodingACPAdapter:
     ) -> NewSessionResponse:
         del kwargs
         root = self._validate_workspace(cwd, additional_directories)
-        llm = self._llm_factory()
+        with phase("session_model"):
+            llm = self._llm_factory()
         try:
-            handle = self._store(root).create(
-                model=llm.model,
-                agent="CodingAgent",
-                working_directory=str(root),
-                origin="acp",
-                check_same_thread=False,
-            )
+            with phase("session_storage"):
+                handle = self._store(root).create(
+                    model=llm.model,
+                    agent="CodingAgent",
+                    working_directory=str(root),
+                    origin="acp",
+                    check_same_thread=False,
+                )
         except BaseException:
             await llm.aclose()
             raise
         try:
-            runtime = await self._create_runtime(handle, root, mcp_servers, llm=llm)
+            with phase("session_runtime"):
+                runtime = await self._create_runtime(handle, root, mcp_servers, llm=llm)
         except BaseException:
             handle.close()
             self._store(root).delete(handle.id)
             raise
         self._defer_bootstrap_updates(runtime.value)
+        mark("session_ready")
         return NewSessionResponse(session_id=handle.id)
 
     async def load_session(
@@ -216,19 +222,23 @@ class CodingACPAdapter:
         del kwargs
         root = self._validate_workspace(cwd, additional_directories)
         try:
-            handle = self._store(root).open(session_id, check_same_thread=False)
+            with phase("session_storage"):
+                handle = self._store(root).open(session_id, check_same_thread=False)
         except (InvalidSessionIdError, SessionNotFoundError):
             raise RequestError.resource_not_found(session_id) from None
         runtime: SessionRuntime[_ACPSession] | None = None
         try:
-            runtime = await self._create_runtime(handle, root, mcp_servers, available=False)
+            with phase("session_runtime"):
+                runtime = await self._create_runtime(handle, root, mcp_servers, available=False)
             # After the replay, never during it: replay writes straight to the
             # client while the bridge pump drains bootstrap updates, so every
             # await here would otherwise let a commands update or an MCP warning
             # land in the middle of the restored conversation.
-            await self._replay_session(handle)
+            with phase("session_replay"):
+                await self._replay_session(handle)
             await self._sessions.publish(session_id)
             self._defer_bootstrap_updates(runtime.value)
+            mark("session_ready")
         except BaseException:
             if runtime is not None:
                 with suppress(KeyError):
@@ -404,7 +414,9 @@ class CodingACPAdapter:
         llm: UnifiedLLM | None = None,
         available: bool = True,
     ) -> SessionRuntime[_ACPSession]:
-        llm = llm or self._llm_factory()
+        if llm is None:
+            with phase("session_model"):
+                llm = self._llm_factory()
         if self._client is None:
             await llm.aclose()
             raise RequestError.internal_error({"reason": "ACP client is not connected"})
@@ -412,17 +424,19 @@ class CodingACPAdapter:
         commands: CodingSlashCommandRegistry | None = None
         value: _ACPSession | None = None
         try:
-            mcp, mcp_warnings = await self._create_mcp_tools(mcp_servers)
-            agent = CodingAgent(
-                llm=llm,
-                cwd=root,
-                storage=handle.storage,
-                # Same anchoring as the session store above: one ACP process
-                # serves many workspaces, so project-local paths follow the
-                # session's workspace rather than the process.
-                libs_dir=root / ".nooa" / "libs",
-                skills_dirs=load_coding_skills_dirs(root),
-            )
+            with phase("session_mcp"):
+                mcp, mcp_warnings = await self._create_mcp_tools(mcp_servers)
+            with phase("session_agent"):
+                agent = CodingAgent(
+                    llm=llm,
+                    cwd=root,
+                    storage=handle.storage,
+                    # Same anchoring as the session store above: one ACP process
+                    # serves many workspaces, so project-local paths follow the
+                    # session's workspace rather than the process.
+                    libs_dir=root / ".nooa" / "libs",
+                    skills_dirs=load_coding_skills_dirs(root),
+                )
             registration_warnings: list[str] = []
             for name, tool in mcp.items():
                 registry_name = f"mcp.{name}"

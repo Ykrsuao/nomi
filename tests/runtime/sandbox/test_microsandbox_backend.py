@@ -116,12 +116,17 @@ async def test_async_tools_are_lazy_and_host_paths_round_trip(tmp_path):
         await executor.aclose()
 
 
-async def test_guest_file_and_network_limits(tmp_path):
+@pytest.mark.parametrize("nested_grant", [False, True], ids=["external-file", "workspace-file"])
+async def test_guest_file_and_network_limits(tmp_path, nested_grant):
     from nooa.runtime.sandbox.config import FileRule
 
     workspace = tmp_path / "job"
-    secret = tmp_path / "read-only.txt"
+    workspace.mkdir()
+    secret = workspace / "nested" / "read-only.txt" if nested_grant else tmp_path / "read-only.txt"
+    secret.parent.mkdir(exist_ok=True)
     secret.write_text("allowed", encoding="utf-8")
+    workspace_mode = workspace.stat().st_mode
+    parent_mode = secret.parent.stat().st_mode
     executor = SandboxedExecutor(
         Service(),
         SandboxConfig(workspace=str(workspace), allow=(FileRule(path=str(secret)),)),
@@ -132,6 +137,7 @@ async def test_guest_file_and_network_limits(tmp_path):
         result = await executor.run_cell(
             "from pathlib import Path\nimport socket\n"
             "assert allowed_file.read_text() == 'allowed'\n"
+            "list(Path.cwd().iterdir())\n"
             "(Path.cwd() / 'result.txt').write_text('saved')\n"
             "try:\n    allowed_file.write_text('changed')\nexcept OSError:\n    pass\nelse:\n    raise AssertionError('read-only file was writable')\n"
             "try:\n    socket.socket(socket.AF_INET, socket.SOCK_STREAM)\nexcept PermissionError:\n    pass\nelse:\n    raise AssertionError('internet socket was allowed')"
@@ -139,6 +145,8 @@ async def test_guest_file_and_network_limits(tmp_path):
         assert result.error is None, result.error
         assert secret.read_text() == "allowed"
         assert (workspace / "result.txt").read_text() == "saved"
+        assert workspace.stat().st_mode == workspace_mode
+        assert secret.parent.stat().st_mode == parent_mode
     finally:
         await executor.aclose()
 

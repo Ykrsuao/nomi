@@ -122,6 +122,19 @@ def test_value_types_round_trip(value):
     assert CODEC.loads(CODEC.dumps(value)) == value
 
 
+def test_path_mapping_preserves_nested_namedtuple_types():
+    from nooa.runtime.sandbox.paths import PathMap
+
+    paths = PathMap([("C:/work", "/workspace")], windows=True)
+    codec = wire.Codec({wire.type_key(Pair): Pair}, path_transform=paths.to_host)
+    value = {"pairs": [Pair(1, "/workspace/data.txt"), Pair(2, "unchanged")]}
+    result = codec.loads(CODEC.dumps(value))
+    assert type(result["pairs"][0]) is Pair
+    assert result["pairs"][0].b == "C:\\work\\data.txt"
+    assert type(result["pairs"][1]) is Pair
+    assert result["pairs"][1].a == 2
+
+
 def test_numpy_round_trips():
     np = pytest.importorskip("numpy")
     arrays = [
@@ -299,6 +312,32 @@ async def test_recv_retires_worker_on_malformed_message(raw):
         assert isinstance(failure, WorkerDiedError)
         assert "malformed message" in str(failure)
         assert ex._worker_failure is failure
+    finally:
+        await ex.aclose()
+
+
+@pytest.mark.parametrize(
+    "signum, cpu, exceeded",
+    [(9, 3.0, True), (24, 3.0, True), (9, 2.5, False), (11, 3.0, False)],
+)
+async def test_kernel_cpu_limit_uses_final_guest_usage(signum, cpu, exceeded):
+    from nooa.runtime.sandbox.errors import CellTimeoutError
+    from nooa.runtime.sandbox.protocol import frame
+
+    async def events():
+        yield types.SimpleNamespace(
+            event_type="stdout",
+            data=frame(CODEC.dumps({"type": "worker_exit", "signal": signum, "cpu_seconds": cpu})),
+        )
+
+    ex = SandboxedExecutor(_Target(), SandboxConfig(max_cpu_seconds=1), cell_timeout=None)
+    ex._cpu_baseline = 2.0
+    ex._stream = events()
+    ex._messages = asyncio.Queue()
+    try:
+        await ex._read_events()
+        failure = await ex._messages.get()
+        assert isinstance(failure, CellTimeoutError if exceeded else WorkerDiedError)
     finally:
         await ex.aclose()
 

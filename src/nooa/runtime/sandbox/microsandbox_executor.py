@@ -5,16 +5,20 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 import hashlib
 import importlib.metadata
 import importlib.util
 import inspect
 import logging
+import os
 import platform
 import sys
 import sysconfig
 import time
 import uuid
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
 
@@ -40,7 +44,39 @@ from nooa.runtime.sandbox.serialization import (
 )
 
 logger = logging.getLogger(__name__)
-_SNAPSHOTS: dict[str, Any] = {}
+_SNAPSHOT_GROUP = "nooa-runtime"
+
+
+def _try_environment_lock(fd: int) -> bool:
+    try:
+        if sys.platform == "win32":
+            import msvcrt
+
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as exc:
+        if exc.errno not in (errno.EACCES, errno.EAGAIN):
+            raise
+        return False
+    return True
+
+
+@asynccontextmanager
+async def _environment_lock(key: str) -> AsyncIterator[None]:
+    """Serialize preparation across processes sharing the same snapshot store."""
+    home = Path(os.environ.get("MSB_HOME") or Path.home() / ".microsandbox")
+    locks = home / "nooa-runtime-locks"
+    locks.mkdir(parents=True, exist_ok=True)
+    # Closing releases the native lock, even on cancellation. Keep the file:
+    # unlinking it would let two processes lock different files at this path.
+    with (locks / f"{key}.lock").open("a+b") as lock:
+        while not _try_environment_lock(lock.fileno()):
+            await asyncio.sleep(0.05)
+        yield
 
 
 def _bounded_text(value: Any, fallback: Any, *, limit: Any) -> str:
@@ -169,16 +205,39 @@ class SandboxedExecutor:
         key = hashlib.sha256(
             (image + "\nuv-0.11.2\n" + "\n".join(dependencies)).encode()
         ).hexdigest()[:24]
-        if key in _SNAPSHOTS:
-            return _SNAPSHOTS[key]
         snapshot_name = f"nooa-runtime-{key}"
-        try:
-            existing = await sdk.Snapshot.get(snapshot_name)
-        except Exception:
-            pass
-        else:
-            _SNAPSHOTS[key] = existing
-            return existing
+        async with _environment_lock(key):
+            # get() resolves public IDs, not member names. A stable group and
+            # explicit selector make this lookup survive a process restart.
+            try:
+                existing = await sdk.Snapshot.open(f"{_SNAPSHOT_GROUP}:{snapshot_name}")
+            except FileNotFoundError:
+                pass
+            else:
+                if existing.image_ref != image:
+                    raise SandboxUnavailable("cached sandbox environment has a different image")
+                return existing
+
+            # Older versions used the random preparation VM as the group.
+            # Adopt those snapshots in place without copying or reinstalling.
+            candidates = [
+                item
+                for item in await sdk.Snapshot.list()
+                if item.name == snapshot_name
+                and item.image_ref == image
+                and (item.group or "").startswith("nooa-prepare-")
+            ]
+            for item in sorted(candidates, key=lambda item: item.created_at, reverse=True):
+                try:
+                    return await item.open()
+                except FileNotFoundError:
+                    # A concurrent explicit cleanup may have removed it.
+                    continue
+            return await self._create_environment(sdk, image, dependencies, snapshot_name)
+
+    async def _create_environment(
+        self, sdk: Any, image: str, dependencies: list[str], snapshot_name: str
+    ) -> Any:
         vm = await sdk.Sandbox.create(
             f"nooa-prepare-{uuid.uuid4().hex}",
             image=image,
@@ -216,16 +275,9 @@ class SandboxedExecutor:
                 raise SandboxUnavailable(
                     "guest dependency preparation failed: " + result.stderr_text[-4000:]
                 )
-            try:
-                snapshot = await sdk.Snapshot.create(
-                    snapshot_name, from_sandbox=await vm.name, full=False
-                )
-            except Exception:
-                # Another initializer may have completed the same immutable,
-                # dependency-keyed environment while this VM was preparing it.
-                snapshot = await sdk.Snapshot.get(snapshot_name)
-            _SNAPSHOTS[key] = snapshot
-            return snapshot
+            return await sdk.Snapshot.create(
+                snapshot_name, from_sandbox=await vm.name, group=_SNAPSHOT_GROUP, full=False
+            )
         finally:
             await vm.destroy(force=True)
 
@@ -264,6 +316,10 @@ class SandboxedExecutor:
         return mounts
 
     def _modules(self) -> list[Any]:
+        from types import ModuleType
+
+        from nooa.agentdoc.visibility import filter_mro_module_globals
+
         modules = []
         library_roots = tuple(
             Path(path).resolve()
@@ -289,14 +345,19 @@ class SandboxedExecutor:
                 and any(Path(location).resolve().is_relative_to(root) for root in library_roots)
             )
 
-        for cls in type(self._agent).__mro__:
-            module = inspect.getmodule(cls)
+        values = [
+            *type(self._agent).__mro__,
+            *self._codec.types.values(),
+            *filter_mro_module_globals(type(self._agent)).values(),
+        ]
+        while values:
+            value = values.pop()
+            module = value if isinstance(value, ModuleType) else inspect.getmodule(value)
             if by_value(module) and module not in modules:
                 modules.append(module)
-        for kind in self._codec.types.values():
-            module = inspect.getmodule(kind)
-            if by_value(module) and module not in modules:
-                modules.append(module)
+                # A local helper may itself import another local helper. Keep
+                # that dependency chain by value without copying installed libs.
+                values.extend(vars(module).values())
         return modules
 
     def _bootstrap(self) -> dict[str, Any]:
@@ -384,6 +445,7 @@ class SandboxedExecutor:
                     "/opt/nooa-src/nooa/runtime/sandbox/guest_launcher.py",
                 ],
                 env={"PYTHONPATH": "/opt/nooa-src", "PYTHONDONTWRITEBYTECODE": "1"},
+                cwd=self._guest_cwd,
                 stdin=sdk.Stdin.pipe(),
                 timeout=None,
                 tty=False,
@@ -650,18 +712,22 @@ class SandboxedExecutor:
         self._disabled = self._config.recovery == "disabled"
 
     async def _dispose(self) -> None:
-        if self._cleanup_task is not None:
-            await asyncio.shield(self._cleanup_task)
-            return
-        self._cleanup_task = asyncio.create_task(self._destroy())
+        if self._cleanup_task is None:
+            self._cleanup_task = asyncio.create_task(self._destroy())
+        cleanup = self._cleanup_task
         try:
-            await asyncio.shield(self._cleanup_task)
+            await asyncio.shield(cleanup)
         finally:
-            self._cleanup_task = None
+            # A cancelled waiter must not detach the still-running destroy.
+            if cleanup.done() and self._cleanup_task is cleanup:
+                self._cleanup_task = None
 
     async def _destroy(self) -> None:
         pump, vm = self._pump, self._vm
-        self._pump = self._vm = self._stream = self._sink = None
+        self._pump = self._stream = self._sink = None
+        self._worker_failure = self._worker_failure or WorkerDiedError(
+            "sandbox interpreter stopped"
+        )
         watchdog, self._watchdog = self._watchdog, None
         if watchdog and watchdog is not asyncio.current_task():
             watchdog.cancel()
@@ -675,6 +741,8 @@ class SandboxedExecutor:
             await asyncio.gather(pump, return_exceptions=True)
         if vm:
             await vm.destroy(force=True, timeout=10)
+            # Retain ownership on failure so a later close/recovery can retry.
+            self._vm = None
 
     async def aclose(self) -> None:
         self._closed = True

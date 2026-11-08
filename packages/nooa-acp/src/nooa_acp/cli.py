@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 import click
 
+from nooa_acp._startup import mark, phase
+
 if TYPE_CHECKING:
     from nooa.unifiedllm import UnifiedLLM
 
@@ -33,11 +35,15 @@ if TYPE_CHECKING:
 )
 def command(model: str, client_type: str | None, sandbox: bool) -> None:
     """Serve the NOOA coding agent over ACP on standard input/output."""
-    from nooa.secrets import load_secrets_into_env
-    from nooa.unifiedllm import get_llm_client
-    from nooa_acp.server import serve
+    with phase("framework_import"):
+        from nooa.secrets import load_secrets_into_env
+    with phase("llm_import"):
+        from nooa.unifiedllm import get_llm_client
+    with phase("acp_import"):
+        from nooa_acp.server import serve
 
-    load_secrets_into_env()
+    with phase("configuration"):
+        load_secrets_into_env()
     nvidia_api_key = os.getenv("NVIDIA_API_KEY") if model.startswith("nvidia_nim/") else None
 
     def llm_factory() -> "UnifiedLLM":
@@ -45,6 +51,7 @@ def command(model: str, client_type: str | None, sandbox: bool) -> None:
         return get_llm_client(model, client_type=client_type, **overrides)
 
     operation = serve(llm_factory, sandbox=True) if sandbox else serve(llm_factory)
+    mark("server_start")
     asyncio.run(operation)
 
 

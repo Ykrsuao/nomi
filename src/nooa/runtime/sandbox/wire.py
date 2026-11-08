@@ -84,7 +84,8 @@ class Codec:
         if isinstance(value, list):
             return [self._map_paths(item) for item in value]
         if isinstance(value, tuple):
-            return tuple(self._map_paths(item) for item in value)
+            items = tuple(self._map_paths(item) for item in value)
+            return type(value)(*items) if hasattr(value, "_fields") else items
         return value
 
     def _ext(self, code: int, payload: Any) -> msgpack.ExtType:

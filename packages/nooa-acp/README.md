@@ -91,6 +91,20 @@ without a client does nothing. Launch it this way to wire up an ACP client
 other than Zed, or to watch the diagnostics it writes to stderr while a client
 drives it. `--model` accepts any LiteLLM model name or configured NOOA alias.
 
+### Startup timing
+
+Set `NOOA_STARTUP_TIMING=1` in the agent's environment to diagnose slow loading.
+Lines prefixed with `[nooa-startup]` go to stderr (and Zed's agent log), leaving
+the ACP protocol on stdout unchanged. They record import, configuration, model,
+storage, MCP and agent preparation phases, including elapsed time and process
+CPU time. Each phase logs its start, so an unfinished phase remains visible.
+Only stage names, process IDs and timings are recorded.
+
+These timings work on any fresh process. Comparing a first launch after boot
+with later launches helps distinguish cold startup from recurring costs; a
+fresh process alone does not reset the operating system's filesystem cache.
+Unset the variable to disable the diagnostic output.
+
 ## Sandbox execution
 
 Pass `--sandbox` to run CodeAct's generated Python in a microsandbox microVM.
@@ -120,6 +134,12 @@ tools run on the host. The microVM isolates generated Python's direct
 operations. Cancelling a running cell or closing its session tears down the VM.
 The real stdio tests cover guest execution and cancellation using simulated
 model responses.
+
+Prepared dependency snapshots are shared across workspaces using the same image
+and dependency versions. They live under `MSB_HOME` (default `~/.microsandbox`),
+survive process restarts, and use a process lock to prevent duplicate preparation.
+Snapshots from older NOOA versions are reused when their environment matches.
+Changing the image or dependencies creates a separate cached environment.
 
 ## Opening a repository runs code from it
 
