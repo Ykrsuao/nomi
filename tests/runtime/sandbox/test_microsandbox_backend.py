@@ -196,7 +196,10 @@ async def test_cpu_and_memory_limits(tmp_path):
     from nooa.runtime.sandbox.errors import CellTimeoutError
 
     cpu = SandboxedExecutor(
-        Service(), SandboxConfig(workspace=str(tmp_path), max_cpu_seconds=1), cell_timeout=10
+        Service(),
+        # Let the kernel limit fire before the host watchdog can observe usage.
+        SandboxConfig(workspace=str(tmp_path), max_cpu_seconds=1, rss_poll_s=60),
+        cell_timeout=None,
     )
     try:
         result = await cpu.run_cell("while True:\n    pass")

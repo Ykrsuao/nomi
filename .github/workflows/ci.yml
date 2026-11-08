@@ -7,8 +7,12 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      macos_native:
+        description: Run experimental native macOS tests (not currently supported)
+        type: boolean
+        default: false
       macos_sandbox:
-        description: Run real microVM tests on a self-hosted Apple Silicon Mac
+        description: Run experimental microVM tests on a self-hosted Apple Silicon Mac
         type: boolean
         default: false
 
@@ -55,6 +59,19 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ripgrep
       - name: Unit tests (no live API calls)
         run: uv run pytest -q -m "not integration and not stress and not sandbox"
+
+  sandbox:
+    name: Linux sandbox
+    runs-on: ubuntu-latest
+    # Real VM tests take about 31 minutes. Give them their own budget instead
+    # of sharing 40 minutes with the roughly 9-minute native suite.
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
       - name: Install microsandbox runtime
         run: uv sync --all-extras
       - name: Check Linux microVM runtime
@@ -64,7 +81,15 @@ jobs:
       # The executor tests use real microVMs; legacy guard-helper tests remain
       # separate checks of the compatibility utilities. No provider keys are used.
       - name: Sandbox containment tests
-        run: uv run --no-sync pytest -q -m sandbox --maxfail=3
+        run: >-
+          uv run --no-sync pytest -v -m sandbox --maxfail=3
+          --durations=20 --junitxml=artifacts/linux-sandbox.xml
+      - name: Upload Linux sandbox results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-sandbox
+          path: artifacts/
 
   python-313-error-compat:
     runs-on: ubuntu-latest
@@ -96,6 +121,8 @@ jobs:
 
   macos-native:
     name: macOS native Python ${{ matrix.python-version }}
+    # Compatibility code is retained, but macOS is outside current support.
+    if: github.event_name == 'workflow_dispatch' && inputs.macos_native
     runs-on: macos-15
     timeout-minutes: 20
     strategy:

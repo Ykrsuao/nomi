@@ -80,7 +80,7 @@ cd my-agent-project
 uv add nooa
 ```
 
-> **Windows:** NOOA runs natively, including in-process CodeAct, shell tools, file-backed SQLite and `monitor()`. Shell commands use PowerShell on Windows and bash on Linux/macOS. Enable CodeAct sandbox execution with `nooa[sandbox]` to use microsandbox; its hardware virtualization requirements apply only when sandbox execution is enabled. No platform override is required.
+> **Supported platforms:** Linux and native Windows. Windows support includes in-process CodeAct, shell tools, file-backed SQLite and `monitor()`. Shell commands use PowerShell on Windows and bash on Linux. Enable CodeAct sandbox execution with `nooa[sandbox]` to use microsandbox; its hardware virtualization requirements apply only when sandbox execution is enabled. No platform override is required. macOS is not currently supported; existing compatibility code and manual CI checks are retained for future validation.
 
 <details>
 <summary><b>Optional sub-packages</b> — CLI, ACP, memory, benchmarks, evaluation pipeline</summary>

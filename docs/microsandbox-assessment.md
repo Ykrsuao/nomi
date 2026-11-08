@@ -37,9 +37,9 @@ Windows 授权 workspace 在 guest 中使用 `/workspace`，额外 allow 路径�
 
 ## macOS CI 与实际 VM 验证
 
-GitHub CI 在 `macos-15` 的 Apple Silicon 运行机上分别验证 Python 3.12 和 3.13 的原生 CodeAct、shell、存储与 ACP；测试所需的 ripgrep 通过 Homebrew 安装。真正启动 microVM 的用例归入 `sandbox` 组。
+当前正式支持范围为 Linux 和原生 Windows，macOS 暂不支持。保留现有兼容代码，以及手动 `workflow_dispatch` 的 `macos_native` 选项：在 `macos-15` 的 Apple Silicon 运行机上分别验证 Python 3.12 和 3.13 的原生 CodeAct、shell、存储与 ACP。该检查不在普通 push 或 pull request 中自动运行。
 
-[GitHub 托管 macOS 运行机不支持嵌套虚拟化](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。初次实测中 SDK 安装和 doctor 检查通过，但创建 VM 失败于 `VmSetup(VmCreate)`，尚未进入 NOOA guest。按本次选择，自动 CI 先验证原生 macOS。真实 VM 和 ACP 沙箱验证保留为手动 `workflow_dispatch` 的 `macos_sandbox` 选项，要求仓库已有能创建 VM 的 `[self-hosted, macOS, ARM64]` 运行机；没有运行机时保持未验证状态。
+[GitHub 托管 macOS 运行机不支持嵌套虚拟化](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。初次实测中 SDK 安装和 doctor 检查通过，但创建 VM 失败于 `VmSetup(VmCreate)`，尚未进入 NOOA guest。真实 VM 和 ACP 沙箱验证保留为手动 `workflow_dispatch` 的 `macos_sandbox` 选项，要求仓库已有能创建 VM 的 `[self-hosted, macOS, ARM64]` 运行机；没有运行机时保持未验证状态。
 
 下面保留迁移验收要求和初始源码依据。
 

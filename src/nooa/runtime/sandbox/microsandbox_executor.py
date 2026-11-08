@@ -96,6 +96,7 @@ class SandboxedExecutor:
         self._messages: Any = None
         self._req_id = 0
         self._worker_pid: int | None = None
+        self._cpu_baseline = 0.0
         self._worker_failure: BaseException | None = None
         self._startup_task: asyncio.Task[None] | None = None
         self._cleanup_task: asyncio.Task[None] | None = None
@@ -380,8 +381,7 @@ class SandboxedExecutor:
                 "python",
                 [
                     "-u",
-                    "-c",
-                    "import os; fd=os.dup(1); os.dup2(2,1); from nooa.runtime.sandbox.guest import main; main(protocol_fd=fd)",
+                    "/opt/nooa-src/nooa/runtime/sandbox/guest_launcher.py",
                 ],
                 env={"PYTHONPATH": "/opt/nooa-src", "PYTHONDONTWRITEBYTECODE": "1"},
                 stdin=sdk.Stdin.pipe(),
@@ -407,6 +407,7 @@ class SandboxedExecutor:
             if ready.get("type") != "ready":
                 raise SandboxUnavailable(ready.get("error", "guest worker did not initialize"))
             self._worker_pid = ready["pid"]
+            self._cpu_baseline = ready["cpu_baseline"]
             self._degraded = ready.get("degraded", [])
             if self._degraded:
                 logger.warning(
@@ -430,6 +431,24 @@ class SandboxedExecutor:
                         message = self._codec.loads(data)
                         if not isinstance(message, dict):
                             raise CellSerializationError("sandbox message must be an object")
+                        if message.get("type") == "worker_exit":
+                            signum, cpu = message.get("signal"), message.get("cpu_seconds")
+                            if (
+                                type(signum) is not int
+                                or not isinstance(cpu, int | float)
+                                or isinstance(cpu, bool)
+                            ):
+                                raise CellSerializationError("invalid guest exit information")
+                            # Linux SIGKILL / SIGXCPU, independent of host platform.
+                            if (
+                                signum in (9, 24)
+                                and self._config.max_cpu_seconds
+                                and cpu >= self._cpu_baseline + self._config.max_cpu_seconds
+                            ):
+                                raise CellTimeoutError("cell exceeded the worker CPU budget")
+                            raise WorkerDiedError(
+                                f"guest worker killed by signal {signum}: {self._diagnostic}"
+                            )
                         await self._messages.put(message)
                 elif kind == "stderr":
                     self._diagnostic = (

@@ -81,7 +81,7 @@ in a large PR.
 
 ## Platform support
 
-nooa supports Linux, macOS and native Windows. Host features must provide native implementations; Windows shell commands use PowerShell and process-tree cleanup uses Job Objects. Sandbox execution uses microsandbox on all three hosts, with fine-grained permissions applied inside its Linux guest.
+nooa currently supports Linux and native Windows. Host features must provide native implementations; Windows shell commands use PowerShell and process-tree cleanup uses Job Objects. Sandbox execution uses microsandbox, with fine-grained permissions applied inside its Linux guest. macOS is outside the current support scope: existing compatibility code is retained, and its CI checks run only when explicitly requested through `workflow_dispatch` (`macos_native` or `macos_sandbox`).
 
 - Import platform-specific modules inside the implementation that uses them.
 - Keep microsandbox initialization and virtualization requirements confined to sandbox execution; in-process execution must work without its runtime.
