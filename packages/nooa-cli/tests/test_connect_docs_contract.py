@@ -547,7 +547,7 @@ def test_default_trace_selection_mocked_resolver_and_exporter(
     monkeypatch.setattr(tracing, "resolve_otlp_endpoint", resolver)
     monkeypatch.setattr(tracing.exporters_mod, "journal", exporter)
     selected = tracing._default_exporters()
-    resolver.assert_called_once_with(endpoint)
+    resolver.assert_called_once_with(endpoint, timeout=0.1)
     if reachable:
         assert selected == [exporter.return_value]
         exporter.assert_called_once_with(endpoint=endpoint)
@@ -571,7 +571,9 @@ def test_automatic_agent_trace_path_keeps_stage_stdout_quiet_json(offline):
     result = invoke([*BASE, "--stage", "routing"])
     report(result)
     assert agent_module._auto_tracing_attempted is True
-    tracing.resolve_otlp_endpoint.assert_called_once_with("http://localhost:5001/v1/traces")
+    tracing.resolve_otlp_endpoint.assert_called_once_with(
+        "http://localhost:5001/v1/traces", timeout=0.1
+    )
     tracing.urllib.request.urlopen.assert_not_called()
     tracing.exporters_mod.journal.assert_not_called()
     assert result.stderr == ""
