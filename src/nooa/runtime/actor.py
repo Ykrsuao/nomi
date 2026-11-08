@@ -1231,7 +1231,7 @@ class ActorRuntime:
                             self.event_manager, ctx.messages, current_generation_id or ""
                         )
                         ctx = await em.run_middleware("llm_call", ctx, _core_llm)
-                except Exception as _exc:
+                except BaseException as _exc:
                     _emit_llm_end(success=False, exception_type=type(_exc).__name__)
                     raise
                 _emit_llm_end(success=True)
@@ -1326,7 +1326,7 @@ class ActorRuntime:
                             output_model=output_model,
                             **_recovery_kw,
                         )
-                except Exception as _exc:
+                except BaseException as _exc:
                     _emit_llm_end(success=False, exception_type=type(_exc).__name__)
                     raise
                 _emit_llm_end(success=True)

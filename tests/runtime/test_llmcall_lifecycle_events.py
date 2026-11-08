@@ -8,6 +8,8 @@ These RUNTIME_EVENTs bracket the ``acall()`` round-trip inside
 "waiting on model" state without inferring it from cell boundaries.
 """
 
+import asyncio
+
 import pytest
 
 from nooa import Agent, strategy
@@ -125,3 +127,67 @@ async def test_generate_emits_end_with_success_false_when_acall_raises():
     assert end_events, ends
     # Every emitted end reports failure with the underlying exception type.
     assert all(success is False and exc == "Boom" for success, exc in end_events), ends
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("with_middleware", [False, True], ids=["direct", "middleware"])
+async def test_cancelled_generation_emits_matching_failed_llmcall_end(with_middleware):
+    """Cancelling a pending generation clears its model-waiting lifecycle."""
+    entered_acall = asyncio.Event()
+
+    class _BlockingLLM(FakeLLMClient):
+        async def acall(self, *a, **k):  # type: ignore[override]
+            entered_acall.set()
+            await asyncio.Event().wait()
+
+    class A(Agent, llm=_BlockingLLM()):
+        @strategy(PurePythonStrategy())
+        async def echo(self, x: int) -> int:
+            """Return the input unchanged."""
+            ...
+
+    agent = A()
+    lifecycle: list[LLMCallStart | LLMCallEnd] = []
+    agent.event_manager.on("LLMCallStart", lifecycle.append)
+    agent.event_manager.on("LLMCallEnd", lifecycle.append)
+
+    async def passthrough(ctx, nxt):
+        return await nxt(ctx)
+
+    if with_middleware:
+        agent.event_manager.intercept("llm_call", passthrough)
+
+    task = asyncio.create_task(agent.echo(1))
+    try:
+        await asyncio.wait_for(entered_acall.wait(), timeout=5)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(task, timeout=5)
+
+        assert len(lifecycle) == 2
+        start, end = lifecycle
+        assert isinstance(start, LLMCallStart)
+        assert isinstance(end, LLMCallEnd)
+        assert start.method_name == "echo"
+        assert start.generation_id
+        assert (
+            end.method_name,
+            end.strategy,
+            end.generation_id,
+            end.turn_number,
+        ) == (
+            start.method_name,
+            start.strategy,
+            start.generation_id,
+            start.turn_number,
+        )
+        assert end.success is False
+        assert end.exception_type == "CancelledError"
+        assert not any(
+            isinstance(event, (LLMCallStart, LLMCallEnd))
+            for event in agent.event_manager.all_events()
+        )
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+        await agent.aclose()

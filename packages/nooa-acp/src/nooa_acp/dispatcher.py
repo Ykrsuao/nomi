@@ -5,16 +5,20 @@
 import asyncio
 from collections.abc import Coroutine
 from contextlib import suppress
+from contextvars import ContextVar
 from typing import Any
 
 from nooa_cli.coding import CodingAgent, CodingSlashCommandRegistry
 from pydantic import BaseModel
 
-from nooa.interactive import Done, NeedInput, Waiting
+from nooa.events import EventBase
+from nooa.interactive import AgentMessage, Done, NeedInput, Waiting
 from nooa.slash_dispatch import SlashCommandResult
 from nooa.strategies.base import GenerationStrategy
 
 TurnResult = Done | NeedInput | Waiting
+
+_current_handle: ContextVar[object | None] = ContextVar("nooa_acp_handle", default=None)
 
 
 class InteractiveSessionDispatcher:
@@ -83,25 +87,46 @@ class InteractiveSessionDispatcher:
                 if drained := channel.drain():
                     notification.setdefault(name, []).extend(drained)
 
-            if self._strategy is None:
-                result = await self.agent.handle(notification)
-            else:
-                result = await self.agent.handle(notification, _strategy=self._strategy)
-            self._show(result)
+            result = await self._handle(notification)
             # Keep the prompt open while the turn waits on a job or queue.
             if isinstance(result, Waiting):
                 continue
             return result
 
-    def _show(self, result: TurnResult) -> None:
+    async def _handle(self, notification: dict[str, list[Any]]) -> TurnResult:
+        last_message: str | None = None
+        invocation = object()
+
+        def remember_message(event: EventBase) -> None:
+            nonlocal last_message
+            # Broker tasks inherit this context; background tasks from an
+            # earlier handle keep theirs and cannot suppress this reply.
+            if isinstance(event, AgentMessage) and _current_handle.get() is invocation:
+                last_message = event.content
+
+        unsubscribe = self.agent.event_manager.on("AgentMessage", remember_message)
+        token = _current_handle.set(invocation)
+        try:
+            if self._strategy is None:
+                result = await self.agent.handle(notification)
+            else:
+                result = await self.agent.handle(notification, _strategy=self._strategy)
+        finally:
+            unsubscribe()
+            _current_handle.reset(token)
+
+        self._show(result, last_message=last_message)
+        return result
+
+    def _show(self, result: TurnResult, *, last_message: str | None = None) -> None:
         """Send the person the text a typed result carries, as an agent message.
 
         ``Done.message`` is the reply, ``Waiting.message`` the line shown while
         waiting, and a ``NeedInput`` shows its question, its reason, and its
         choices or the fields of its ``answer_type`` with their types and
         descriptions. This server has no forms, so a typed answer still
-        arrives as the person's text reply. The agent is told not to send
-        these itself, so the host must.
+        arrives as the person's text reply. If the agent already sent the
+        same complete text during this handle, keep that message once.
         """
         if isinstance(result, NeedInput):
             parts = [result.question]
@@ -114,7 +139,7 @@ class InteractiveSessionDispatcher:
             text: str | None = "\n\n".join(parts)
         else:
             text = result.message
-        if text:
+        if text and text != last_message:
             self.agent.message(text)
 
     async def cancel(self) -> bool:

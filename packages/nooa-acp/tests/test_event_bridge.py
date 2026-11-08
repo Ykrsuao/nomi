@@ -3,6 +3,8 @@
 """Tests for translating NOOA events into ACP updates."""
 
 import asyncio
+import json
+from time import perf_counter
 from typing import Any, cast
 
 import pytest
@@ -26,7 +28,7 @@ from nooa_cli.coding import (
 
 from nooa.context_blocks.events import ResultStatus, ToolCallEvent
 from nooa.events import LLMResponse, PythonOutput
-from nooa.interactive import AgentMessage
+from nooa.interactive import AgentMessage, InteractiveAgent
 from nooa.llm_types import LLMUsage
 from nooa.unifiedllm import FakeLLMClient
 
@@ -616,3 +618,113 @@ async def test_bridge_keeps_streamed_terminal_output_on_force_closed_card(tmp_pa
     assert text == "step 1 of 3\n\nStopped at your request."
     await bridge.close()
     await agent.close()
+
+
+async def test_prompt_cancel_during_flush_records_completion_after_answer_delivery(
+    tmp_path, monkeypatch, capsys
+):
+    """Cancelling the waiter must not mark a still-buffered answer as flushed."""
+    monkeypatch.setenv("NOOA_PROMPT_TIMING", "1")
+    answer_entered = asyncio.Event()
+    answer_release = asyncio.Event()
+
+    class _BlockedClient(_RecordingClient):
+        async def session_update(self, session_id: str, update: object, **kwargs) -> None:
+            if isinstance(update, AgentMessageChunk):
+                answer_entered.set()
+                await answer_release.wait()
+            await super().session_update(session_id, update, **kwargs)
+
+    agent = CodingAgent(llm=FakeLLMClient(), cwd=tmp_path)
+    client = _BlockedClient()
+    bridge = ACPEventBridge(agent, client, "session-1")  # type: ignore[arg-type]
+
+    async def prompt() -> None:
+        async with bridge.prompt(perf_counter(), "inprocess"):
+            agent.event_manager.add(AgentMessage(content="Ready answer"))
+
+    def timings(stderr: str) -> list[dict[str, Any]]:
+        return [
+            json.loads(line.removeprefix("[nooa-prompt] "))
+            for line in stderr.splitlines()
+            if line.startswith("[nooa-prompt] ")
+        ]
+
+    task = asyncio.create_task(prompt())
+    try:
+        await asyncio.wait_for(answer_entered.wait(), timeout=5)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(task, timeout=5)
+
+        before = capsys.readouterr().err
+        stages = [record["stage"] for record in timings(before)]
+        assert "first_status" in stages
+        assert "first_answer" not in stages
+        assert "complete" not in stages
+        assert not any(isinstance(update, AgentMessageChunk) for _, update in client.updates)
+
+        answer_release.set()
+        await asyncio.wait_for(bridge.flush(), timeout=5)
+        records = timings(before + capsys.readouterr().err)
+        stages = [record["stage"] for record in records]
+        assert stages.count("first_answer") == stages.count("complete") == 1
+        assert stages.index("first_answer") < stages.index("complete")
+        assert records[-1]["stage"] == "complete"
+        assert records[-1]["outcome"] == "cancelled"
+        assert [
+            update.content.text
+            for _, update in client.updates
+            if isinstance(update, AgentMessageChunk)
+        ] == ["Ready answer"]
+    finally:
+        answer_release.set()
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+        await asyncio.wait_for(bridge.close(), timeout=5)
+        await agent.close()
+
+
+async def test_nested_generation_timings_bypass_code_cell_stderr_capture(monkeypatch, capsys):
+    """A generation invoked inside a cell still reports timing to process stderr."""
+    monkeypatch.setenv("NOOA_PROMPT_TIMING", "1")
+    llm = FakeLLMClient.with_tool_call(
+        "execute_python", {"code": "return_result(Done(explanation='complete'))"}
+    )
+    agent = InteractiveAgent(llm=llm)
+    bridge = ACPEventBridge(agent, _RecordingClient(), "session-1")  # type: ignore[arg-type]
+    try:
+        async with asyncio.timeout(10), bridge.prompt(perf_counter(), "inprocess"):
+            result = await agent.runtime.execute_code(
+                "import sys\n"
+                "await self.handle({'user_messages': ['Nested request']})\n"
+                "print('cell stderr remains captured', file=sys.stderr)",
+                validate=False,
+            )
+
+        captured = capsys.readouterr()
+        assert result.error is None
+        assert "cell stderr remains captured" in result.stderr
+        assert "cell stderr remains captured" not in captured.err
+        assert "[nooa-prompt] " not in result.stdout + result.stderr
+        assert "[nooa-prompt] " not in captured.out
+        records = [
+            json.loads(line.removeprefix("[nooa-prompt] "))
+            for line in captured.err.splitlines()
+            if line.startswith("[nooa-prompt] ")
+        ]
+        stages = [record["stage"] for record in records]
+        for stage in (
+            "prefill_start",
+            "prefill_end",
+            "model_start",
+            "model_end",
+            "first_model_response",
+            "complete",
+        ):
+            assert stages.count(stage) == 1
+        assert stages[-1] == "complete"
+        assert records[-1]["outcome"] == "end_turn"
+    finally:
+        await asyncio.wait_for(bridge.close(), timeout=5)
+        await agent.aclose()

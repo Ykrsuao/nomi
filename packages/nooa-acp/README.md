@@ -105,6 +105,44 @@ with later launches helps distinguish cold startup from recurring costs; a
 fresh process alone does not reset the operating system's filesystem cache.
 Unset the variable to disable the diagnostic output.
 
+### Waiting for a reply
+
+Each prompt shows a separate activity card while NOOA prepares the execution
+environment, waits for a model response, or works on the request. Titles follow
+runtime events; they do not estimate a percentage or a remaining duration. The
+card completes when the first answer is ready to send. If the turn ends earlier,
+it shows completion, cancellation, or failure instead. These updates are optional
+ACP `other` tool activity, separate from answer text and durable conversation
+history. A client rejecting an activity update does not suppress the answer.
+
+Set `NOOA_PROMPT_TIMING=1` to diagnose time from `session/prompt` to the answer.
+`NOOA_STARTUP_TIMING=1` also enables these records for an end-to-end diagnosis.
+Lines beginning with `[nooa-prompt]` go only to stderr. Each accepted prompt has
+an opaque `turn_id`, a process ID, an execution backend and elapsed wall time:
+
+| Stage | What it measures |
+| --- | --- |
+| `received`, `accepted` | Entry to the adapter and acquisition of this session's foreground turn |
+| `prefill_start`, `prefill_end` | Input inspection/setup, including lazy sandbox preparation |
+| `model_start`, `model_end` | Each logical model call; `call` pairs its boundaries and `outcome` reports its exit |
+| `first_model_response` | The first complete, valid response available to the runtime |
+| `first_status` | First successful activity write to the ACP transport |
+| `first_answer` | First successful nonempty answer write to the ACP transport |
+| `dispatch_end` | Foreground execution returns, including its runtime cleanup |
+| `complete` | Final updates have reached the transport, or delivery has failed; includes the outcome |
+
+The model client currently collects a streaming response before returning it.
+`first_model_response` therefore does **not** measure the provider's first token.
+Likewise, transport completion cannot measure when Zed paints the text. Model
+call time includes client preparation, middleware, queueing and retries; it is
+not pure network latency. If cancellation or failure prevents an answer, there
+is no `first_answer` record. The host's stop/error note is not counted as an
+answer, and status updates are never counted as answer latency.
+
+Only fixed stage/outcome names, opaque correlation IDs and timings are logged;
+these records contain no prompts, responses, Python source, paths, model
+configuration or reasoning. Both timing switches are off by default.
+
 ## Sandbox execution
 
 Pass `--sandbox` to run CodeAct's generated Python in a microsandbox microVM.

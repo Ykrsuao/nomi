@@ -59,7 +59,7 @@ class _VM:
     async def exec(self, *args, **kwargs):
         return SimpleNamespace(stdout_text=platform.python_version(), stderr_text="", exit_code=0)
 
-    async def destroy(self, *, force):
+    async def destroy(self, *, force, timeout=None):
         self.store.destroyed.append(self._name)
 
 

@@ -25,6 +25,12 @@ from acp.schema import (
 _HANG_TIMEOUT = 30
 
 
+def _is_prompt_activity(update: object) -> bool:
+    return isinstance(update, ToolCallStart | ToolCallProgress) and update.tool_call_id.startswith(
+        "nooa-progress-"
+    )
+
+
 def test_protocol_subprocess_imports_this_checkout(tmp_path):
     import json
     import subprocess
@@ -56,11 +62,18 @@ class _RecordingClient:
         self.tool_started = asyncio.Event()
         self.commands_updated = asyncio.Event()
         self.sandbox_ready = asyncio.Event()
+        self.preparing = asyncio.Event()
+        self.waiting_for_model = asyncio.Event()
 
     async def session_update(self, session_id: str, update: object, **kwargs) -> None:
         self.updates.append((session_id, update))
-        if isinstance(update, ToolCallStart):
+        if isinstance(update, ToolCallStart) and not _is_prompt_activity(update):
             self.tool_started.set()
+        if isinstance(update, ToolCallStart | ToolCallProgress) and _is_prompt_activity(update):
+            if update.title == "Preparing execution environment":
+                self.preparing.set()
+            if update.title == "Waiting for model":
+                self.waiting_for_model.set()
         if isinstance(update, AvailableCommandsUpdate):
             self.commands_updated.set()
         if isinstance(update, AgentMessageChunk) and update.content.text == "Sandbox ready":
@@ -145,7 +158,11 @@ async def test_acp_subprocess_transcript(tmp_path, monkeypatch):
     assert [command.name for command in commands.available_commands] == ["protocol-check"]
     assert commands.available_commands[0].input is not None
     assert commands.available_commands[0].input.root.hint == "<value>"
-    started = next(update for _, update in client.updates if isinstance(update, ToolCallStart))
+    started = next(
+        update
+        for _, update in client.updates
+        if isinstance(update, ToolCallStart) and not _is_prompt_activity(update)
+    )
     assert started.kind == "other"
     assert started.status == "in_progress"
     assert started.raw_input is None
@@ -162,7 +179,11 @@ async def test_acp_subprocess_transcript(tmp_path, monkeypatch):
         == "text"
     )
 
-    completed = next(update for _, update in client.updates if isinstance(update, ToolCallProgress))
+    completed = next(
+        update
+        for _, update in client.updates
+        if isinstance(update, ToolCallProgress) and not _is_prompt_activity(update)
+    )
     assert completed.content is not None
     assert len(completed.content) == 2
     assert completed.title == "Ran Python"
@@ -201,7 +222,10 @@ async def test_acp_subprocess_dispatches_advertised_slash_command(tmp_path, monk
         isinstance(update, AgentMessageChunk) and update.content.text == "Check ready."
         for _, update in client.updates
     )
-    assert not any(isinstance(update, ToolCallStart) for _, update in client.updates)
+    assert not any(
+        isinstance(update, ToolCallStart) and not _is_prompt_activity(update)
+        for _, update in client.updates
+    )
 
 
 async def test_acp_subprocess_cancellation_finishes_open_tools(tmp_path):
@@ -225,11 +249,17 @@ async def test_acp_subprocess_cancellation_finishes_open_tools(tmp_path):
         response = await asyncio.wait_for(prompt_task, timeout=_HANG_TIMEOUT)
 
     assert response.stop_reason == "cancelled"
-    started = next(update for _, update in client.updates if isinstance(update, ToolCallStart))
+    started = next(
+        update
+        for _, update in client.updates
+        if isinstance(update, ToolCallStart) and not _is_prompt_activity(update)
+    )
     failed = next(
         update
         for _, update in client.updates
-        if isinstance(update, ToolCallProgress) and update.status == "failed"
+        if isinstance(update, ToolCallProgress)
+        and update.status == "failed"
+        and not _is_prompt_activity(update)
     )
     assert failed.tool_call_id == started.tool_call_id
 
@@ -368,3 +398,57 @@ async def test_acp_sandbox_subprocess_cancels_running_guest(tmp_path):
         result = await asyncio.wait_for(pending, timeout=30)
         assert result.stop_reason == "cancelled"
         await connection.close_session(session.session_id)
+
+
+@pytest.mark.sandbox
+async def test_acp_sandbox_cancels_before_setup_then_reuses_session(tmp_path):
+    """Cancel a deterministically held prefill, then run a real guest in the same session."""
+    client = _RecordingClient()
+    fixture = Path(__file__).parent / "fixtures" / "fake_agent.py"
+    async with spawn_agent_process(
+        client,
+        sys.executable,
+        str(fixture),
+        "--sandbox",
+        "--pause-prefill",
+        cwd=tmp_path,
+    ) as (connection, _process):
+        await connection.initialize(PROTOCOL_VERSION)
+        session = await connection.new_session(str(tmp_path))
+        pending = asyncio.create_task(
+            connection.prompt(session.session_id, [text_block("cancel during setup")])
+        )
+        try:
+            await asyncio.wait_for(client.preparing.wait(), timeout=_HANG_TIMEOUT)
+            assert not any(isinstance(update, AgentMessageChunk) for _, update in client.updates)
+            await connection.cancel(session.session_id)
+            result = await asyncio.wait_for(pending, timeout=_HANG_TIMEOUT)
+            assert result.stop_reason == "cancelled"
+            activity = [update for _, update in client.updates if _is_prompt_activity(update)]
+            assert activity[-1].title == "Cancelled"
+            assert activity[-1].status == "failed"
+            assert len({update.tool_call_id for update in activity}) == 1
+            assert sum(update.status in {"failed", "completed"} for update in activity) == 1
+
+            client.updates.clear()
+            result = await asyncio.wait_for(
+                connection.prompt(session.session_id, [text_block("run the smoke test now")]),
+                timeout=180,
+            )
+            assert result.stop_reason == "end_turn"
+            answers = [
+                update.content.text
+                for _, update in client.updates
+                if isinstance(update, AgentMessageChunk)
+            ]
+            assert "Interpreter platform: linux" in answers
+            assert "NOOA ACP smoke test passed." in answers
+            activity = [update for _, update in client.updates if _is_prompt_activity(update)]
+            assert activity[-1].status == "completed"
+            assert activity[-1].title == "Response ready"
+            assert sum(update.status in {"failed", "completed"} for update in activity) == 1
+            await connection.close_session(session.session_id)
+        finally:
+            if not pending.done():
+                pending.cancel()
+            await asyncio.gather(pending, return_exceptions=True)

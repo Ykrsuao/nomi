@@ -17,7 +17,7 @@ import sys
 import sysconfig
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
@@ -27,6 +27,7 @@ from nooa.events import ExecutionResult
 from nooa.runtime.sandbox import wire
 from nooa.runtime.sandbox.bootstrap import describe_call, dumps_namespace
 from nooa.runtime.sandbox.config import SandboxConfig
+from nooa.runtime.sandbox.dependencies import packages_distributions
 from nooa.runtime.sandbox.errors import (
     CellMemoryError,
     CellSerializationError,
@@ -45,6 +46,7 @@ from nooa.runtime.sandbox.serialization import (
 
 logger = logging.getLogger(__name__)
 _SNAPSHOT_GROUP = "nooa-runtime"
+_CLEANUP_TIMEOUT_S = 10.0
 
 
 def _try_environment_lock(fd: int) -> bool:
@@ -126,6 +128,7 @@ class SandboxedExecutor:
         self._lock = asyncio.Lock()
         self._closed = self._disabled = False
         self._vm: Any = None
+        self._vm_acquisition: asyncio.Future[Any] | None = None
         self._stream: Any = None
         self._sink: Any = None
         self._pump: asyncio.Task[None] | None = None
@@ -167,13 +170,13 @@ class SandboxedExecutor:
 
         from nooa.agentdoc.visibility import filter_mro_module_globals
 
-        packages = importlib.metadata.packages_distributions()
         values = (
             list(filter_mro_module_globals(type(self._agent)).values())
             + list(self._framework_builtins.values())
             + list(self._codec.types.values())
         )
         seen = set()
+        roots: set[str] = set()
         while values:
             value = values.pop()
             if id(value) in seen:
@@ -189,15 +192,17 @@ class SandboxedExecutor:
                 else getattr(value, "__module__", type(value).__module__)
             )
             if isinstance(module_name, str):
-                for distribution in packages.get(module_name.split(".")[0], []):
-                    if distribution not in {
-                        "nooa",
-                        "nooa-cli",
-                        "nooa-memory",
-                        "nooa-acp",
-                        "nooa-bench",
-                    }:
-                        dependencies[distribution] = importlib.metadata.version(distribution)
+                roots.add(module_name.split(".")[0])
+        for distributions in packages_distributions(roots).values():
+            for distribution in distributions:
+                if distribution not in dependencies and distribution not in {
+                    "nooa",
+                    "nooa-cli",
+                    "nooa-memory",
+                    "nooa-acp",
+                    "nooa-bench",
+                }:
+                    dependencies[distribution] = importlib.metadata.version(distribution)
         return [f"{name}=={version}" for name, version in sorted(dependencies.items())]
 
     async def _prepare(self, sdk: Any, image: str) -> Any:
@@ -238,14 +243,17 @@ class SandboxedExecutor:
     async def _create_environment(
         self, sdk: Any, image: str, dependencies: list[str], snapshot_name: str
     ) -> Any:
-        vm = await sdk.Sandbox.create(
-            f"nooa-prepare-{uuid.uuid4().hex}",
-            image=image,
-            memory=max(1024, self._config.vm_memory_mb),
-            cpus=self._config.cpus,
-            network=sdk.Network.allow_all(),
-        )
+        cancelled = False
         try:
+            vm = await self._acquire_vm(
+                sdk.Sandbox.create(
+                    f"nooa-prepare-{uuid.uuid4().hex}",
+                    image=image,
+                    memory=max(1024, self._config.vm_memory_mb),
+                    cpus=self._config.cpus,
+                    network=sdk.Network.allow_all(),
+                )
+            )
             version = await vm.exec(
                 "python", ["-c", "import platform; print(platform.python_version())"]
             )
@@ -278,8 +286,11 @@ class SandboxedExecutor:
             return await sdk.Snapshot.create(
                 snapshot_name, from_sandbox=await vm.name, group=_SNAPSHOT_GROUP, full=False
             )
+        except asyncio.CancelledError:
+            cancelled = True
+            raise
         finally:
-            await vm.destroy(force=True)
+            await self._dispose(after_cancel=cancelled)
 
     def _mounts(self, sdk: Any) -> dict[str, Any]:
         self._guest_allow = []
@@ -414,29 +425,35 @@ class SandboxedExecutor:
             name = f"nooa-{uuid.uuid4().hex}"
             if self._config.prepare_environment:
                 snapshot = await self._prepare(sdk, image)
-                self._vm = await sdk.Sandbox.restore(
-                    snapshot,
-                    name=name,
-                    memory=max(self._config.vm_memory_mb, self._config.max_memory_mb + 512),
-                    cpus=self._config.cpus,
-                    user="0:0",
-                    security=sdk.SecurityProfile.DEFAULT,
-                    volumes=mounts,
-                    disable_network=not self._config.network,
-                    network_policy=sdk.NetworkPolicy.allow_all()
-                    if self._config.network
-                    else sdk.NetworkPolicy.none(),
+                await self._acquire_vm(
+                    sdk.Sandbox.restore(
+                        snapshot,
+                        name=name,
+                        memory=max(self._config.vm_memory_mb, self._config.max_memory_mb + 512),
+                        cpus=self._config.cpus,
+                        user="0:0",
+                        security=sdk.SecurityProfile.DEFAULT,
+                        volumes=mounts,
+                        disable_network=not self._config.network,
+                        network_policy=sdk.NetworkPolicy.allow_all()
+                        if self._config.network
+                        else sdk.NetworkPolicy.none(),
+                    )
                 )
             else:
-                self._vm = await sdk.Sandbox.create(
-                    name,
-                    image=image,
-                    memory=self._config.vm_memory_mb,
-                    cpus=self._config.cpus,
-                    user="0:0",
-                    security=sdk.SecurityProfile.DEFAULT,
-                    volumes=mounts,
-                    network=sdk.Network.allow_all() if self._config.network else sdk.Network.none(),
+                await self._acquire_vm(
+                    sdk.Sandbox.create(
+                        name,
+                        image=image,
+                        memory=self._config.vm_memory_mb,
+                        cpus=self._config.cpus,
+                        user="0:0",
+                        security=sdk.SecurityProfile.DEFAULT,
+                        volumes=mounts,
+                        network=sdk.Network.allow_all()
+                        if self._config.network
+                        else sdk.Network.none(),
+                    )
                 )
             self._stream = await self._vm.exec_stream(
                 "python",
@@ -478,9 +495,22 @@ class SandboxedExecutor:
             self._resource_error = None
             if self._config.max_memory_mb or self._config.max_cpu_seconds:
                 self._watchdog = asyncio.create_task(self._watch_resources(ready))
-        except BaseException:
-            await self._dispose()
+        except BaseException as exc:
+            # Environment preparation may already have started cleanup. Keep
+            # its ownership without adding another timeout to this unwind.
+            if self._cleanup_task is None or self._cleanup_task.done():
+                await self._dispose(after_cancel=isinstance(exc, asyncio.CancelledError))
             raise
+
+    async def _acquire_vm(self, operation: Awaitable[Any]) -> Any:
+        # The SDK returns native Futures. Cancelling one can leave a registered
+        # VM without returning its handle, so retain the acquisition until its
+        # result is handed either to the caller or to _destroy().
+        acquisition = asyncio.ensure_future(operation)
+        self._vm_acquisition = acquisition
+        self._vm = await asyncio.shield(acquisition)
+        self._vm_acquisition = None
+        return self._vm
 
     async def _read_events(self) -> None:
         reader = FrameReader()
@@ -642,7 +672,7 @@ class SandboxedExecutor:
                         ),
                     )
             except asyncio.CancelledError:
-                await self._dispose()
+                await self._dispose(after_cancel=True)
                 raise
             except TimeoutError:
                 await self._recover()
@@ -711,23 +741,41 @@ class SandboxedExecutor:
         await self._dispose()
         self._disabled = self._config.recovery == "disabled"
 
-    async def _dispose(self) -> None:
+    async def _dispose(self, *, after_cancel: bool = False) -> None:
+        # A bounded waiter can return while acquisition is still in flight.
+        # A later run_cell must recover this cleanup before creating another VM.
+        self._worker_failure = self._worker_failure or WorkerDiedError(
+            "sandbox interpreter stopped"
+        )
         if self._cleanup_task is None:
             self._cleanup_task = asyncio.create_task(self._destroy())
         cleanup = self._cleanup_task
         try:
-            await asyncio.shield(cleanup)
+            # SDK destroy's timeout does not cover all storage-lock waits.
+            # Bound this waiter while the shared task retains ownership of
+            # pending acquisition and destruction for completion or a retry.
+            await asyncio.wait_for(asyncio.shield(cleanup), timeout=_CLEANUP_TIMEOUT_S)
+        except TimeoutError:
+            if not after_cancel:
+                raise
+            # Keep the caller's cancellation outcome while cleanup continues
+            # to own the resource. An explicit close can still report a timeout.
+            logger.warning("microsandbox cleanup is still running after cancellation")
         finally:
             # A cancelled waiter must not detach the still-running destroy.
             if cleanup.done() and self._cleanup_task is cleanup:
                 self._cleanup_task = None
 
     async def _destroy(self) -> None:
+        acquisition = self._vm_acquisition
+        if acquisition is not None:
+            try:
+                self._vm = await asyncio.shield(acquisition)
+            finally:
+                if acquisition.done() and self._vm_acquisition is acquisition:
+                    self._vm_acquisition = None
         pump, vm = self._pump, self._vm
         self._pump = self._stream = self._sink = None
-        self._worker_failure = self._worker_failure or WorkerDiedError(
-            "sandbox interpreter stopped"
-        )
         watchdog, self._watchdog = self._watchdog, None
         if watchdog and watchdog is not asyncio.current_task():
             watchdog.cancel()
@@ -740,7 +788,7 @@ class SandboxedExecutor:
             pump.cancel()
             await asyncio.gather(pump, return_exceptions=True)
         if vm:
-            await vm.destroy(force=True, timeout=10)
+            await vm.destroy(force=True, timeout=_CLEANUP_TIMEOUT_S)
             # Retain ownership on failure so a later close/recovery can retry.
             self._vm = None
 

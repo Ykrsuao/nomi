@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+from time import perf_counter
 from typing import Any, cast
 
 from acp import (
@@ -71,6 +72,7 @@ from nooa.strategies.codeact import (
     CodeActStrategy,
 )
 from nooa.unifiedllm import UnifiedLLM
+from nooa_acp._prompt import PromptProgress
 from nooa_acp._runtime import (
     SessionBusyError,
     SessionRuntime,
@@ -288,101 +290,15 @@ class CodingACPAdapter:
         return CloseSessionResponse()
 
     async def prompt(self, session_id: str, prompt: list[Any], **kwargs: Any) -> PromptResponse:
+        received_at = perf_counter()
         del kwargs
         runtime = await self._get_runtime(session_id)
         text = self._prompt_text(prompt)
         try:
-            async with runtime.turn():
-                session = runtime.value
-                session.handle.record_user_message(text)
-                session.cancel_complete.clear()
-                try:
-                    if not session.commands_sent_on_prompt:
-                        session.bridge.publish(
-                            _available_commands_update(session.commands.commands())
-                        )
-                        session.commands_sent_on_prompt = True
-                    slash = self._slash_invocation(session.commands, text)
-                    if slash is None:
-                        result = await session.dispatcher.submit(text)
-                    else:
-                        name, raw_args = slash
-                        try:
-                            submission = await session.dispatcher.invoke_slash(
-                                session.commands,
-                                name,
-                                raw_args,
-                            )
-                        except CoercionError as exc:
-                            message = f"/{name}: {exc.message}"
-                            if exc.hint:
-                                message += f"\n\nUsage: `/{name} {exc.hint}`"
-                            session.agent.message(message)
-                            await session.bridge.flush()
-                            return PromptResponse(stop_reason="end_turn")
-                        except GenerationError:
-                            # Subclasses Exception, so the catch-all below would
-                            # swallow it and lose the stop reason the outer
-                            # handler maps. Generation limits are the runtime's
-                            # to report, not a command failure.
-                            raise
-                        except Exception as exc:
-                            # Command bodies are third-party code from workspace
-                            # and installed skills. Letting one raise turns the
-                            # whole prompt into a JSON-RPC internal_error, and
-                            # the user's turn is already durably recorded — so
-                            # the session replays a question with no answer.
-                            # The same failure inside execute_python is caught by
-                            # the strategy and shown to the model; this path had
-                            # no equivalent.
-                            logger.warning(
-                                "Slash command /%s failed in session %s",
-                                name,
-                                session_id,
-                                exc_info=True,
-                            )
-                            session.agent.message(f"/{name} failed: {exc}")
-                            await session.bridge.flush()
-                            return PromptResponse(stop_reason="end_turn")
-                        if submission is None:
-                            result = None
-                        else:
-                            slash_result, result = submission
-                            if not slash_result.output_to_agent:
-                                message = str(slash_result)
-                                if message:
-                                    session.agent.message(message)
-                                await session.bridge.flush()
-                                return PromptResponse(stop_reason="end_turn")
-                except GenerationError as exc:
-                    # The strategy does not guarantee a PythonOutput for a call
-                    # it already announced, so a turn ending on a generation
-                    # limit can leave its card in_progress. Nothing else closes
-                    # it before session close, and a later cancel would retitle
-                    # this turn's stale card "Cancelled".
-                    await session.bridge.fail_open_tools("Did not finish.", title="Unfinished")
-                    await session.bridge.flush()
-                    message = str(exc)
-                    if message == OUTPUT_TOKENS_EXHAUSTED_MESSAGE:
-                        return PromptResponse(stop_reason="max_tokens")
-                    # MAX_ITERATIONS_MESSAGE and the max_retries message share
-                    # this prefix; the limit name tells them from other errors.
-                    if message.startswith(_GENERATION_LIMIT_PREFIX) and (
-                        "max_iterations=" in message or "max_retries=" in message
-                    ):
-                        return PromptResponse(stop_reason="max_turn_requests")
-                    raise RequestError(-32603, message, {"details": message}) from exc
-                if result is None:
-                    await session.cancel_complete.wait()
-                    # stop_reason and the tool card both carry the outcome, but
-                    # a collapsed card shows nothing and the turn just goes
-                    # quiet. Record it as a real message so the conversation —
-                    # and the durable transcript on resume — says what happened.
-                    session.agent.message("Stopped at your request.")
-                    await session.bridge.flush()
-                    return PromptResponse(stop_reason="cancelled")
-                await session.bridge.flush()
-                return PromptResponse(stop_reason="end_turn")
+            async with runtime.turn() as session:
+                backend = "sandbox" if self._sandbox else "inprocess"
+                async with session.bridge.prompt(received_at, backend) as progress:
+                    return await self._run_prompt(session, text, progress)
         except SessionBusyError:
             raise RequestError.invalid_request(
                 {"sessionId": session_id, "reason": "A prompt is already running"}
@@ -392,6 +308,79 @@ class CodingACPAdapter:
             # It is gone as far as the client is concerned, so say so rather
             # than letting this escape as an opaque internal error.
             raise RequestError.resource_not_found(session_id) from None
+
+    async def _run_prompt(
+        self, session: _ACPSession, text: str, progress: PromptProgress
+    ) -> PromptResponse:
+        session.handle.record_user_message(text)
+        session.cancel_complete.clear()
+        try:
+            if not session.commands_sent_on_prompt:
+                session.bridge.publish(_available_commands_update(session.commands.commands()))
+                session.commands_sent_on_prompt = True
+            slash = self._slash_invocation(session.commands, text)
+            if slash is None:
+                result = await session.dispatcher.submit(text)
+            else:
+                name, raw_args = slash
+                try:
+                    submission = await session.dispatcher.invoke_slash(
+                        session.commands, name, raw_args
+                    )
+                except CoercionError as exc:
+                    message = f"/{name}: {exc.message}"
+                    if exc.hint:
+                        message += f"\n\nUsage: `/{name} {exc.hint}`"
+                    progress.stop("command_error")
+                    session.agent.message(message)
+                    return PromptResponse(stop_reason="end_turn")
+                except GenerationError:
+                    # Preserve generation limits for the outer stop-reason mapping.
+                    raise
+                except Exception as exc:
+                    # Workspace/installed command failures still need a durable
+                    # reply to the already-recorded user message.
+                    logger.warning(
+                        "Slash command /%s failed in session %s",
+                        name,
+                        session.bridge.session_id,
+                        exc_info=True,
+                    )
+                    progress.stop("command_error")
+                    session.agent.message(f"/{name} failed: {exc}")
+                    return PromptResponse(stop_reason="end_turn")
+                if submission is None:
+                    result = None
+                else:
+                    slash_result, result = submission
+                    if not slash_result.output_to_agent:
+                        message = str(slash_result)
+                        if message:
+                            session.agent.message(message)
+                        return PromptResponse(stop_reason="end_turn")
+        except GenerationError as exc:
+            # An interrupted strategy may have announced a tool without an output.
+            await session.bridge.fail_open_tools("Did not finish.", title="Unfinished")
+            message = str(exc)
+            if message == OUTPUT_TOKENS_EXHAUSTED_MESSAGE:
+                progress.stop("max_tokens")
+                return PromptResponse(stop_reason="max_tokens")
+            if message.startswith(_GENERATION_LIMIT_PREFIX) and (
+                "max_iterations=" in message or "max_retries=" in message
+            ):
+                progress.stop("max_turn_requests")
+                return PromptResponse(stop_reason="max_turn_requests")
+            raise RequestError(-32603, message, {"details": message}) from exc
+        finally:
+            progress.mark("dispatch_end")
+        if result is None:
+            await session.cancel_complete.wait()
+            # Keep the cancellation in durable history, but do not count this
+            # host-authored note as the model's first answer.
+            progress.stop("cancelled")
+            session.agent.message("Stopped at your request.")
+            return PromptResponse(stop_reason="cancelled")
+        return PromptResponse(stop_reason="end_turn")
 
     async def cancel(self, session_id: str, **kwargs: Any) -> None:
         del kwargs

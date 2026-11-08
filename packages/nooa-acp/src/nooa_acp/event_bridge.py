@@ -5,8 +5,8 @@
 import asyncio
 import logging
 import re
-from collections.abc import Callable
-from contextlib import suppress
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -32,8 +32,9 @@ from nooa_cli.coding import (
 
 from nooa.agentdoc import pformat
 from nooa.context_blocks.events import EventBase, ResultStatus, ToolCallEvent
-from nooa.events import LLMResponse, PythonOutput
+from nooa.events import LLMCallEnd, LLMCallStart, LLMResponse, PythonOutput
 from nooa.interactive import AgentMessage
+from nooa_acp._prompt import PromptProgress, current_prompt
 
 # ACP owns stdout for JSON-RPC; diagnostics belong on stderr, which is where
 # the logging default sends them.
@@ -49,6 +50,13 @@ _MAX_VALUE_CHARS = 10_000
 @dataclass(frozen=True, slots=True)
 class _BestEffortUpdate:
     value: Any
+    progress: PromptProgress | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class _AnswerUpdate:
+    value: Any
+    progress: PromptProgress
 
 
 def _fenced_code(text: str, language: str) -> str:
@@ -84,11 +92,14 @@ class ACPEventBridge:
         # fail_open_tools closes it.
         self._cancelled_output: dict[str, str] = {}
         self._cost_usd = 0.0
+        self._prompt_progress: PromptProgress | None = None
         self._unsubscribers: list[Callable[[], None]] = [
             agent.event_manager.on("AgentMessage", self._on_agent_message),
             agent.event_manager.on("ToolCallEvent", self._on_tool_call),
             agent.event_manager.on("PythonOutput", self._on_python_output),
             agent.event_manager.on("LLMResponse", self._on_llm_response),
+            agent.event_manager.on("LLMCallStart", self._on_llm_start),
+            agent.event_manager.on("LLMCallEnd", self._on_llm_end),
             agent.event_manager.on("FileEdit", self._on_file_edit),
             agent.event_manager.on("TerminalCommandStarted", self._on_terminal_started),
             agent.event_manager.on("TerminalCommandOutput", self._on_terminal_output),
@@ -108,12 +119,61 @@ class ACPEventBridge:
         """Queue bootstrap metadata without poisoning the live event stream."""
         self._enqueue(_BestEffortUpdate(update))
 
+    def _publish_progress(self, update: Any, progress: PromptProgress) -> None:
+        self._enqueue(_BestEffortUpdate(update, progress))
+
+    def _current_progress(self) -> PromptProgress | None:
+        progress = current_prompt.get()
+        if progress is self._prompt_progress and progress is not None and progress.outcome is None:
+            return progress
+        return None
+
+    @asynccontextmanager
+    async def prompt(self, started_at: float, backend: str) -> AsyncIterator[PromptProgress]:
+        """Observe one claimed foreground turn, including its final transport flush."""
+        progress = PromptProgress(started_at, backend, self._publish_progress)
+        token = current_prompt.set(progress)
+        self._prompt_progress = progress
+        try:
+            progress.start()
+            try:
+                yield progress
+            except BaseException as exc:
+                outcome = "cancelled" if isinstance(exc, asyncio.CancelledError) else "failed"
+                progress.stop(outcome)
+                with suppress(Exception):
+                    await self.flush(progress=progress)
+                raise
+            else:
+                outcome = progress.outcome or "end_turn"
+                progress.stop(outcome)
+                try:
+                    await self.flush(progress=progress)
+                except BaseException as exc:
+                    # The pump still owns queued answers if its waiter is
+                    # cancelled. Its flush marker records completion only once
+                    # those writes have actually finished (or been dropped).
+                    progress.stop(
+                        "cancelled" if isinstance(exc, asyncio.CancelledError) else "failed"
+                    )
+                    raise
+        finally:
+            self._prompt_progress = None
+            current_prompt.reset(token)
+
     def _on_agent_message(self, event: EventBase) -> None:
         if not isinstance(event, AgentMessage):
             return
-        self._enqueue(update_agent_message(text_block(event.content)))
+        update = update_agent_message(text_block(event.content))
+        progress = self._current_progress()
+        if progress is not None and event.content.strip() and progress.answer_queued():
+            self._enqueue(_AnswerUpdate(update, progress))
+        else:
+            self._enqueue(update)
 
     def _on_tool_call(self, event: EventBase) -> None:
+        if isinstance(event, ToolCallEvent) and (progress := self._current_progress()) is not None:
+            progress.on_tool_call(event)
         if (
             not isinstance(event, ToolCallEvent)
             or event.name not in {"execute_python", "python_cell"}
@@ -144,6 +204,8 @@ class ACPEventBridge:
         )
 
     def _on_python_output(self, event: EventBase) -> None:
+        if isinstance(event, PythonOutput) and (progress := self._current_progress()) is not None:
+            progress.on_python_output(event)
         if not isinstance(event, PythonOutput) or event.tool_call_id not in self._open_tools:
             return
         # Core records a cancelled cell with whatever it printed. Keep that
@@ -267,9 +329,19 @@ class ACPEventBridge:
             )
         )
 
+    def _on_llm_start(self, event: EventBase) -> None:
+        if isinstance(event, LLMCallStart) and (progress := self._current_progress()) is not None:
+            progress.on_model_start(event)
+
+    def _on_llm_end(self, event: EventBase) -> None:
+        if isinstance(event, LLMCallEnd) and (progress := self._current_progress()) is not None:
+            progress.on_model_end(event)
+
     def _on_llm_response(self, event: EventBase) -> None:
         if not isinstance(event, LLMResponse):
             return
+        if (progress := self._current_progress()) is not None:
+            progress.model_response()
         usage = event.usage
         if usage is None:
             return
@@ -337,12 +409,16 @@ class ACPEventBridge:
                         await self.client.session_update(self.session_id, item.value)
                     except Exception:
                         logger.debug(
-                            "ACP client rejected best-effort session bootstrap update",
+                            "ACP client rejected best-effort session update",
                             exc_info=True,
                         )
+                    else:
+                        if item.progress is not None:
+                            item.progress.status_sent()
                 elif self._error is None:
                     try:
-                        await self.client.session_update(self.session_id, item)
+                        update = item.value if isinstance(item, _AnswerUpdate) else item
+                        await self.client.session_update(self.session_id, update)
                     except Exception as exc:
                         # Skip the rest of this turn's updates rather than
                         # hammering a transport that just failed; the next
@@ -353,15 +429,38 @@ class ACPEventBridge:
                             self.session_id,
                             exc_info=True,
                         )
+                    else:
+                        if isinstance(item, _AnswerUpdate):
+                            item.progress.answer_sent()
             finally:
                 self._queue.task_done()
 
-    async def flush(self) -> None:
+    async def flush(self, *, progress: PromptProgress | None = None) -> None:
         if self._closed:
+            if progress is not None:
+                progress.complete("failed")
+                raise RuntimeError("ACP event bridge is closed")
             return
         if self._pump_failure is not None:
+            if progress is not None:
+                progress.complete("failed")
             raise self._stopped_error(self._pump_failure)
-        future = asyncio.get_running_loop().create_future()
+        future: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+        if progress is not None:
+
+            def on_flushed(done: asyncio.Future[None]) -> None:
+                # Consume the result even if the prompt stopped awaiting it.
+                # This callback belongs to the FIFO boundary, not its waiter.
+                try:
+                    done.result()
+                except asyncio.CancelledError:
+                    progress.complete("cancelled")
+                except BaseException:
+                    progress.complete("failed")
+                else:
+                    progress.complete(progress.outcome or "end_turn")
+
+            future.add_done_callback(on_flushed)
         self._queue.put_nowait(future)
         # Race the pump: if it dies without draining this marker, waiting on the
         # marker alone would never return.
