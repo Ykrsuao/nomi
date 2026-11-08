@@ -306,13 +306,17 @@ class SandboxedExecutor:
             {
                 k: v
                 for k, v in self._framework_builtins.items()
-                if k not in {"return_result", "_call"}
+                if k not in {"return_result", "_call", "python_cell_state"}
             }
         )
+        call = self._framework_builtins.get("_call")
         return {
             "globals": globals_,
             "builtins": builtins,
-            "call": describe_call(self._framework_builtins.get("_call")),
+            "call": describe_call(call),
+            "cell_state_inputs": (list(call.bound_parameters()) if call is not None else [])
+            if "python_cell_state" in self._framework_builtins
+            else None,
             "restrictions": self._restrictions,
             "python_version": list(sys.version_info[:3]),
             "cwd": self._guest_cwd,

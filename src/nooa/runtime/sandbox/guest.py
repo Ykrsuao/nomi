@@ -60,6 +60,25 @@ def return_function(return_type):
     return return_result
 
 
+def cell_state_function(namespace, input_names):
+    from nooa.strategies.codeact_v2 import CodeActV2
+
+    initial = dict(namespace)
+    inputs = {name: namespace.get(name) for name in input_names}
+
+    def python_cell_state():
+        # The guest combines globals and locals. Omit unchanged module and
+        # framework bindings, while retaining inputs and cell-created values.
+        live = {
+            name: value
+            for name, value in namespace.items()
+            if name in inputs or name not in initial or value is not initial[name]
+        }
+        return CodeActV2._describe_cell_state(inputs, live)
+
+    return python_cell_state
+
+
 def apply_limits(config):
     import resource
 
@@ -118,6 +137,10 @@ def main(*, protocol_fd=None):
         namespace = build_namespace(
             None, builtins, proxy, init["restrictions"], module_globals=init["globals"]
         )
+        if init.get("cell_state_inputs") is not None:
+            namespace["python_cell_state"] = cell_state_function(
+                namespace, init["cell_state_inputs"]
+            )
         if init["cwd"]:
             os.chdir(init["cwd"])
             sys.path.insert(0, init["cwd"])

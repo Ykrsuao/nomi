@@ -723,7 +723,6 @@ async def test_network_guard_inside_cell():
         await ex.aclose()
 
 
-@pytest.mark.skipif(CAPS.landlock_abi < 1, reason="Landlock unavailable")
 async def test_filesystem_guard_inside_cell():
     with tempfile.TemporaryDirectory() as ws, tempfile.TemporaryDirectory() as secret:
         secret_path = os.path.join(secret, "s.txt")
@@ -740,8 +739,9 @@ async def test_filesystem_guard_inside_cell():
         )
         try:
             # Workspace write allowed.
-            ok = await _run(ex, f"open({os.path.join(ws, 'a.txt')!r}, 'w').write('x')", 1)
+            ok = await _run(ex, "open('a.txt', 'w').write('x')", 1)
             assert ok.success, ok.error
+            assert Path(ws, "a.txt").read_text() == "x"
         finally:
             await ex.aclose()
 
@@ -749,7 +749,8 @@ async def test_filesystem_guard_inside_cell():
         try:
             res = await _run(ex2, f"open({secret_path!r}).read()")
             assert not res.success
-            assert "PermissionError" in str(res.error) or "permission" in str(res.error).lower()
+            assert isinstance(res.error.original_error, (PermissionError, FileNotFoundError))
+            assert "TOPSECRET" not in res.stdout
         finally:
             await ex2.aclose()
 

@@ -129,6 +129,13 @@ class CodeActV2(CodeActStrategy):
         """Use one visibility rule for compact context and the complete state builtin."""
         live_locals = None if call is None else (call.execution_locals or call.session_locals)
         inputs = {} if call is None else call.bound_parameters()
+        return CodeActV2._describe_cell_state(inputs, live_locals)
+
+    @staticmethod
+    def _describe_cell_state(
+        inputs: dict[str, Any], live_locals: dict[str, Any] | None
+    ) -> dict[str, dict[str, str]]:
+        """Describe values from either the host call or the guest namespace."""
         input_names = set(inputs)
         local_types = {
             str(name): type((live_locals or {}).get(name, value)).__name__

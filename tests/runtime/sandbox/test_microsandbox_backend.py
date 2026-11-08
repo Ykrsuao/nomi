@@ -15,6 +15,7 @@ from nooa.config import CodeActConfig
 from nooa.runtime.sandbox.config import SandboxConfig
 from nooa.runtime.sandbox.executor import SandboxedExecutor
 from nooa.strategies.codeact import CodeActStrategy
+from nooa.strategies.codeact_v2 import CodeActV2
 from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 pytestmark = pytest.mark.sandbox
@@ -51,7 +52,8 @@ async def test_real_vm_keeps_namespace_and_brokers_state(tmp_path):
         await executor.aclose()
 
 
-async def test_real_codeact_returns_guest_result(tmp_path):
+@pytest.mark.parametrize("strategy_type", [CodeActStrategy, CodeActV2])
+async def test_real_codeact_returns_guest_result(tmp_path, strategy_type):
     def response(code):
         return LLMResponse(
             raw_response=None,
@@ -59,28 +61,38 @@ async def test_real_codeact_returns_guest_result(tmp_path):
             finish_reason="tool_calls",
             tool_calls=[
                 ToolCall(
-                    id=str(len(code)), name="execute_python", arguments=json.dumps({"code": code})
+                    id=str(len(code)),
+                    name="python_cell" if strategy_type is CodeActV2 else "execute_python",
+                    arguments=json.dumps({"code": code}),
                 )
             ],
         )
 
-    llm = FakeLLMClient(
-        scripted_responses=[response("value = 6"), response("return_result(value * 7)")]
-    )
+    final_cell = "return_result(value * 7)"
+    if strategy_type is CodeActV2:
+        final_cell = (
+            "assert python_cell_state()['cell_locals'] == {'seed': 'int', 'value': 'int'}\n"
+            + final_cell
+        )
+    llm = FakeLLMClient(scripted_responses=[response("value = seed"), response(final_cell)])
 
     class Calculator(Agent, llm=llm):
         @strategy(
-            CodeActStrategy(
+            strategy_type(
                 config=CodeActConfig(
                     execution_backend="sandbox", sandbox=SandboxConfig(workspace=str(tmp_path))
                 )
             )
         )
-        async def calculate(self) -> int:
+        async def calculate(self, seed: int) -> int:
             """Compute the answer."""
             ...
 
-    assert await Calculator().calculate() == 42
+    calculator = Calculator()
+    try:
+        assert await calculator.calculate(6) == 42
+    finally:
+        await calculator.aclose()
 
 
 async def test_async_tools_are_lazy_and_host_paths_round_trip(tmp_path):
@@ -114,13 +126,14 @@ async def test_guest_file_and_network_limits(tmp_path):
         Service(),
         SandboxConfig(workspace=str(workspace), allow=(FileRule(path=str(secret)),)),
         cell_timeout=15,
+        framework_builtins={"allowed_file": secret},
     )
     try:
         result = await executor.run_cell(
             "from pathlib import Path\nimport socket\n"
-            "assert Path('/allowed/0').read_text() == 'allowed'\n"
-            "Path('/workspace/result.txt').write_text('saved')\n"
-            "try:\n    Path('/allowed/0').write_text('changed')\nexcept OSError:\n    pass\nelse:\n    raise AssertionError('read-only file was writable')\n"
+            "assert allowed_file.read_text() == 'allowed'\n"
+            "(Path.cwd() / 'result.txt').write_text('saved')\n"
+            "try:\n    allowed_file.write_text('changed')\nexcept OSError:\n    pass\nelse:\n    raise AssertionError('read-only file was writable')\n"
             "try:\n    socket.socket(socket.AF_INET, socket.SOCK_STREAM)\nexcept PermissionError:\n    pass\nelse:\n    raise AssertionError('internet socket was allowed')"
         )
         assert result.error is None, result.error
