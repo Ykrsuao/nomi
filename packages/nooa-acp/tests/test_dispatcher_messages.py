@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Keep explicit messages and typed final replies from sending the same body twice."""
+"""Exercise typed reply delivery and ACP turn boundaries."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from nooa_cli.coding import CodingAgent
 
 from nooa.config.strategy_config import CodeActConfig
 from nooa.errors import GenerationError
-from nooa.interactive import AgentMessage, Done, NeedInput, SummarizationConfig
+from nooa.interactive import AgentMessage, Done, NeedInput, SummarizationConfig, Waiting
 from nooa.skill_registry import SkillRegistry
 from nooa.strategies.codeact import CodeActStrategy
 from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
@@ -157,6 +157,149 @@ async def test_waiting_and_next_handle_can_each_send_the_same_body(tmp_path, exp
         assert isinstance(result, Done)
         assert session.llm.call_count == 2
         assert session.messages() == [text, text]
+
+
+@pytest.mark.parametrize(
+    ("targets", "message", "explicit"),
+    [
+        (["user_messages"], "Stage 1 complete.", False),
+        (["user_messages"], "Stage 1 complete.", True),
+        (["user_messages"], None, True),
+        (["user_messages"], None, False),
+        (["user_messages", " user_messages "], "Stage 1 complete.", False),
+    ],
+    ids=["typed-message", "same-explicit-message", "explicit-only", "silent", "duplicate-targets"],
+)
+async def test_user_waiting_ends_turn_and_accepts_next_prompt(tmp_path, targets, message, explicit):
+    progress = "Stage 1 complete."
+    explanation = "Host-only status: awaiting the next user message"
+    waiting = (
+        (f"self.message({progress!r})\n" if explicit else "")
+        + f"return_result(Waiting(on={targets!r}, message={message!r}, "
+        + f"explanation={explanation!r}))"
+    )
+    final = (
+        "assert notification == {'user_messages': ['continue']}\n"
+        "return_result(Done(message='Stage 2 complete.', explanation='complete'))"
+    )
+    async with _session(tmp_path, waiting, final) as session:
+        result = await session.dispatcher.submit("Complete the first stage")
+
+        assert result == Waiting(on=targets, message=message, explanation=explanation)
+        assert session.dispatcher.active is False
+        assert session.llm.call_count == 1
+        expected = [progress] if message or explicit else []
+        assert session.messages() == expected
+
+        result = await session.dispatcher.submit("continue")
+
+        assert isinstance(result, Done)
+        assert session.dispatcher.active is False
+        assert session.llm.call_count == 2
+        assert session.messages() == [*expected, "Stage 2 complete."]
+
+
+@pytest.mark.parametrize(
+    "targets",
+    [["system_messages"], ["user_messages", "system_messages"]],
+    ids=["background-only", "user-and-background"],
+)
+async def test_background_waiting_keeps_prompt_open_until_notification(
+    tmp_path, monkeypatch, targets
+):
+    waiting = (
+        f"return_result(Waiting(on={targets!r}, message='Waiting for the check.', "
+        "explanation='background check is running'))"
+    )
+    final = (
+        "assert notification == {'system_messages': ['job finished']}\n"
+        "return_result(Done(message='Check complete.', explanation='complete'))"
+    )
+    async with _session(tmp_path, waiting, final) as session:
+        waiting_for_notification = asyncio.Event()
+        original_race = session.agent.queue_manager.race
+        race_calls = 0
+
+        async def race():
+            nonlocal race_calls
+            race_calls += 1
+            if race_calls == 2:
+                # The Waiting result has been handled; the next delivery is
+                # still backed by the real queue and needs a new notification.
+                waiting_for_notification.set()
+            return await original_race()
+
+        monkeypatch.setattr(session.agent.queue_manager, "race", race)
+        prompt = asyncio.create_task(session.dispatcher.submit("Start the background check"))
+        try:
+            await waiting_for_notification.wait()
+            assert prompt.done() is False
+            assert session.dispatcher.active is True
+            assert session.llm.call_count == 1
+            assert session.messages() == ["Waiting for the check."]
+
+            session.agent.queue_manager.get_channel("system_messages").put("job finished")
+            result = await prompt
+
+            assert isinstance(result, Done)
+            assert session.dispatcher.active is False
+            assert session.llm.call_count == 2
+            assert session.messages() == ["Waiting for the check.", "Check complete."]
+        finally:
+            if not prompt.done():
+                prompt.cancel()
+            await asyncio.gather(prompt, return_exceptions=True)
+
+
+@pytest.mark.parametrize("background_running", [False, True], ids=["queued", "running-job"])
+async def test_user_waiting_preserves_background_work_for_next_prompt(tmp_path, background_running):
+    background = (
+        "async def publish_later(agent=self):\n"
+        "    agent._waiting_test_started.set()\n"
+        "    await agent._waiting_test_release.wait()\n"
+        "    return 'job finished'\n"
+        "self.queue_manager.spawn(publish_later(), channel='system_messages')\n"
+        if background_running
+        else "self.queue_manager.get_channel('system_messages').put('job finished')\n"
+    )
+    waiting = background + (
+        "return_result(Waiting(on=['user_messages'], explanation='awaiting the next stage'))"
+    )
+    final = (
+        "assert notification == {\n"
+        "    'user_messages': ['continue'], 'system_messages': ['job finished']\n"
+        "}\n"
+        "return_result(Done(explanation='complete'))"
+    )
+    async with _session(tmp_path, waiting, final) as session:
+        session.agent._waiting_test_started = asyncio.Event()
+        session.agent._waiting_test_release = asyncio.Event()
+        result = await session.dispatcher.submit("Complete the first stage")
+
+        assert isinstance(result, Waiting)
+        assert session.dispatcher.active is False
+        assert session.llm.call_count == 1
+
+        if background_running:
+            await session.agent._waiting_test_started.wait()
+            jobs = session.agent.queue_manager.running_handles()
+            assert len(jobs) == 1
+            delivered = asyncio.Event()
+            session.agent.queue_manager.set_notify_callback(delivered.set)
+            try:
+                session.agent._waiting_test_release.set()
+                await delivered.wait()
+                assert jobs[0].state == "done"
+            finally:
+                session.agent.queue_manager.set_notify_callback(None)
+
+        result = await session.dispatcher.submit("continue")
+
+        assert isinstance(result, Done)
+        assert session.llm.call_count == 2
+        assert all(
+            channel.drain() == [] for channel in session.agent.queue_manager.channels().values()
+        )
 
 
 @pytest.mark.parametrize(

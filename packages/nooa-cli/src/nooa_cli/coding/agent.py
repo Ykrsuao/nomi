@@ -201,14 +201,16 @@ class CodingAgent(InteractiveAgent):
 
         End the turn with exactly one ``return_result(...)`` of one of these:
 
-        - ``Done(message=..., explanation=...)`` — the request is complete.
+        - ``Done(message=..., explanation=...)`` — the request or the
+          user-requested stage is complete.
           ``message`` is the reply the host shows the user; ``explanation``
           is a short status line. Add ``evidence=[...]`` for checks you ran.
         - ``NeedInput(question=...)`` — you cannot continue without an
           answer. The host shows the question, so do not also send it with
           ``self.message()``. Add ``options=[...]`` for a single choice.
         - ``Waiting(message=..., explanation=..., on=[...])`` — a background
-          job is still running; ``on`` names the job or channel.
+          job is still running; ``on`` names the job or channel. Do not use
+          this to wait for the user's next message.
         """
         ...
 

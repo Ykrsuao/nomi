@@ -30,7 +30,7 @@ from nooa_cli.commands import discover_commands
 
 from nooa.context_blocks.events import ToolCallEvent
 from nooa.errors import GenerationError
-from nooa.interactive import Done
+from nooa.interactive import Done, Waiting
 from nooa.skill import Skill, slash_command
 from nooa.slash_dispatch import SlashCommandResult
 from nooa.strategies.codeact import MAX_ITERATIONS_MESSAGE, OUTPUT_TOKENS_EXHAUSTED_MESSAGE
@@ -279,6 +279,74 @@ async def test_adapter_completes_one_session_prompt(tmp_path):
         isinstance(update, AgentMessageChunk) and update.content.text == "ACP response"
         for update in client.updates
     )
+    await adapter.close()
+
+
+async def test_adapter_ends_user_wait_and_accepts_the_next_prompt(tmp_path):
+    """Waiting for the person must release the ACP turn so they can reply."""
+    client = _RecordingClient()
+    adapter = CodingACPAdapter(lambda: FakeLLMClient(strict_exhaustion=True))
+    adapter.on_connect(client)  # type: ignore[arg-type]
+    created = await adapter.new_session(str(tmp_path))
+    runtime = await adapter._sessions.get(created.session_id)
+    session = runtime.value
+    first_prompt = "Pause after this step"
+    next_prompt = "Continue"
+    waiting_message = "Ready for the next step."
+    final_message = "The next step is complete."
+    observed: list[dict[str, list[object]]] = []
+
+    async def handle(notification):
+        observed.append(notification)
+        if len(observed) == 1:
+            session.agent.message(waiting_message)
+            return Waiting(
+                message=waiting_message,
+                explanation="waiting for the person's next message",
+                on=["user_messages"],
+            )
+        return Done(message=final_message, explanation="continued")
+
+    with patch.object(session.agent, "handle", side_effect=handle):
+        first = await asyncio.wait_for(
+            adapter.prompt(created.session_id, [text_block(first_prompt)]), timeout=5
+        )
+
+        assert first.stop_reason == "end_turn"
+        assert runtime.busy is False
+        assert session.dispatcher.active is False
+        assert observed == [{"user_messages": [first_prompt]}]
+        assert [
+            update.content.text
+            for update in client.updates
+            if isinstance(update, AgentMessageChunk)
+        ] == [waiting_message]
+
+        second = await asyncio.wait_for(
+            adapter.prompt(created.session_id, [text_block(next_prompt)]), timeout=5
+        )
+
+    assert second.stop_reason == "end_turn"
+    assert runtime.busy is False
+    assert session.dispatcher.active is False
+    assert observed == [
+        {"user_messages": [first_prompt]},
+        {"user_messages": [next_prompt]},
+    ]
+    assert [
+        update.content.text for update in client.updates if isinstance(update, AgentMessageChunk)
+    ] == [waiting_message, final_message]
+
+    await adapter.close_session(created.session_id)
+    client.updates.clear()
+    await adapter.load_session(str(tmp_path), created.session_id)
+
+    assert [
+        update.content.text for update in client.updates if isinstance(update, AgentMessageChunk)
+    ] == [f"{waiting_message}\n", f"{final_message}\n"]
+    assert [
+        update.content.text for update in client.updates if isinstance(update, UserMessageChunk)
+    ] == [f"{first_prompt}\n", f"{next_prompt}\n"]
     await adapter.close()
 
 

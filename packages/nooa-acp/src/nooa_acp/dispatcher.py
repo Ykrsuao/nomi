@@ -88,8 +88,9 @@ class InteractiveSessionDispatcher:
                     notification.setdefault(name, []).extend(drained)
 
             result = await self._handle(notification)
-            # Keep the prompt open while the turn waits on a job or queue.
-            if isinstance(result, Waiting):
+            # ACP must finish this request before accepting the next user message.
+            # Keep background waits open, including mixed user/background targets.
+            if isinstance(result, Waiting) and set(result.on) != {"user_messages"}:
                 continue
             return result
 
