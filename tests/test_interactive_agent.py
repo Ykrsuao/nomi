@@ -25,6 +25,7 @@ from nooa.interactive import (
     Waiting,
     install_summarizer,
 )
+from nooa.runtime.context_vars import _parent_agent_var
 from nooa.strategies import CodeActStrategy
 from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
@@ -36,6 +37,63 @@ class _Host(InteractiveAgent, llm=FakeLLMClient()):
 @pytest.fixture
 def agent():
     return _Host(llm=FakeLLMClient())
+
+
+@pytest.fixture
+def forbid_implicit_llm(monkeypatch):
+    def unexpected_client(*args, **kwargs):
+        pytest.fail("InteractiveAgent must not create an implicit model client")
+
+    monkeypatch.setattr("nooa.unifiedllm.get_llm_client", unexpected_client)
+
+
+@pytest.mark.parametrize("falsey", [False, True])
+async def test_explicit_llm_overrides_class_without_a_fallback(forbid_implicit_llm, falsey):
+    class ExplicitClient(FakeLLMClient):
+        def __bool__(self):
+            return not falsey
+
+    client = ExplicitClient()
+    agent = _Host(llm=client)
+    try:
+        assert agent.llm is client
+    finally:
+        await agent.aclose()
+
+
+@pytest.mark.parametrize("llm_kwargs", [{}, {"llm": None}], ids=["omitted", "none"])
+async def test_class_llm_is_inherited_without_a_fallback(forbid_implicit_llm, llm_kwargs):
+    class InheritedHost(_Host):
+        pass
+
+    agent = InheritedHost(**llm_kwargs)
+    try:
+        assert agent.llm is _Host._agent_llm
+    finally:
+        await agent.aclose()
+
+
+@pytest.mark.parametrize("llm_kwargs", [{}, {"llm": None}], ids=["omitted", "none"])
+async def test_parent_llm_is_inherited_without_a_fallback(forbid_implicit_llm, llm_kwargs):
+    parent = InteractiveAgent(llm=FakeLLMClient())
+    token = _parent_agent_var.set(parent)
+    try:
+        child = InteractiveAgent(**llm_kwargs)
+        try:
+            assert child.llm is parent.llm
+        finally:
+            await child.aclose()
+    finally:
+        _parent_agent_var.reset(token)
+        await parent.aclose()
+
+
+@pytest.mark.parametrize("llm_kwargs", [{}, {"llm": None}], ids=["omitted", "none"])
+def test_missing_llm_requires_explicit_configuration(forbid_implicit_llm, llm_kwargs):
+    with pytest.raises(ValueError, match="No LLM available for InteractiveAgent") as exc:
+        InteractiveAgent(**llm_kwargs)
+    assert "Pass llm=my_llm" in str(exc.value)
+    assert "Set llm=my_llm in class definition" in str(exc.value)
 
 
 def test_declares_only_the_user_channel(agent):

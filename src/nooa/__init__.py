@@ -83,9 +83,9 @@ from nooa.strategy_validation import (  # noqa: E402
 )
 from nooa.token_counter import char_approximate_token_counter  # noqa: E402
 
-# Names loaded on first use. The strategies import CodeAct, which imports
-# the LLM client and LiteLLM (about two seconds); llm_config_chain touches
-# the llm_config / paths machinery. ``import nooa`` stays cheap, and
+# Names loaded on first use. The strategies import CodeAct and the LLM
+# client types; llm_config_chain touches the llm_config / paths machinery.
+# LiteLLM itself loads only for provider operations. ``import nooa`` stays cheap, and
 # ``from nooa import CodeActStrategy`` still works.
 # NOTE: ReflexionStrategy is experimental; it resolves to the
 # warning-emitting factory in nooa.experimental (below).

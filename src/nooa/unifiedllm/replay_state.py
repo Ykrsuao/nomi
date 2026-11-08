@@ -15,8 +15,6 @@ import os
 from typing import Any, Literal
 from urllib.parse import urlsplit
 
-import litellm
-
 from nooa.llm_types import CacheBoundary, LLMResponse
 from nooa.unifiedllm.cache_policy import reject_boundary_dict, wrap_anthropic_text
 from nooa.unifiedllm.errors import ReasoningReplayError
@@ -114,6 +112,8 @@ def _configured_endpoint(params: dict[str, Any]) -> str | None:
 
 
 def _uses_native_openai_endpoint(api_params: dict[str, Any]) -> bool:
+    from ._litellm import litellm
+
     endpoint = (
         _configured_endpoint(api_params)
         or getattr(litellm, "api_base", None)
@@ -136,6 +136,8 @@ def replay_scope(
     do not change the provider wire format, so gateway or credential changes
     must not silently disable capture or replay.
     """
+    from ._litellm import litellm
+
     configured_endpoint = _configured_endpoint(params)
     try:
         resolved_model, provider, _, _ = litellm.get_llm_provider(

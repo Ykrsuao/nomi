@@ -228,21 +228,6 @@ class SummarizationConfig(BaseModel):
     target_chars: int = 4000
 
 
-# Default model used when an agent class is defined without an explicit LLM
-# (overridden at instantiation).
-DEFAULT_MODEL = "claude-opus-4-8"
-
-with hidden:
-    try:
-        from nooa.unifiedllm import get_llm_client
-
-        _DEFAULT_LLM = get_llm_client(DEFAULT_MODEL)
-    except Exception:
-        from nooa.unifiedllm import FakeLLMClient
-
-        _DEFAULT_LLM = FakeLLMClient()
-
-
 # Summarizer trigger as a fraction of the LLM's context window. This is the
 # ONLY budget managed here — event-pile truncation is enforced at the
 # runtime level (see ActorRuntime._build_messages) and adapts to whichever
@@ -363,11 +348,17 @@ class AgentVars:
 
 
 @hidden
-class InteractiveAgent(Agent, llm=_DEFAULT_LLM):
+class InteractiveAgent(Agent):
     """Base class for agents driven by an outer dispatcher (TUI, harness, ...).
 
     Subclass this and implement ``handle()`` to build a custom interactive
     agent. ``message()`` is provided for free.
+
+    **Model configuration.** Uses ``Agent``'s resolution order: an explicit
+    ``llm`` argument, the class hierarchy, then the runtime parent agent.
+    Omitting ``llm`` or passing ``None`` uses the inherited configuration.
+    There is no default model or simulated-client fallback; missing model
+    configuration raises ``ValueError`` with setup guidance.
 
     **Input queues.** Every ``InteractiveAgent`` has a ``self.user_messages``
     queue (``InputQueue``) that the host feeds when the human types.
@@ -403,7 +394,9 @@ class InteractiveAgent(Agent, llm=_DEFAULT_LLM):
     vars: SnapshotVars
 
     def __init__(self, llm=None, **kwargs):
-        super().__init__(llm=llm or _DEFAULT_LLM, **kwargs)
+        if llm is not None:
+            kwargs["llm"] = llm
+        super().__init__(**kwargs)
         self._render_message = None
         self.vars = SnapshotVars()
         self.queue_manager = QueueManager(event_manager=self.event_manager)

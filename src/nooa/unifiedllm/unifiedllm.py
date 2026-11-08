@@ -13,9 +13,8 @@ from collections.abc import Callable, Coroutine, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
-import litellm
 from pydantic import BaseModel, RootModel
 
 from nooa.llm_types import (
@@ -57,17 +56,8 @@ from .structured_output import (
 
 logger = logging.getLogger(__name__)
 
-# Bedrock/Anthropic reject requests where messages contain tool_call blocks but
-# no tools= param is passed (e.g. PredictStrategy after a CodeAct turn).
-# This flag tells litellm to auto-insert a dummy tool instead of raising.
-litellm.modify_params = True
-
-# litellm defaults to aiohttp for async HTTP (faster than httpx at high RPS).
-# But it never closes sessions on shutdown, producing noisy ResourceWarnings:
-#   "Unclosed client session" / "Unclosed connector"
-# For a TUI agent making sequential calls the perf difference is irrelevant,
-# and we already patch httpx for connection management. Disable aiohttp.
-litellm.disable_aiohttp_transport = True
+if TYPE_CHECKING:
+    import litellm
 
 # Optional integration with nooa debug handler for LLM call tracking
 # This allows the debug signal handler to show pending LLM calls
@@ -220,6 +210,8 @@ class _ClientHttp:
                 get_ssl_configuration,
             )
 
+            from ._litellm import litellm
+
             return {
                 "verify": get_ssl_configuration(),
                 "cert": os.getenv("SSL_CERTIFICATE", getattr(litellm, "ssl_certificate", None)),
@@ -254,6 +246,8 @@ class _ClientHttp:
 
     def _build_completion_wrappers(self, model: str, config: dict[str, Any]) -> None:
         """Pick the right litellm client type for a Chat Completions provider."""
+        from ._litellm import litellm
+
         try:
             _, provider, dynamic_api_key, dynamic_api_base = litellm.get_llm_provider(
                 model,
@@ -1220,6 +1214,8 @@ def _update_token_calibration(
     # Calibration is best-effort: it must NEVER raise out of the (already paid)
     # response path. The whole estimate — primary AND fallback — is guarded.
     try:
+        from ._litellm import litellm
+
         counted = _token_counter_messages(message_list)
         try:
             estimated = litellm.token_counter(model=model, messages=counted)
@@ -1532,6 +1528,8 @@ class UnifiedLLM(ABC):
         Returns:
             Calibrated number of tokens in the text.
         """
+        from ._litellm import litellm
+
         raw = litellm.token_counter(model=self.model, text=text)
         return _token_calibration.calibrate(self.model, raw)
 
@@ -1543,6 +1541,8 @@ class UnifiedLLM(ABC):
             or None if model is not in litellm's registry.
         """
         try:
+            from ._litellm import litellm
+
             return litellm.get_model_info(self.model)
         except Exception:
             return None
@@ -1698,6 +1698,8 @@ class UnifiedLLM(ABC):
 
 def _collect_sync(raw: Any) -> "litellm.ModelResponse":
     """Consume a sync streaming or non-streaming litellm response, returning ModelResponse."""
+    from ._litellm import litellm
+
     if isinstance(raw, litellm.CustomStreamWrapper):
         chunks = list(raw)
         result = litellm.stream_chunk_builder(chunks)
@@ -1724,6 +1726,8 @@ def _with_sdk_retries(client: Any, max_retries: int) -> Any:
 
 async def _collect_async(raw: Any) -> "litellm.ModelResponse":
     """Consume an async streaming or non-streaming litellm response, returning ModelResponse."""
+    from ._litellm import litellm
+
     if isinstance(raw, litellm.CustomStreamWrapper):
         chunks = [chunk async for chunk in raw]  # type: ignore[attr-defined]
         result = litellm.stream_chunk_builder(chunks)
@@ -1990,42 +1994,6 @@ def _extract_think_tags(content: str) -> tuple[str, str | None]:
     return content, None
 
 
-# ============================================================================
-# PATCH: Prevent litellm from stripping cache_control for Anthropic models
-# ============================================================================
-# litellm's OpenAIGPTConfig.remove_cache_control_flag_from_messages_and_tools()
-# unconditionally strips cache_control from all messages and tools before sending.
-# For Anthropic models behind an OpenAI-compatible endpoint (e.g., NVIDIA gateway),
-# we need cache_control to survive so the API can enable prompt caching.
-_cache_control_patch_applied = False
-
-
-def _apply_cache_control_preserve_patch():
-    """Patch litellm to preserve cache_control for Anthropic models."""
-    global _cache_control_patch_applied
-    if _cache_control_patch_applied:
-        return
-
-    try:
-        from litellm.llms.openai.chat.gpt_transformation import OpenAIGPTConfig
-
-        _original_remove = OpenAIGPTConfig.remove_cache_control_flag_from_messages_and_tools
-
-        def _patched_remove(self, model, messages, tools=None):
-            if _is_anthropic_model(model):
-                return messages, tools
-            return _original_remove(self, model, messages, tools)
-
-        OpenAIGPTConfig.remove_cache_control_flag_from_messages_and_tools = _patched_remove
-        _cache_control_patch_applied = True
-        logger.debug("Applied cache_control preserve patch for Anthropic models")
-    except (ImportError, AttributeError) as e:
-        logger.warning(f"Could not apply cache_control preserve patch: {e}")
-
-
-_apply_cache_control_preserve_patch()
-
-
 # The output schema of the native-output call running in this context, read by
 # the request hooks below. A ContextVar keeps concurrent calls separate.
 _NATIVE_OUTPUT_CONTRACT: ContextVar[dict[str, Any] | None] = ContextVar(
@@ -2162,6 +2130,8 @@ class CompletionClient(UnifiedLLM):
         fields = ("thinking", "output_config")
         if not any(key in api_params for key in fields):
             return
+        from ._litellm import litellm
+
         _, provider, _, _ = litellm.get_llm_provider(
             model=effective_model,
             custom_llm_provider=api_params.get("custom_llm_provider"),
@@ -2259,6 +2229,8 @@ class CompletionClient(UnifiedLLM):
         # only decides where it goes. The OpenAI SDK copies extra_body into
         # the request JSON, while LiteLLM's Anthropic Messages handler expects
         # a top-level parameter (it would nest an extra_body value).
+        from ._litellm import litellm
+
         _, provider, _, _ = litellm.get_llm_provider(
             model=effective_model,
             custom_llm_provider=api_params.get("custom_llm_provider"),
@@ -2493,6 +2465,8 @@ class CompletionClient(UnifiedLLM):
         If retry_config.retry_on_empty_content is True, will retry when the model
         returns empty content but has reasoning_content (common with some reasoning models).
         """
+        from ._litellm import litellm
+
         call_config = self._prepare_call_config(kwargs)
         self._validate_request_config("messages", call_config)
         native_output = self._native_output_for_call(kwargs, call_config)
@@ -2614,6 +2588,8 @@ class CompletionClient(UnifiedLLM):
         If retry_config.retry_on_empty_content is True, will retry when the model
         returns empty content but has reasoning_content (common with some reasoning models).
         """
+        from ._litellm import litellm
+
         call_config = self._prepare_call_config(kwargs)
         self._validate_request_config("messages", call_config)
         native_output = self._native_output_for_call(kwargs, call_config)
@@ -2930,6 +2906,8 @@ class ResponsesClient(UnifiedLLM):
         Accepts public message dictionaries and LLMResponse objects. Stored turns
         are projected here; only leading system messages become `instructions`.
         """
+        from ._litellm import litellm
+
         call_config = self._prepare_call_config(kwargs)
         self._validate_request_config("input", call_config)
         effective_model = self._effective_model(call_config)
@@ -3019,6 +2997,8 @@ class ResponsesClient(UnifiedLLM):
         Accepts public message dictionaries and LLMResponse objects. Stored turns
         are projected here; only leading system messages become `instructions`.
         """
+        from ._litellm import litellm
+
         call_config = self._prepare_call_config(kwargs)
         self._validate_request_config("input", call_config)
         effective_model = self._effective_model(call_config)

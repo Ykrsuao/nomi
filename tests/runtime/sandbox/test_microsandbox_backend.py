@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -68,7 +69,7 @@ async def test_real_codeact_returns_guest_result(tmp_path, strategy_type):
             ],
         )
 
-    final_cell = "return_result(value * 7)"
+    final_cell = "assert 'litellm' not in sys.modules\nreturn_result(value * 7)"
     if strategy_type is CodeActV2:
         final_cell = (
             "assert python_cell_state()['cell_locals'] == {'seed': 'int', 'value': 'int'}\n"
@@ -226,7 +227,6 @@ async def test_cpu_and_memory_limits(tmp_path):
 
 
 async def test_local_parent_module_and_imported_numpy_function(tmp_path):
-    import sys
     import types
 
     from numpy import array

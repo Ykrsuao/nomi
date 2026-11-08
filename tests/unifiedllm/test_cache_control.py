@@ -2,6 +2,18 @@
 # SPDX-License-Identifier: Apache-2.0
 """Transport preservation of native cache markers."""
 
+import pytest
+
+from nooa.unifiedllm import CompletionClient
+
+
+@pytest.fixture(autouse=True)
+def configured_transport():
+    # Importing the types no longer starts a provider transport. Exercise the
+    # patch after the public client constructor has configured its SDK.
+    with CompletionClient("openai/gpt-4o-mini", api_key="test-key"):
+        yield
+
 
 class TestCacheControlPreservePatch:
     """Tests for the monkey-patch that prevents litellm from stripping cache_control."""
