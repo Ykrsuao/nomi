@@ -15,8 +15,8 @@ import httpx
 
 downloads = []
 
-def unavailable_catalogue(*args, **kwargs):
-    downloads.append(True)
+def unavailable_catalogue(url, *args, **kwargs):
+    downloads.append(str(url))
     raise httpx.ConnectError('Synthetic unavailable pricing catalogue')
 
 httpx.get = unavailable_catalogue
@@ -35,7 +35,13 @@ async def prepare_model(factory, **options):
 server.serve = prepare_model
 result = CliRunner().invoke(command, ['--model', 'startup-fixture'])
 assert result.exit_code == 0, result.output
-print(json.dumps({'download_attempts': len(downloads), 'prepared_models': len(clients)}))
+print(json.dumps({
+    'download_attempts': len(downloads),
+    'catalogue_download_attempts': sum(
+        'model_prices_and_context_window.json' in url for url in downloads
+    ),
+    'prepared_models': len(clients),
+}))
 """
 
 
@@ -81,4 +87,9 @@ def test_startup_uses_bundled_catalogue_unless_remote_is_requested(tmp_path, rem
     )
     report = json.loads(result.stdout.strip().splitlines()[-1])
     assert report["prepared_models"] == 1
-    assert report["download_attempts"] == (1 if remote_catalogue == "False" else 0)
+    if remote_catalogue == "False":
+        # LiteLLM may retry a failed catalogue request in a background thread.
+        # Explicit opt-in must fetch the table; its retry count is SDK-owned.
+        assert report["catalogue_download_attempts"] >= 1
+    else:
+        assert report["download_attempts"] == 0
