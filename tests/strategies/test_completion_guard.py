@@ -7,9 +7,9 @@ from unittest.mock import patch
 
 import pytest
 
-from nooa.strategies._completion_guard import completion_binding_errors
-from nooa.strategies.codeact_v2 import CodeActV2
-from nooa.strategies.generated_code import GeneratedCodeValidator
+from aster.strategies._completion_guard import completion_binding_errors
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.strategies.generated_code import GeneratedCodeValidator
 
 RESERVED = frozenset(name.removesuffix("()") for name in CodeActV2()._always_available_builtins())
 
@@ -219,7 +219,7 @@ def test_deep_valid_cells_without_rebinding_remain_valid(deep_code, mention):
 @pytest.mark.parametrize("reserved", [RESERVED, frozenset()])
 def test_unrelated_source_skips_ast_parsing(reserved):
     """The source pre-check avoids parsing when no advertised helper can be rebound."""
-    with patch("nooa.strategies._completion_guard.ast.parse", side_effect=AssertionError):
+    with patch("aster.strategies._completion_guard.ast.parse", side_effect=AssertionError):
         assert completion_binding_errors("answer = 42", reserved=reserved) == []
 
 

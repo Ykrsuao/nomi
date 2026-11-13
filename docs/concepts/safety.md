@@ -5,7 +5,7 @@ code, even when the prompt is trusted and the model is strong.
 
 ## The containment boundary is outside the Python process
 
-NOOA validates generated syntax, blocks known-dangerous constructs, and can
+Aster validates generated syntax, blocks known-dangerous constructs, and can
 restrict imports and calls. These controls reduce accidents and protect the
 event loop. They are defense in depth, not a security sandbox.
 
@@ -45,7 +45,7 @@ Hide secrets and internal clients:
 ```python
 from typing import Annotated
 
-from nooa import hidden
+from aster import hidden
 
 with hidden:
     from my_service import Client

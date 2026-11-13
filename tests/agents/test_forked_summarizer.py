@@ -7,12 +7,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from nooa import Agent
-from nooa.agents import TokenBudgetSummarizer
-from nooa.config.summarizer_config import TokenBudgetConfig
-from nooa.events import BeforeTurn, Message
-from nooa.runtime.middleware import LLMCallContext
-from nooa.unifiedllm import CacheBoundary, FakeLLMClient, LLMResponse, LLMUsage, ToolCall
+from aster import Agent
+from aster.agents import TokenBudgetSummarizer
+from aster.config.summarizer_config import TokenBudgetConfig
+from aster.events import BeforeTurn, Message
+from aster.runtime.middleware import LLMCallContext
+from aster.unifiedllm import CacheBoundary, FakeLLMClient, LLMResponse, LLMUsage, ToolCall
 
 
 def test_install_requires_target_event_manager():
@@ -266,7 +266,7 @@ async def test_pending_summary_is_not_replaced_or_queued():
 
 @pytest.mark.asyncio
 async def test_install_does_not_change_parent_request_and_fork_uses_effective_client(monkeypatch):
-    from nooa.runtime.actor import _current_llm_var, _current_method_var
+    from aster.runtime.actor import _current_llm_var, _current_method_var
 
     agent = Agent(llm=FakeLLMClient())
     effective = FakeLLMClient()
@@ -341,7 +341,7 @@ async def test_fork_preparation_failure_does_not_fail_parent(caplog):
 
 @pytest.mark.asyncio
 async def test_fork_borrows_bound_tools_without_copying_their_owner():
-    from nooa.unifiedllm import Tool
+    from aster.unifiedllm import Tool
 
     agent, summarizer, ctx = setup()
     copies = []
@@ -395,7 +395,7 @@ async def test_unusable_fork_has_no_standalone_fallback():
 
 
 def test_model_switch_keeps_fork_subscription():
-    from nooa.interactive import apply_model_limits
+    from aster.interactive import apply_model_limits
 
     agent = Agent(llm=FakeLLMClient())
     summarizer = TokenBudgetSummarizer.install(agent, config=TokenBudgetConfig())
@@ -474,7 +474,7 @@ async def test_filtered_history_warns_once_and_never_uses_standalone(caplog):
 
 @pytest.mark.parametrize("class_filter", [False, True])
 def test_known_history_filter_warns_at_install(class_filter, caplog):
-    from nooa.runtime.event_query import EventQuery
+    from aster.runtime.event_query import EventQuery
 
     query = EventQuery.current_call()
     if class_filter:

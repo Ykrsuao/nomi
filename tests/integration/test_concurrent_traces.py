@@ -14,17 +14,17 @@ from unittest.mock import patch
 
 import pytest
 
-from nooa import Agent
-from nooa.runtime.hooks import get_hooks, set_hooks
-from nooa.tracing import (
+from aster import Agent
+from aster.runtime.hooks import get_hooks, set_hooks
+from aster.tracing import (
     get_session,
     set_session,
 )
-from nooa.tracing._hooks_impl import (
+from aster.tracing._hooks_impl import (
     OpenInferenceHooks,
     _get_active_spans,
 )
-from nooa.unifiedllm import LLMResponse, ToolCall
+from aster.unifiedllm import LLMResponse, ToolCall
 
 
 class FakeLLM:
@@ -103,11 +103,11 @@ def setup_tracing(temp_trace_dir):
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-    from nooa.tracing import NOOAInstrumentor
-    from nooa.tracing._otlp_file_exporter import (
+    from aster.tracing import ASTERInstrumentor
+    from aster.tracing._otlp_file_exporter import (
         OtlpJsonFileExporter,
     )
-    from nooa.tracing._session_processor import SessionSpanProcessor
+    from aster.tracing._session_processor import SessionSpanProcessor
 
     # Create a fresh exporter for this test's temp directory
     exporter = OtlpJsonFileExporter(temp_trace_dir)
@@ -124,8 +124,8 @@ def setup_tracing(temp_trace_dir):
     tracer_provider.add_span_processor(SessionSpanProcessor())
     tracer_provider.add_span_processor(SimpleSpanProcessor(exporter))
 
-    # Instrument nooa - this sets hooks
-    NOOAInstrumentor().instrument(tracer_provider=tracer_provider)
+    # Instrument aster - this sets hooks
+    ASTERInstrumentor().instrument(tracer_provider=tracer_provider)
 
     # Return hooks for tests that need to propagate to child tasks
     hooks = get_hooks()

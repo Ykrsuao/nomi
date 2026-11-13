@@ -7,8 +7,8 @@ import json
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
-from nooa.unifiedllm.connect._records import text_baseline_passed
+from aster.unifiedllm import connect
+from aster.unifiedllm.connect._records import text_baseline_passed
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -175,9 +175,9 @@ async def test_selected_cap_media_budget_and_actual_saved_config(monkeypatch, st
 async def test_responses_pdf_sdk_projects_only_supported_file_keys(monkeypatch):
     import base64
 
-    from nooa.media import File
-    from nooa.runtime.media_capture import media_to_content_block
-    from nooa.unifiedllm import ResponsesClient
+    from aster.media import File
+    from aster.runtime.media_capture import media_to_content_block
+    from aster.unifiedllm import ResponsesClient
 
     payload = b"%PDF-1.4 original bytes"
     block = media_to_content_block(File.from_bytes(payload, media_type="application/pdf"))
@@ -205,7 +205,7 @@ async def test_responses_pdf_sdk_projects_only_supported_file_keys(monkeypatch):
     finally:
         await client.aclose()
     assert len(sent) == 1 and block["file"]["format"] == "application/pdf"
-    from nooa.unifiedllm.media_inputs import filter_media_messages
+    from aster.unifiedllm.media_inputs import filter_media_messages
 
     generic = media_to_content_block(File.from_bytes(b"not a PDF", media_type="application/msword"))
     filtered = filter_media_messages([{"role": "user", "content": [generic]}], ("pdf",))

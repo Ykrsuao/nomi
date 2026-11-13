@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """quiet_trace_target() hides only the "OTel tracing enabled" banner."""
 
-import nooa.tracing as tracing
+import aster.tracing as tracing
 
 
 class _Exporter:

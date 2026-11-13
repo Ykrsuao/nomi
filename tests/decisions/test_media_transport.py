@@ -11,15 +11,15 @@ import httpx
 import pytest
 from pydantic import BaseModel, ConfigDict, field_serializer
 
-from nooa import Agent, Context, DecideStrategy, EventQuery, strategy
-from nooa.context_blocks import ScopedContext
-from nooa.decisions import DecisionClient, DecisionModel, DecisionRequest
-from nooa.decisions.client import BooleanQuestion
-from nooa.decisions.media import collect_decision_attachments
-from nooa.decisions.schema import compile_decision_schema
-from nooa.events import Task
-from nooa.media import Audio, File, Image, Media, Video
-from nooa.unifiedllm import FakeLLMClient, RetryConfig
+from aster import Agent, Context, DecideStrategy, EventQuery, strategy
+from aster.context_blocks import ScopedContext
+from aster.decisions import DecisionClient, DecisionModel, DecisionRequest
+from aster.decisions.client import BooleanQuestion
+from aster.decisions.media import collect_decision_attachments
+from aster.decisions.schema import compile_decision_schema
+from aster.events import Task
+from aster.media import Audio, File, Image, Media, Video
+from aster.unifiedllm import FakeLLMClient, RetryConfig
 
 PNG = b"\x89PNG\r\n\x1a\nfixture"
 JPEG = b"\xff\xd8\xfffixture"
@@ -28,7 +28,7 @@ ENDPOINT = "https://decision.example/decisions"
 
 @pytest.fixture(autouse=True)
 def disable_auto_network_tracing(monkeypatch):
-    monkeypatch.setattr("nooa.agent._auto_tracing_attempted", True)
+    monkeypatch.setattr("aster.agent._auto_tracing_attempted", True)
 
 
 def image_request(image=None):
@@ -199,7 +199,7 @@ def test_nested_media_never_textualized_by_model_serializer():
 
 
 def test_bounded_images_and_dedup(monkeypatch):
-    from nooa.decisions import media
+    from aster.decisions import media
 
     image = Image.from_bytes(PNG, media_type="image/png")
     references, attachments = collect_decision_attachments({"a": image, "b": image}, ["image"])
@@ -412,9 +412,9 @@ async def test_nested_sets_reject_before_model_serializer_and_http(permissions, 
 async def test_actual_decide_selected_event_rejects_visible_native_media_before_serializer(
     permissions, monkeypatch
 ):
-    from nooa.events import EventBase
+    from aster.events import EventBase
 
-    monkeypatch.setattr("nooa.agent._auto_tracing_attempted", True)
+    monkeypatch.setattr("aster.agent._auto_tracing_attempted", True)
 
     class PhotoEvent(EventBase):
         model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -451,9 +451,9 @@ async def test_actual_decide_selected_event_rejects_visible_native_media_before_
 async def test_hidden_event_native_media_not_inspected_or_sent(monkeypatch):
     from pydantic import Field
 
-    from nooa.events import EventBase
+    from aster.events import EventBase
 
-    monkeypatch.setattr("nooa.agent._auto_tracing_attempted", True)
+    monkeypatch.setattr("aster.agent._auto_tracing_attempted", True)
 
     class HiddenPhotoEvent(EventBase):
         model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -511,9 +511,9 @@ async def test_direct_request_must_preserve_exact_named_association(state):
 @pytest.mark.parametrize("permissions", [("audio",), ("image", "audio", "video", "pdf")])
 @pytest.mark.asyncio
 async def test_text_only_from_llm_keeps_multimodal_chat_routes_working(permissions, monkeypatch):
-    from nooa.unifiedllm import AssistantText, LLMResponse
+    from aster.unifiedllm import AssistantText, LLMResponse
 
-    monkeypatch.setattr("nooa.agent._auto_tracing_attempted", True)
+    monkeypatch.setattr("aster.agent._auto_tracing_attempted", True)
     llm = FakeLLMClient(
         [LLMResponse(parts=(AssistantText(text='{"result": true}'),), finish_reason="stop")]
     )
@@ -608,9 +608,9 @@ async def test_openai_remote_url_forwarded_without_local_fetching():
 async def test_actual_strategy_errors_preflight_without_any_http(
     value, permissions, limit, match, monkeypatch
 ):
-    monkeypatch.setattr("nooa.agent._auto_tracing_attempted", True)
+    monkeypatch.setattr("aster.agent._auto_tracing_attempted", True)
     if limit is not None:
-        monkeypatch.setattr("nooa.decisions.media.MAX_DECISION_IMAGE_BYTES", limit)
+        monkeypatch.setattr("aster.decisions.media.MAX_DECISION_IMAGE_BYTES", limit)
     sent = []
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(lambda r: sent.append(r) or response("openai"))

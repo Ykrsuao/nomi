@@ -7,8 +7,8 @@ import json  # noqa: F401
 # agentdoc: hide
 import os  # noqa: F401
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 
 class AgentHideCommentBefore(Agent, llm=FakeLLMClient()):

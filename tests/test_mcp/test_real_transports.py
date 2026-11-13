@@ -20,7 +20,7 @@ import pytest
 
 pytest.importorskip("mcp")
 
-MCPManager = import_module("nooa.mcp").MCPManager
+MCPManager = import_module("aster.mcp").MCPManager
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

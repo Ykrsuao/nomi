@@ -11,6 +11,10 @@
 AGENT_REPO="${AGENT_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 export AGENT_REPO
 
+# Full Aster checkout used as the Docker build context.
+export ASTER_SOURCE_ROOT="${ASTER_SOURCE_ROOT:-$(cd "$AGENT_REPO/../.." && pwd)}"
+export ASTER_VERSION="${ASTER_VERSION:-0.0.0+checkout}"
+
 # CyberGym benchmark checkout + data (created by scripts/setup.sh).
 export CYBERGYM_REPO="${CYBERGYM_REPO:-$AGENT_REPO/cybergym_repo}"
 export CYBERGYM_DATA_DIR="${CYBERGYM_DATA_DIR:-$CYBERGYM_REPO/cybergym_data/data}"
@@ -37,10 +41,10 @@ fi
 # Model + agent image.
 export MODEL="${MODEL:-glm-5.2}"
 export REASONING_EFFORT="${REASONING_EFFORT:-xhigh}"
-export RUNNER_IMAGE="${RUNNER_IMAGE:-nooa/nooa-cybergym:latest}"
+export RUNNER_IMAGE="${RUNNER_IMAGE:-aster/aster-cybergym:latest}"
 
 # Hard per-task wall-clock limit (seconds). The container is killed at this cap.
-# Keep it above the agent's soft timeout (NOOA_CYBERGYM_SOFT_TIMEOUT_SEC, default
+# Keep it above the agent's soft timeout (ASTER_CYBERGYM_SOFT_TIMEOUT_SEC, default
 # 13920s / 3h52m) so the agent can return its best PoC gracefully before the kill.
 export TIMEOUT="${TIMEOUT:-14400}"  # 4h
 

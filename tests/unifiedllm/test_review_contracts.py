@@ -10,13 +10,13 @@ import pytest
 from litellm import ModelResponse
 from pydantic import BaseModel
 
-from nooa.context_blocks.events import EventBase
-from nooa.llm_types import AssistantText, LLMResponse, ToolCall, assistant_message
-from nooa.unifiedllm import CompletionClient, ResponsesClient
-from nooa.unifiedllm.chat_parts import capture_chat_parts, project_chat_turn
-from nooa.unifiedllm.errors import ReasoningReplayError
-from nooa.unifiedllm.replay_state import prepare_chat_messages
-from nooa.unifiedllm.response_parts import capture_parts
+from aster.context_blocks.events import EventBase
+from aster.llm_types import AssistantText, LLMResponse, ToolCall, assistant_message
+from aster.unifiedllm import CompletionClient, ResponsesClient
+from aster.unifiedllm.chat_parts import capture_chat_parts, project_chat_turn
+from aster.unifiedllm.errors import ReasoningReplayError
+from aster.unifiedllm.replay_state import prepare_chat_messages
+from aster.unifiedllm.response_parts import capture_parts
 
 
 @pytest.mark.parametrize("scope", [None, "chat:openai:gateway", "chat:gemini:model"])
@@ -180,7 +180,7 @@ def test_public_projection_is_built_once_and_edits_invalidate_only_the_copy():
             ToolCall(id="c", name="run", arguments="{}"),
         )
     )
-    with patch("nooa.llm_types.assistant_message", wraps=assistant_message) as build:
+    with patch("aster.llm_types.assistant_message", wraps=assistant_message) as build:
         assert turn["role"] == "assistant"
         assert turn.get("content") == "answer"
         assert "tool_calls" in turn

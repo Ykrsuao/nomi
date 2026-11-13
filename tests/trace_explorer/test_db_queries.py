@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from nooa.viewer import otlp_store
+from aster.viewer import otlp_store
 
 
 @pytest.fixture

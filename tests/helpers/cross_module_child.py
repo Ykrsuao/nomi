@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-from nooa import strategy
-from nooa.strategies import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import strategy
+from aster.strategies import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient
 from tests.helpers.cross_module_parent import ParentAgent
 
 # Child-module symbols.

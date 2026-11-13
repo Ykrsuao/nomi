@@ -7,9 +7,9 @@ from typing import ClassVar
 
 import pytest
 
-from nooa.context_blocks.events import AssistantEvent, EventBase, UserEvent
-from nooa.context_blocks.models import Role
-from nooa.events import BeforeTurn, Notification
+from aster.context_blocks.events import AssistantEvent, EventBase, UserEvent
+from aster.context_blocks.models import Role
+from aster.events import BeforeTurn, Notification
 
 
 @pytest.mark.parametrize(

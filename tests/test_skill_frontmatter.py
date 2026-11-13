@@ -4,7 +4,7 @@
 
 import pytest
 
-from nooa.skill import _find_skill_md, _parse_frontmatter, _read_skill_properties
+from aster.skill import _find_skill_md, _parse_frontmatter, _read_skill_properties
 
 # ---------------------------------------------------------------------------
 # _find_skill_md

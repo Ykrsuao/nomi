@@ -35,7 +35,7 @@ def _make_otlp_spans():
 def app():
     from fastapi import FastAPI
 
-    from nooa.viewer.explorer_routes import router
+    from aster.viewer.explorer_routes import router
 
     test_app = FastAPI()
     test_app.include_router(router)
@@ -45,7 +45,7 @@ def app():
 @pytest.fixture(autouse=True)
 def clear_cache():
     """Clear the explorer cache before each test."""
-    from nooa.viewer.explorer_routes import clear_explorer_cache
+    from aster.viewer.explorer_routes import clear_explorer_cache
 
     clear_explorer_cache()
     yield
@@ -54,7 +54,7 @@ def clear_cache():
 
 @pytest.fixture
 def mock_store():
-    with patch("nooa.viewer.explorer_routes.otlp_store") as m:
+    with patch("aster.viewer.explorer_routes.otlp_store") as m:
         m.session_exists.return_value = True
         m.get_session_spans.return_value = _make_otlp_spans()
         yield m
@@ -85,7 +85,7 @@ class TestExplorerCache:
     @pytest.mark.asyncio
     async def test_cache_has_max_size(self, app, mock_store):
         """Cache should evict oldest entries when full."""
-        from nooa.viewer.explorer_routes import _explorer_cache
+        from aster.viewer.explorer_routes import _explorer_cache
 
         # Fill cache beyond max size, verify it doesn't grow unbounded
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -97,13 +97,13 @@ class TestExplorerCache:
     @pytest.mark.asyncio
     async def test_cache_clear(self, app, mock_store):
         """Cache should be clearable."""
-        from nooa.viewer.explorer_routes import clear_explorer_cache
+        from aster.viewer.explorer_routes import clear_explorer_cache
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             await client.get("/api/explorer/overview", params={"session_id": "sess-1"})
 
         clear_explorer_cache()
 
-        from nooa.viewer.explorer_routes import _explorer_cache
+        from aster.viewer.explorer_routes import _explorer_cache
 
         assert len(_explorer_cache) == 0

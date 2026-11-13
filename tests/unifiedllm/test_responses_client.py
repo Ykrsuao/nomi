@@ -14,7 +14,7 @@ import os
 import pytest
 from pydantic import BaseModel
 
-from nooa.unifiedllm import LLMResponse, ResponsesClient, create_tool_from_callable
+from aster.unifiedllm import LLMResponse, ResponsesClient, create_tool_from_callable
 
 # Mark all tests in this module as integration tests (skipped by default in CI)
 pytestmark = pytest.mark.integration

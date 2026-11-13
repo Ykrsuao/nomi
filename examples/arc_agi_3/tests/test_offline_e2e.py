@@ -4,7 +4,7 @@
 
 Drives ``run_solver.py`` for a short offline run and asserts the agent + harness
 IPC loop produced real progress (states, actions, and a gameplay summary). This
-exercises the whole stack — the nooa agent, the launcher, the file-IPC harness,
+exercises the whole stack — the aster agent, the launcher, the file-IPC harness,
 and the vendored ``arc_agi_3`` wrapper over the public SDK.
 
 Marked ``integration`` (skipped by default) because it needs:
@@ -117,7 +117,7 @@ def test_offline_run_makes_progress(tmp_path: Path) -> None:
     assert _traces_contain(run, "ls20") == 0, "real game name leaked into llm.input_messages"
 
     # --- regression: memory is copied back from the neutral dir to results.
-    assert (run / "team_nemo" / "shared" / "memory.sqlite").exists(), (
+    assert (run / "team_aster" / "shared" / "memory.sqlite").exists(), (
         "memory.sqlite was not copied back to the results dir"
     )
 

@@ -5,13 +5,14 @@
 The expensive parts of `scripts/make_release.py` (evals, builds, `gh`) cannot
 run in CI, but the part that decides whether a release is safe — parsing eval
 output and classifying the diff — is pure and worth pinning down. These tests
-feed synthetic `.noo-eval.jsonl` through the real parser and comparator.
+feed synthetic `.aster-eval.jsonl` through the real parser and comparator.
 """
 
 from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -35,11 +36,41 @@ def mr():
     # Registered before exec: @dataclass resolves annotations via sys.modules.
     sys.modules["_make_release"] = module
     spec.loader.exec_module(module)
+    module.GITHUB_REPO = "test-owner/aster"
     return module
 
 
+@pytest.mark.parametrize("repository", ["", "upstream", "https://github.com/owner/repo", "a/b/c"])
+def test_release_requires_explicit_repository_before_external_commands(mr, monkeypatch, repository):
+    monkeypatch.setattr(mr, "GITHUB_REPO", repository)
+
+    def unexpected_command(*args, **kwargs):
+        pytest.fail("A release command ran without an explicit repository")
+
+    monkeypatch.setattr(mr, "run", unexpected_command)
+    with pytest.raises(mr.ReleaseError, match="ASTER_RELEASE_REPOSITORY"):
+        mr.release_for_tag("v1.2.3")
+    with pytest.raises(mr.ReleaseError, match="ASTER_RELEASE_REPOSITORY"):
+        mr.generated_change_notes("v1.2.3", "a" * 40, "v1.2.2")
+
+
+@pytest.mark.parametrize("newest_suffix", [".aster-eval.jsonl", ".noo-eval.jsonl"])
+def test_newest_eval_accepts_current_and_archived_filenames(mr, tmp_path, newest_suffix):
+    nested = tmp_path / "nested"
+    nested.mkdir()
+    expected = None
+    for suffix in (".aster-eval.jsonl", ".noo-eval.jsonl"):
+        path = nested / f"result{suffix}"
+        path.write_text("{}\n", encoding="utf-8")
+        timestamp = 2000 if suffix == newest_suffix else 1000
+        os.utime(path, (timestamp, timestamp))
+        if suffix == newest_suffix:
+            expected = path
+    assert mr.newest_eval(tmp_path) == expected
+
+
 def write_eval(path: Path, rows: Sequence[Row]) -> Path:
-    """Write a .noo-eval.jsonl from (model, test, case, tier, passed, error_type)."""
+    """Write a .aster-eval.jsonl from (model, test, case, tier, passed, error_type)."""
     with open(path, "w") as fh:
         fh.write(json.dumps({"_type": "metadata", "metadata": {}}) + "\n")
         for model, test, case, tier, passed, error in rows:
@@ -495,11 +526,11 @@ def test_release_lookup_rejects_string_draft_state(mr, monkeypatch):
 @pytest.mark.parametrize(
     "api_url",
     [
-        "https://api.github.com/repos/NVIDIA-NeMo/labs-OO-Agents/releases/0",
-        "https://api.github.com/repos/NVIDIA-NeMo/labs-OO-Agents/releases/not-an-id",
+        "https://api.github.com/repos/test-owner/aster/releases/0",
+        "https://api.github.com/repos/test-owner/aster/releases/not-an-id",
         "https://api.github.com/repos/other/repo/releases/7",
-        "https://example.com/repos/NVIDIA-NeMo/labs-OO-Agents/releases/7",
-        f"https://api.github.com/repos/NVIDIA-NeMo/labs-OO-Agents/releases/1{'0' * 5000}",
+        "https://example.com/repos/test-owner/aster/releases/7",
+        f"https://api.github.com/repos/test-owner/aster/releases/1{'0' * 5000}",
     ],
 )
 def test_release_lookup_rejects_invalid_api_url(mr, monkeypatch, api_url):
@@ -547,7 +578,7 @@ def test_strict_arm_uses_explicit_wheel_without_env_or_ambient_extras(mr, tmp_pa
     tree = tmp_path / "tree"
     tree.mkdir()
     (tree / "uv.lock").write_text("locked")
-    wheel = tmp_path / "nemo_oo_agents_nvidia-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "aster_nvidia-0.1.0-py3-none-any.whl"
     wheel.write_bytes(b"wheel")
     output_root = tmp_path / "evidence"
     commands = []
@@ -564,7 +595,7 @@ def test_strict_arm_uses_explicit_wheel_without_env_or_ambient_extras(mr, tmp_pa
             result_dir = output_root / "candidate" / "run"
             result_dir.mkdir(parents=True)
             write_eval(
-                result_dir / "result.noo-eval.jsonl",
+                result_dir / "result.aster-eval.jsonl",
                 [("model-a", "test-a", "case-a", "stable", True, None)],
             )
         return subprocess.CompletedProcess(cmd, 0, "", "")
@@ -599,7 +630,7 @@ def test_strict_arm_uses_explicit_wheel_without_env_or_ambient_extras(mr, tmp_pa
 
 
 def test_strict_capability_installs_same_wheel_in_both_fresh_arms(mr, tmp_path, monkeypatch):
-    wheel = tmp_path / "nemo_oo_agents_nvidia-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "aster_nvidia-0.1.0-py3-none-any.whl"
     wheel.write_bytes(b"wheel")
     calls = []
 
@@ -715,7 +746,7 @@ def test_public_notes_put_github_changes_before_capability_report(mr):
     )
 
     assert notes == f"{changes}\n\n---\n\n{capability}\n"
-    assert "Unpublished NOOA release candidate" not in notes
+    assert "Unpublished ASTER release candidate" not in notes
     assert "Reviewer checklist" not in notes
 
 
@@ -729,7 +760,7 @@ def test_public_notes_have_a_fallback_when_github_returns_no_changes(mr):
 
 
 def _ci_args(mr, tmp_path):
-    wheel = tmp_path / "nemo_oo_agents_nvidia-0.1.0-py3-none-any.whl"
+    wheel = tmp_path / "aster_nvidia-0.1.0-py3-none-any.whl"
     wheel.write_bytes(b"wheel")
     return mr._parser().parse_args(
         [
@@ -928,7 +959,7 @@ def test_fresh_wheel_quickstarts_isolate_customer_install_and_record_failures(
     mr, tmp_path, monkeypatch, failure
 ):
     """Verify environment isolation and durable evidence across smoke failures."""
-    wheel = tmp_path / "nooa-1.2.3-py3-none-any.whl"
+    wheel = tmp_path / "aster-1.2.3-py3-none-any.whl"
     wheel.touch()
     manifest = mr.ReleaseManifest(tmp_path / "evidence" / "release-manifest.json", {})
     monkeypatch.setenv("NVIDIA_INTERNAL_API_KEY", "test-inference-key")
@@ -937,7 +968,7 @@ def test_fresh_wheel_quickstarts_isolate_customer_install_and_record_failures(
     monkeypatch.setenv("OPENAI_API_KEY", "different-provider-must-not-win")
     monkeypatch.setenv("PYTHONPATH", str(REPO / "src"))
     monkeypatch.setenv("UV_CONSTRAINT", "ambient-constraints.txt")
-    monkeypatch.setenv("NEMO_OO_LLM_CONFIG", "ambient-registry.yaml")
+    monkeypatch.setenv("ASTER_LLM_CONFIG", "ambient-registry.yaml")
     calls = []
 
     def fake_run(cmd, **kwargs):
@@ -953,7 +984,7 @@ def test_fresh_wheel_quickstarts_isolate_customer_install_and_record_failures(
             "OPENAI_API_KEY",
             "PYTHONPATH",
             "UV_CONSTRAINT",
-            "NEMO_OO_LLM_CONFIG",
+            "ASTER_LLM_CONFIG",
         ):
             assert name not in env
         assert env["PYTHON_DOTENV_DISABLED"] == "1"
@@ -961,7 +992,7 @@ def test_fresh_wheel_quickstarts_isolate_customer_install_and_record_failures(
             return subprocess.CompletedProcess(cmd, 1, "", "resolver failed")
         if "-c" in cmd:
             Path(cmd[-1]).write_text(
-                json.dumps({"packages": {"nooa": "1.2.3", "example-dependency": "4.5.6"}})
+                json.dumps({"packages": {"aster": "1.2.3", "example-dependency": "4.5.6"}})
             )
             return subprocess.CompletedProcess(
                 cmd,
@@ -1016,7 +1047,7 @@ def test_fresh_wheel_quickstarts_require_credentials(mr, tmp_path, monkeypatch):
     monkeypatch.delenv("NVIDIA_INFERENCE_API_KEY", raising=False)
     manifest = mr.ReleaseManifest(tmp_path / "release-manifest.json", {})
     with pytest.raises(mr.ReleaseError, match="require NVIDIA"):
-        mr.fresh_wheel_quickstarts(tmp_path / "nooa.whl", manifest)
+        mr.fresh_wheel_quickstarts(tmp_path / "aster.whl", manifest)
     assert manifest.data["quickstart_smoke"]["outcome"] == "failed"
 
 
@@ -1067,7 +1098,7 @@ def test_built_core_wheel_must_pass_quickstarts_before_combined_smoke(
 
     def quickstarts(wheel, received_manifest):
         """Check that the core-only gate runs before combined-package installation."""
-        assert wheel.name == "nooa-1.2.3-py3-none-any.whl"
+        assert wheel.name == "aster-1.2.3-py3-none-any.whl"
         assert received_manifest is manifest
         assert not any("install" in cmd for cmd in calls)
         calls.append(["quickstarts"])

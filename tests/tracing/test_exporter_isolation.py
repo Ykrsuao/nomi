@@ -10,7 +10,7 @@ import asyncio
 
 import pytest
 
-from nooa.tracing._session import get_session, set_session
+from aster.tracing._session import get_session, set_session
 
 
 class TestSessionIsolation:
@@ -80,7 +80,7 @@ class TestSessionIsolation:
 
 class TestSessionScope:
     def test_restores_nested_scopes_after_exception(self):
-        from nooa.tracing._session import session_scope
+        from aster.tracing._session import session_scope
 
         set_session("original")
         try:
@@ -96,7 +96,7 @@ class TestSessionScope:
             set_session(None)
 
     def test_none_temporarily_clears_session(self):
-        from nooa.tracing._session import session_scope
+        from aster.tracing._session import session_scope
 
         set_session("original")
         try:
@@ -108,7 +108,7 @@ class TestSessionScope:
 
     @pytest.mark.asyncio
     async def test_isolated_between_concurrent_tasks(self):
-        from nooa.tracing._session import session_scope
+        from aster.tracing._session import session_scope
 
         ready = asyncio.Event()
         entered = 0

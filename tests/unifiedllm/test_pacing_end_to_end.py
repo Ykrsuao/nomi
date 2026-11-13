@@ -16,18 +16,25 @@ from typing import Any
 import litellm
 import pytest
 
-from nooa.unifiedllm import (
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.unifiedllm import (
     AdmissionBroker,
+    AdmissionCallCapError,
     AdmissionControl,
     AdmissionControlConfig,
+    AdmissionQueueFullError,
     AdmissionTimeoutError,
+    AdmissionUnavailableError,
     BrokerAdmissionConfig,
     CompletionClient,
     ResponsesClient,
     RetryConfig,
     UnifiedLLM,
 )
-from nooa.unifiedllm import admission as admission_module
+from aster.unifiedllm import admission as admission_module
 
 _NO_RETRY = RetryConfig(max_retries=0, rate_limit_extra_retries=0)
 _FAST_RETRY = RetryConfig(
@@ -188,7 +195,7 @@ async def _gateway(
 
 
 def _base_client(api: str, endpoint: str, retry: RetryConfig = _NO_RETRY) -> UnifiedLLM:
-    """Disable hidden SDK retries so wire requests represent NOOA provider attempts."""
+    """Disable hidden SDK retries so wire requests represent ASTER provider attempts."""
     client_type = CompletionClient if api == "chat" else ResponsesClient
     return client_type(
         "openai/gpt-4o-mini",
@@ -215,6 +222,81 @@ def _local_counts(client: AdmissionControl) -> tuple[int, int]:
     return group.active, group.queued
 
 
+@pytest.mark.parametrize("strategy_type", [CodeActStrategy, CodeActV2])
+@pytest.mark.parametrize("api", ["chat", "responses"])
+@pytest.mark.parametrize("provider_retries", [0, 3])
+@pytest.mark.parametrize(
+    "error_type", [AdmissionCallCapError, AdmissionTimeoutError, AdmissionUnavailableError]
+)
+async def test_codeact_admission_rejection_sends_no_http_and_client_recovers(
+    strategy_type, api, provider_retries, error_type
+):
+    """Strategy retries must not turn one policy decision into repeated acquisitions."""
+    failure = error_type("synthetic application admission rejection")
+    attempts = 0
+    delegate = admission_module.AdmissionPolicy(
+        max_in_flight=1,
+        concurrency_group=f"terminal-{id(failure)}",
+        queue_timeout=None,
+        api_base=None,
+    )
+
+    class RejectOnce:
+        """Reject once, then reuse actual local admission for the recovery request."""
+
+        async def acquire(self, observer):
+            """Count real attempts without mocking either provider transport."""
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                raise failure
+            return await delegate.acquire(observer)
+
+    async def respond(_request):
+        """Any admitted recovery request receives a valid protocol response."""
+        return 200, {}
+
+    async with _gateway(respond) as gateway:
+        llm = AdmissionControl(
+            _base_client(
+                api,
+                gateway.api_base,
+                RetryConfig(
+                    max_retries=provider_retries,
+                    rate_limit_extra_retries=0,
+                ),
+            ),
+            AdmissionControlConfig(controller=RejectOnce()),
+        )
+
+        class PolicyAgent(Agent):
+            """Reach the ordinary strategy and transport stack under application policy."""
+
+            @strategy(strategy_type(config=CodeActConfig(prefill=None, max_retries=3)))
+            async def answer(self) -> int:
+                """Generate an integer if the controller admits this request."""
+                ...
+
+        agent = PolicyAgent(llm=llm)
+        try:
+            with pytest.raises(error_type) as caught:
+                await agent.answer()
+            assert caught.value is failure
+            assert attempts == 1
+            assert gateway.requests == []
+            assert agent.events.query(type="Error") == []
+            # The same wrapper/controller is still usable; no reset or restart.
+            assert (await llm.acall(_MESSAGES)).content == "ok"
+            assert attempts == 2
+            assert len(gateway.requests) == 1
+            assert gateway.requests[0].path == (
+                "/v1/chat/completions" if api == "chat" else "/v1/responses"
+            )
+        finally:
+            await agent.aclose()
+            await llm.aclose()
+
+
 @asynccontextmanager
 async def _controlled(
     api: str,
@@ -225,6 +307,7 @@ async def _controlled(
     retry: RetryConfig = _NO_RETRY,
     rate: float | None = None,
     max_cooldown: float | None = None,
+    max_pending: int | None = None,
 ) -> AsyncIterator[tuple[AdmissionControl, AdmissionBroker | None]]:
     """Exercise the same transport contract for local and broker-owned policies."""
     base = _base_client(api, endpoint, retry)
@@ -237,6 +320,7 @@ async def _controlled(
                 group="wire-test",
                 requests_per_second=rate,
                 max_cooldown=max_cooldown,
+                max_pending=max_pending,
             ).start()
             controller = broker.controller(queue_timeout=timeout)
             config = AdmissionControlConfig(controller=controller)
@@ -247,6 +331,7 @@ async def _controlled(
                 queue_timeout=timeout,
                 requests_per_second=rate,
                 max_cooldown=max_cooldown,
+                max_pending=max_pending,
             )
         yield AdmissionControl(base, config), broker
     finally:
@@ -255,6 +340,72 @@ async def _controlled(
             controller.close()
         if broker is not None:
             broker.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("backend", ["local", "broker"])
+@pytest.mark.parametrize("api", ["chat", "responses"])
+@pytest.mark.parametrize("retries", [0, 2])
+async def test_bounded_queue_rejects_before_http_and_recovers(
+    backend: str,
+    api: str,
+    retries: int,
+) -> None:
+    """Overflow never reaches the wire; cancellation returns a pending position."""
+    release, started = asyncio.Event(), asyncio.Event()
+
+    async def respond(_request: _Request) -> tuple[int, dict[str, str]]:
+        """Hold the first real request until queue and overflow are observed."""
+        started.set()
+        await release.wait()
+        return 200, {}
+
+    retry = RetryConfig(max_retries=retries, rate_limit_extra_retries=0)
+    async with _gateway(respond) as gateway:
+        async with _controlled(
+            api,
+            gateway.api_base,
+            backend,
+            retry=retry,
+            max_pending=1,
+        ) as (llm, broker):
+            tasks = []
+
+            def queued() -> int:
+                """Inspect the actual scheduling owner, not client task counts."""
+                return broker.snapshot().queued if broker else _local_counts(llm)[1]
+
+            try:
+                first = asyncio.create_task(llm.acall(_MESSAGES))
+                tasks.append(first)
+                await asyncio.wait_for(started.wait(), 60)
+                waiter = asyncio.create_task(llm.acall(_MESSAGES))
+                tasks.append(waiter)
+                await _wait_until(lambda: queued() == 1)
+                with pytest.raises(AdmissionQueueFullError):
+                    await llm.acall(_MESSAGES)
+                assert len(gateway.requests) == 1
+                waiter.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await waiter
+                await _wait_until(lambda: queued() == 0)
+                replacement = asyncio.create_task(llm.acall(_MESSAGES))
+                tasks.append(replacement)
+                await _wait_until(lambda: queued() == 1)
+                release.set()
+                assert [r.content for r in await asyncio.gather(first, replacement)] == ["ok", "ok"]
+                assert len(gateway.requests) == 2
+                await _wait_until(lambda: queued() == 0)
+                if broker:
+                    await _wait_until(lambda: broker.snapshot().active == 0)
+                    assert broker.snapshot().admitted_calls == 2
+                else:
+                    assert _local_counts(llm) == (0, 0)
+            finally:
+                release.set()
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
 
 
 @pytest.mark.asyncio
@@ -386,10 +537,10 @@ async def test_final_overload_delays_already_queued_http_callers(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("api", ["chat", "responses"])
 async def test_retry_reacquires_after_shared_cooldown_through_http(api: str) -> None:
-    """One NOOA retry produces exactly two paced wire attempts and no permit leak."""
+    """One ASTER retry produces exactly two paced wire attempts and no permit leak."""
 
     async def respond(_request: _Request) -> tuple[int, dict[str, str]]:
-        """Reject exactly the first wire attempt, then permit its NOOA retry."""
+        """Reject exactly the first wire attempt, then permit its ASTER retry."""
         return (429, {"Retry-After": "1"}) if len(gateway.requests) == 1 else (200, {})
 
     async with _gateway(respond) as gateway:

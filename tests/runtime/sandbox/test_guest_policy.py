@@ -31,7 +31,7 @@ def test_nested_allow_does_not_change_workspace_permissions(tmp_path):
             """
 import ctypes, os, sys
 from pathlib import Path
-from nooa.runtime.sandbox.guest_policy import _filesystem_jail
+from aster.runtime.sandbox.guest_policy import _filesystem_jail
 libc = ctypes.CDLL(None, use_errno=True)
 assert libc.unshare(0x00020000) == 0
 assert libc.mount(None, b'/', None, (1 << 14) | (1 << 18), None) == 0

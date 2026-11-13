@@ -9,7 +9,7 @@ from itertools import permutations
 import httpx
 import pytest
 
-from nooa.unifiedllm import AssistantReasoning, LLMResponse, LLMUsage, connect
+from aster.unifiedllm import AssistantReasoning, LLMResponse, LLMUsage, connect
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -33,7 +33,7 @@ def test_wrong_puzzle_answer_alone_is_not_a_check_failure():
     """The puzzle exists to elicit reasoning, not to prove the model can
     solve it. A wrong answer with reasoning genuinely observed must pass.
     """
-    from nooa.unifiedllm.connect._records import check_status
+    from aster.unifiedllm.connect._records import check_status
 
     record = {"outcome": "accepted", "reasoning_observed": True, "answer_correct": False}
     entry = connect.configure_entry(
@@ -47,7 +47,7 @@ def test_missing_reasoning_is_still_a_check_failure():
     """Unlike a wrong answer, a genuinely missing reasoning signal is exactly
     what this check exists to verify — that must still flag attention.
     """
-    from nooa.unifiedllm.connect._records import check_status
+    from aster.unifiedllm.connect._records import check_status
 
     record = {"outcome": "accepted", "reasoning_observed": False, "answer_correct": True}
     assert check_status("level:high", record, missing_reasoning=True) == "attention"

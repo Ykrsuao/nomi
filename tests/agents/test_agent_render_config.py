@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for Agent.__init__ render_config= parameter (Task 17)."""
 
-from nooa.context_blocks.formatter import MarkdownBlockFormatter
-from nooa.context_blocks.render_config import RenderConfig
-from nooa.context_blocks.renderers import CachedBlockFormatter
-from nooa.unifiedllm import FakeLLMClient
+from aster.context_blocks.formatter import MarkdownBlockFormatter
+from aster.context_blocks.render_config import RenderConfig
+from aster.context_blocks.renderers import CachedBlockFormatter
+from aster.unifiedllm import FakeLLMClient
 
 
 def make_llm():
@@ -13,7 +13,7 @@ def make_llm():
 
 
 def test_agent_accepts_render_config():
-    from nooa import Agent
+    from aster import Agent
 
     rc = RenderConfig(block_formatter=MarkdownBlockFormatter())
 
@@ -26,7 +26,7 @@ def test_agent_accepts_render_config():
 
 
 def test_agent_default_render_config():
-    from nooa import Agent
+    from aster import Agent
 
     class MyAgent(Agent, llm=make_llm()):
         pass

@@ -5,7 +5,7 @@
 import json  # noqa: F401 — for LLM exec_globals
 from typing import Any
 
-from nooa import Agent
+from aster import Agent
 
 
 class JsonExtractAgent(Agent):

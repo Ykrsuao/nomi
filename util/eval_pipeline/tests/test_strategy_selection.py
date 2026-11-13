@@ -4,9 +4,9 @@
 
 import pytest
 
+from aster import CodeActStrategy, CodeActV2
+from aster.strategies import get_default_strategy
 from eval_pipeline.cli import VALID_STRATEGIES, get_strategy_instance
-from nooa import CodeActStrategy, CodeActV2
-from nooa.strategies import get_default_strategy
 
 
 def test_v2_replaces_lite_without_changing_the_default():

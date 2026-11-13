@@ -17,24 +17,26 @@ def run_cli(*args):
     env = {
         key: value
         for key, value in os.environ.items()
-        if key not in {"NOOA_SKIP_PLATFORM_CHECK", "PYTHONUTF8", "PYTHONIOENCODING"}
+        if key not in {"ASTER_SKIP_PLATFORM_CHECK", "PYTHONUTF8", "PYTHONIOENCODING"}
     }
-    result = subprocess.run([sys.executable, "-m", "nooa_cli", *args], env=env, capture_output=True)
+    result = subprocess.run(
+        [sys.executable, "-m", "aster_cli", *args], env=env, capture_output=True
+    )
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
     return result
 
 
 async def check_host(directory):
-    from nooa import Agent, strategy
-    from nooa.runtime.producers import monitor
-    from nooa.storage.sqlite import (
+    from aster import Agent, strategy
+    from aster.runtime.producers import monitor
+    from aster.storage.sqlite import (
         SessionAlreadyActiveError,
         SQLiteStorageManager,
         delete_sqlite_database,
     )
-    from nooa.strategies.predict import PredictStrategy
-    from nooa.tools.shell_tools import ShellTools
-    from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+    from aster.strategies.predict import PredictStrategy
+    from aster.tools.shell_tools import ShellTools
+    from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
     predict = FakeLLMClient(
         scripted_responses=[
@@ -120,9 +122,9 @@ def main():
         for stream in (sys.stdout, sys.stderr):
             if hasattr(stream, "reconfigure"):
                 stream.reconfigure(encoding="utf-8", errors="replace")
-    import nooa
+    import aster
 
-    print("nooa", nooa.__version__, sys.platform)
+    print("aster", aster.__version__, sys.platform)
     with tempfile.TemporaryDirectory() as temporary:
         directory = Path(temporary)
         asyncio.run(check_host(directory))
@@ -137,7 +139,7 @@ def main():
             "--api-style",
             "chat",
             "--api-key-env",
-            "NOOA_SMOKE_FAKE_KEY",
+            "ASTER_SMOKE_FAKE_KEY",
             "--as",
             "fake",
             "--no-probe",

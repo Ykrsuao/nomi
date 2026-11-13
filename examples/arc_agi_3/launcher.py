@@ -3,14 +3,14 @@
 """Launch the ARC-AGI-3 solver agent in headless mode (no TUI / tmux required).
 
 Runs the agent directly via the ``InteractiveAgent`` dispatcher loop — no
-``nooa_tui`` package needed. All agent behaviours (memory, reflection,
+``aster_tui`` package needed. All agent behaviours (memory, reflection,
 summarization, effort ladder, IPC tail, context blocks) are preserved; the only
 thing removed is the terminal-drawing layer.
 
 Usage (normally started by run_solver.py):
 
     .venv/bin/python examples/arc_agi_3/launcher.py \
-        --run-dir results/arc_agi_3/nemo_solver/<run> --game ls20 --variant memory
+        --run-dir results/arc_agi_3/aster_solver/<run> --game ls20 --variant memory
 """
 
 from __future__ import annotations
@@ -54,8 +54,8 @@ def build_memory_config(store_path: str | Path):
     consolidation OFF the turn's critical path — inline it cost 600-1,500s/game
     on the 20260716 fleet and triggered sandbox cell-deadline kills.
     """
-    from nooa_memory import MemoryConfig
-    from nooa_memory.config import ReflectionPolicy, RetrievalConfig, SpontaneousConfig
+    from aster_memory import MemoryConfig
+    from aster_memory.config import ReflectionPolicy, RetrievalConfig, SpontaneousConfig
 
     return MemoryConfig(
         enabled=True,
@@ -183,7 +183,7 @@ async def _headless_dispatch(agent) -> None:
     harness's nudge/force-advance ladder and the fleet wall-clock cap already
     bound a wedged agent, and a transient LLM outage must not kill the game.
     """
-    from nooa.interactive import Done
+    from aster.interactive import Done
 
     consecutive_errors = 0
 
@@ -221,13 +221,13 @@ async def run() -> None:
     if args.model:
         os.environ["ARC_LLM_MODEL"] = args.model
     run_dir = Path(args.run_dir).resolve()
-    workspace = run_dir / "team_nemo" / "shared"
+    workspace = run_dir / "team_aster" / "shared"
     workspace.mkdir(parents=True, exist_ok=True)
 
     from viewer_event_exporter import ViewerEventExporter
     from viewer_trace_exporter import ViewerMessageExporter
 
-    from nooa.tracing import enable_tracing, exporters
+    from aster.tracing import enable_tracing, exporters
 
     trace_exporters = [
         exporters.jsonl(trace_dir=str(run_dir / "traces")),
@@ -248,7 +248,7 @@ async def run() -> None:
     # debugging). Must run BEFORE build_llm() so the patched httpx transport is used.
     http_log_dir = os.environ.get("ARC_HTTP_LOG_DIR")
     if http_log_dir:
-        from nooa.unifiedllm.http_logging import enable_http_request_logging
+        from aster.unifiedllm.http_logging import enable_http_request_logging
 
         enable_http_request_logging(
             output_dir=http_log_dir,
@@ -285,8 +285,8 @@ async def run() -> None:
     ws_store = workspace / "memory.sqlite"
 
     if args.variant == "memory":
-        from nooa_memory.generative import llm_reasoner, llm_reconciler
-        from nooa_memory.memory_skill import MemorySkill
+        from aster_memory.generative import llm_reasoner, llm_reconciler
+        from aster_memory.memory_skill import MemorySkill
 
         store_path.parent.mkdir(parents=True, exist_ok=True)
         store_path.unlink(missing_ok=True)
@@ -301,14 +301,14 @@ async def run() -> None:
 
         memory_config = build_memory_config(store_path)
         agent.skills.register(
-            "nemo.memory",
+            "aster.memory",
             MemorySkill(
                 memory_config,
                 reasoner=llm_reasoner(_session_llm),
                 reconciler=llm_reconciler(_session_llm),
             ),
         )
-        agent.skills.activate(["nemo.memory"])
+        agent.skills.activate(["aster.memory"])
 
     # Kickoff parity with the TUI runner: run_solver used to type this message
     # into the TUI once the first game state existed. Deliver the same message

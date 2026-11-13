@@ -7,7 +7,7 @@ import json
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 from tests.unifiedllm.connect.connect_http import mock_http, mock_post, response_body
 
 REPLIES = {style: response_body(style) for style in ("chat", "responses", "anthropic")}
@@ -209,7 +209,7 @@ async def test_success_status_without_expected_response_shape_is_inconclusive(
     proposal = connect.plan("local", "model", style, "https://api.test/v1", "")
     result = await connect.run(proposal, approved="minimal")
     record = result.entry["provenance"]["probes"]["routing"]
-    # SDK validation and NOOA replay validation can fail at different layers;
+    # SDK validation and ASTER replay validation can fail at different layers;
     # neither a malformed 200 nor an unreadable reply confirms the interface.
     assert record["outcome"] in {"not_probed", "not_confirmed"}, record
     assert record["error"]

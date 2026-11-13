@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Sentiment classification agent."""
 
-from nooa import Agent
+from aster import Agent
 
 
 class SentimentAgent(Agent):

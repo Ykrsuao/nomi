@@ -8,7 +8,7 @@ when the LLM API returns a context-window error.
 
 import math
 
-from nooa.runtime.actor import _ARCHIVE_TARGET_UTILIZATION
+from aster.runtime.actor import _ARCHIVE_TARGET_UTILIZATION
 
 
 class TestAdaptiveArchivalComputation:

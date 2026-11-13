@@ -11,13 +11,13 @@ from typing import Annotated, Any
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent
-from nooa.errors.storage import SerializationError
-from nooa.storage import SQLiteStorageManager
-from nooa.storage.markers import nosnapshot, snapshotable
-from nooa.storage.serialization import MAX_SNAPSHOT_DEPTH, deserialize, serialize
-from nooa.storage.snapshot import AgentSnapshot
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.errors.storage import SerializationError
+from aster.storage import SQLiteStorageManager
+from aster.storage.markers import nosnapshot, snapshotable
+from aster.storage.serialization import MAX_SNAPSHOT_DEPTH, deserialize, serialize
+from aster.storage.snapshot import AgentSnapshot
+from aster.unifiedllm import FakeLLMClient
 
 
 class _SnapshotAgent(Agent, llm=FakeLLMClient()):
@@ -92,7 +92,7 @@ def test_cyclic_attribute_does_not_prevent_new_checkpoint(tmp_path, caplog, shap
         previous_id = storage.save_snapshot(agent)
         agent.checkpoint = 2
         agent.live_graph = _cycle(shape)
-        with caplog.at_level(logging.WARNING, logger="nooa.storage.snapshot"):
+        with caplog.at_level(logging.WARNING, logger="aster.storage.snapshot"):
             latest_id = storage.save_snapshot(agent)
         assert latest_id != previous_id
         assert storage.get_latest_snapshot_id() == latest_id
@@ -170,7 +170,7 @@ def test_too_deep_attribute_warning_text(caplog):
         value = [value]
     agent = _SnapshotAgent()
     agent.deep_attr = value
-    with caplog.at_level(logging.WARNING, logger="nooa.storage.snapshot"):
+    with caplog.at_level(logging.WARNING, logger="aster.storage.snapshot"):
         snapshot = AgentSnapshot.from_agent(agent)
     assert "deep_attr" not in snapshot.attributes
     messages = [r.getMessage() for r in caplog.records if "deep_attr" in r.getMessage()]

@@ -21,21 +21,21 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.context_blocks import ResultStatus
-from nooa.errors import GenerationError, XMLFormatError
-from nooa.strategies.codeact import (
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.context_blocks import ResultStatus
+from aster.errors import GenerationError, XMLFormatError
+from aster.strategies.codeact import (
     CodeActSession,
     CodeActStrategy,
     _iter_agent_attrs,
     _ReturnResultSignal,
 )
-from nooa.strategies.pure_python import (
+from aster.strategies.pure_python import (
     GenerationSession,
     PurePythonStrategy,
 )
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # ---------------------------------------------------------------------------
 # Helpers shared across tests
@@ -223,7 +223,7 @@ class TestExecutionContext:
         rt.agent = TestAgent(llm=_TEST_LLM)
 
         # Patch inspect.getmodule to return None
-        with patch("nooa.strategies.codeact.inspect.getmodule", return_value=None):
+        with patch("aster.strategies.codeact.inspect.getmodule", return_value=None):
             result = await strat.execution_context(rt)
 
         assert "Execution Context" in result
@@ -239,7 +239,7 @@ class TestSanitizeCode:
     """Tests for code fence stripping (now in shared response_cleanup module)."""
 
     def test_sanitize_removes_python_fence(self):
-        from nooa.runtime.response_cleanup import strip_code_fences
+        from aster.runtime.response_cleanup import strip_code_fences
 
         code = "```python\nresult = 42\n```"
         cleaned, token = strip_code_fences(code)
@@ -247,14 +247,14 @@ class TestSanitizeCode:
         assert token == "```python"
 
     def test_sanitize_removes_plain_fence(self):
-        from nooa.runtime.response_cleanup import strip_code_fences
+        from aster.runtime.response_cleanup import strip_code_fences
 
         code = "```\nresult = 42\n```"
         cleaned, token = strip_code_fences(code)
         assert cleaned == "result = 42"
 
     def test_sanitize_no_fence(self):
-        from nooa.runtime.response_cleanup import strip_code_fences
+        from aster.runtime.response_cleanup import strip_code_fences
 
         code = "result = 42"
         cleaned, token = strip_code_fences(code)
@@ -267,7 +267,7 @@ class TestSanitizeCode:
         fenced code and failed silently, so helpers weren't pre-bound."""
         import ast
 
-        from nooa.runtime.response_cleanup import strip_code_fences
+        from aster.runtime.response_cleanup import strip_code_fences
 
         fenced = "```python\nasync def helper(self, x):\n    return x * 2\n```"
         cleaned, token = strip_code_fences(fenced)
@@ -279,7 +279,7 @@ class TestSanitizeCode:
     def test_fenced_code_with_opening_line_code_preserved(self):
         """Regression: LLMs sometimes emit ```python CODE\n``` on one line.
         That code must not be silently deleted."""
-        from nooa.runtime.response_cleanup import strip_code_fences
+        from aster.runtime.response_cleanup import strip_code_fences
 
         code = "```python print('hello')\n```"
         cleaned, token = strip_code_fences(code)
@@ -317,7 +317,7 @@ class TestCodeActEmptyCode:
         result = await agent.compute()
         assert result == 99
 
-        from nooa.events import PythonOutput
+        from aster.events import PythonOutput
 
         output = next(
             event
@@ -923,8 +923,8 @@ class TestFormatErrorCustomFormatter:
         assert result == "custom[4/321/17]: surrogate: bad()"
 
     def test_builtin_formatter_receives_worker_diagnostic_and_error_budget(self):
-        from nooa.errors import IPythonErrorFormatter
-        from nooa.runtime.sandbox.errors import SandboxExecutionError
+        from aster.errors import IPythonErrorFormatter
+        from aster.runtime.sandbox.errors import SandboxExecutionError
 
         strat = CodeActStrategy(error_formatter=IPythonErrorFormatter())
         diagnostic = "Cell In[7], line 1\nValueError: " + "x" * 500
@@ -1000,7 +1000,7 @@ class TestBuildBuiltins:
         agent = TestAgent(llm=_TEST_LLM)
         strat = CodeActStrategy()
 
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="call_1",
@@ -1014,7 +1014,7 @@ class TestBuildBuiltins:
         rt = MagicMock()
         rt.agent = agent
         rt.event_manager = MagicMock()
-        with patch("nooa.strategies.codeact.inspect.getmodule", return_value=None):
+        with patch("aster.strategies.codeact.inspect.getmodule", return_value=None):
             builtins = strat._build_builtins(rt, call)
         assert "x" in builtins
         assert builtins["x"] == 42
@@ -1033,7 +1033,7 @@ class TestBuildBuiltins:
         agent = TestAgent(llm=_TEST_LLM)
         strat = CodeActStrategy()
 
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="call_1",
@@ -1047,7 +1047,7 @@ class TestBuildBuiltins:
         rt = MagicMock()
         rt.agent = agent
         rt.event_manager = MagicMock()
-        with patch("nooa.strategies.codeact.inspect.getmodule", return_value=None):
+        with patch("aster.strategies.codeact.inspect.getmodule", return_value=None):
             builtins = strat._build_builtins(rt, call)
         assert "x" in builtins
         assert builtins["x"] == 99
@@ -1516,7 +1516,7 @@ class TestPurePythonRunPrefill:
     @pytest.mark.asyncio
     async def test_run_prefill_with_error_emits_failed_python_output(self):
         """Prefill failures are visible to the model but remain non-fatal."""
-        from nooa.events import ExecutionResult, PythonOutput
+        from aster.events import ExecutionResult, PythonOutput
 
         class ErrorPrefill:
             def get_code(self, call, config=None):
@@ -1557,7 +1557,7 @@ class TestPurePythonRunPrefill:
     @pytest.mark.asyncio
     async def test_run_prefill_success_emits_python_output_not_feedback(self):
         """Successful prefill should emit PythonOutput (not Feedback)."""
-        from nooa.events import ExecutionResult, PythonOutput
+        from aster.events import ExecutionResult, PythonOutput
 
         class SimplePrefill:
             def get_code(self, call, config=None):
@@ -1682,7 +1682,7 @@ class TestPurePythonIsTaskComplete:
         rt = MagicMock()
         rt.agent = agent
 
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="call_1",
@@ -1694,7 +1694,7 @@ class TestPurePythonIsTaskComplete:
             kwargs={},
         )
 
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         result = ExecutionResult(stdout="", error=None, defined_methods={}, has_return=False)
         is_complete = strat._is_task_complete(result, rt, call)
@@ -1706,8 +1706,8 @@ class TestPurePythonIsTaskComplete:
         rt = MagicMock()
         rt.agent = MagicMock(spec=[])  # No attributes
 
-        from nooa.events import ExecutionResult
-        from nooa.strategies.current_call import CurrentCall
+        from aster.events import ExecutionResult
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="call_1",
@@ -1749,8 +1749,8 @@ class TestPurePythonFinalizeSuccess:
         rt.agent = agent
         rt.event_manager = MagicMock()
 
-        from nooa.events import ExecutionResult
-        from nooa.strategies.current_call import CurrentCall
+        from aster.events import ExecutionResult
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="call_1",
@@ -1790,9 +1790,9 @@ class TestPurePythonFinalizeSuccess:
         rt.agent = agent
         rt.event_manager = MagicMock()
 
-        from nooa.events import ExecutionResult
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.events import ExecutionResult
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.generated_code import ReturnValueValidator
 
         call = CurrentCall(
             id="call_1",
@@ -1830,9 +1830,9 @@ class TestPurePythonFinalizeSuccess:
         rt.event_manager = MagicMock()
         rt.truncation_config = MagicMock()
 
-        from nooa.events import ExecutionResult
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.events import ExecutionResult
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.generated_code import ReturnValueValidator
 
         call = CurrentCall(
             id="call_1",
@@ -1870,9 +1870,9 @@ class TestPurePythonFinalizeSuccess:
         rt.event_manager = MagicMock()
         rt.truncation_config = MagicMock()
 
-        from nooa.events import ExecutionResult
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.events import ExecutionResult
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.generated_code import ReturnValueValidator
 
         call = CurrentCall(
             id="call_1",
@@ -1956,7 +1956,7 @@ class TestFormatValidationErrorShared:
 
     def test_json_decode_error(self):
         """Should format JSONDecodeError."""
-        from nooa.strategies.codeact_errors import format_validation_error
+        from aster.strategies.codeact_errors import format_validation_error
 
         try:
             json.loads("invalid json")
@@ -1966,7 +1966,7 @@ class TestFormatValidationErrorShared:
 
     def test_pydantic_validation_error(self):
         """Should format PydanticValidationError with field details."""
-        from nooa.strategies.codeact_errors import format_validation_error
+        from aster.strategies.codeact_errors import format_validation_error
 
         class MyModel(BaseModel):
             x: int
@@ -1980,7 +1980,7 @@ class TestFormatValidationErrorShared:
 
     def test_generic_error(self):
         """Should format generic exception."""
-        from nooa.strategies.codeact_errors import format_validation_error
+        from aster.strategies.codeact_errors import format_validation_error
 
         err = RuntimeError("something broke")
         result = format_validation_error(err, str)
@@ -1998,7 +1998,7 @@ class TestPurePythonSendExecutionError:
     @pytest.mark.asyncio
     async def test_send_execution_error_with_stdout(self):
         """Syntax failures use PythonOutput and preserve guidance/stdout."""
-        from nooa.events import PythonOutput
+        from aster.events import PythonOutput
 
         strat = PurePythonStrategy()
         rt = MagicMock()
@@ -2025,7 +2025,7 @@ class TestPurePythonSendExecutionError:
     @pytest.mark.asyncio
     async def test_syntax_guidance_is_included_inside_error_budget(self):
         """The final diagnostic stays bounded after appending syntax guidance."""
-        from nooa.config.truncation_config import CaptureConfig, TruncationConfig
+        from aster.config.truncation_config import CaptureConfig, TruncationConfig
 
         strat = PurePythonStrategy()
         rt = MagicMock()
@@ -2047,7 +2047,7 @@ class TestPurePythonSendExecutionError:
         """PurePython uses the same structured, source-aware contract as CodeAct."""
         import linecache
 
-        from nooa.events import PythonOutput
+        from aster.events import PythonOutput
 
         strat = PurePythonStrategy()
         rt = MagicMock()
@@ -2094,7 +2094,7 @@ class TestPurePythonSendExecutionError:
         rt.event_manager.add = MagicMock(return_value="evt1")
         strat.continuation_prompt = AsyncMock(return_value="Continue...")
 
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         result = ExecutionResult(
             stdout="",
@@ -2532,7 +2532,7 @@ class TestExecutionContextBlockedModules:
         The is_from_blocked_module function is imported locally within execution_context,
         so we configure a CodeActConfig with explicitly blocked modules to trigger line 344.
         """
-        from nooa.runtime.restrictions import RestrictionsConfig
+        from aster.runtime.restrictions import RestrictionsConfig
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy())
@@ -2562,7 +2562,7 @@ class TestExecutionContextWithSkillsSection:
     @pytest.mark.asyncio
     async def test_execution_context_shows_skills_section(self):
         """execution_context should include Skills section when agent has Skill attrs."""
-        from nooa.skill import Skill
+        from aster.skill import Skill
 
         class TestAgent(Agent, llm=_TEST_LLM):
             my_skill = Skill(content="skill documentation")
@@ -2708,7 +2708,7 @@ class TestCodeActPreEllipsisCode:
     @pytest.mark.asyncio
     async def test_pre_ellipsis_code_is_executed_as_prefill(self):
         """Pre-ellipsis code should be executed as separate prefill step (lines 1698-1699)."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         strat = CodeActStrategy()
         session = CodeActSession(
@@ -2734,7 +2734,7 @@ class TestCodeActPreEllipsisCode:
         rt.event_manager.update = MagicMock()
         rt.execute_code = AsyncMock()
 
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         rt.execute_code.return_value = ExecutionResult(
             stdout="", error=None, defined_methods={}, captured_locals={"setup_var": 42}
@@ -2765,7 +2765,7 @@ class TestCodeActExecutePrefillStep:
     @pytest.mark.asyncio
     async def test_execute_prefill_step_merges_captured_locals(self):
         """Captured locals from prefill should be merged into session (lines 1773-1774)."""
-        from nooa.events import ExecutionResult, PythonOutput
+        from aster.events import ExecutionResult, PythonOutput
 
         strat = CodeActStrategy()
         em = MagicMock()
@@ -2810,7 +2810,7 @@ class TestCodeActExecutePrefillStep:
     @pytest.mark.asyncio
     async def test_execute_prefill_steps_use_distinct_execution_counts(self):
         """Prefill execution, diagnostics, and output events share unique cell numbers."""
-        from nooa.events import ExecutionResult, PythonOutput
+        from aster.events import ExecutionResult, PythonOutput
 
         strat = CodeActStrategy()
         em = MagicMock()
@@ -2853,7 +2853,7 @@ class TestCodeActExecutePrefillStep:
     @pytest.mark.asyncio
     async def test_execute_prefill_step_with_error_logs_warning(self):
         """Prefill step with error should log but not raise (line 1806)."""
-        from nooa.events import ExecutionResult, PythonOutput
+        from aster.events import ExecutionResult, PythonOutput
 
         strat = CodeActStrategy()
         em = MagicMock()
@@ -2908,7 +2908,7 @@ class TestCodeActExecuteCodeValidationErrors:
     @pytest.mark.asyncio
     async def test_execute_code_returns_error_result_on_validation_failure(self):
         """_execute_code should return ExecutionResult with error on validation failure."""
-        from nooa.strategies.generated_code import GeneratedCodeValidator
+        from aster.strategies.generated_code import GeneratedCodeValidator
 
         strat = CodeActStrategy()
         em = MagicMock()
@@ -2951,7 +2951,7 @@ class TestCodeActExecuteCodeHelperBindingError:
     @pytest.mark.asyncio
     async def test_execute_code_returns_error_on_helper_binding_error(self):
         """_execute_code should return error result when helper fails to compile (lines 1871-1875)."""
-        from nooa.strategies.generated_code import (
+        from aster.strategies.generated_code import (
             HelperApplyResult,
             HelperFunctionManager,
         )
@@ -3044,7 +3044,7 @@ class TestPurePythonExecutionError:
         result = await agent.compute()
         assert result == 42
 
-        from nooa.events import PythonOutput
+        from aster.events import PythonOutput
 
         outputs = [
             event for event in agent.event_manager.values() if isinstance(event, PythonOutput)
@@ -3084,8 +3084,8 @@ class TestPurePythonIsTaskCompleteException:
         rt = MagicMock()
         rt.agent = agent
 
-        from nooa.events import ExecutionResult
-        from nooa.strategies.current_call import CurrentCall
+        from aster.events import ExecutionResult
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c1",
@@ -3099,7 +3099,7 @@ class TestPurePythonIsTaskCompleteException:
         result = ExecutionResult(stdout="", error=None, defined_methods={}, has_return=False)
 
         with patch(
-            "nooa.strategies.pure_python.get_type_hints",
+            "aster.strategies.pure_python.get_type_hints",
             side_effect=NameError("unknown"),
         ):
             is_complete = strat._is_task_complete(result, rt, call)
@@ -3120,8 +3120,8 @@ class TestPurePythonIsTaskCompleteException:
         rt = MagicMock()
         rt.agent = agent
 
-        from nooa.events import ExecutionResult
-        from nooa.strategies.current_call import CurrentCall
+        from aster.events import ExecutionResult
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c1",
@@ -3135,11 +3135,11 @@ class TestPurePythonIsTaskCompleteException:
         result = ExecutionResult(stdout="", error=None, defined_methods={}, has_return=False)
 
         with patch(
-            "nooa.strategies.pure_python.get_type_hints",
+            "aster.strategies.pure_python.get_type_hints",
             side_effect=NameError("unknown"),
         ):
             with patch(
-                "nooa.strategies.pure_python.inspect.signature",
+                "aster.strategies.pure_python.inspect.signature",
                 side_effect=ValueError("no signature"),
             ):
                 is_complete = strat._is_task_complete(result, rt, call)
@@ -3170,7 +3170,7 @@ class TestPurePythonBuildBuiltins:
         rt.agent = agent
         rt.event_manager = MagicMock()
 
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c1",
@@ -3183,7 +3183,7 @@ class TestPurePythonBuildBuiltins:
         )
 
         with patch(
-            "nooa.strategies.pure_python.inspect.signature",
+            "aster.strategies.pure_python.inspect.signature",
             side_effect=ValueError("no sig"),
         ):
             builtins = strat._build_builtins(rt, call)
@@ -3330,7 +3330,7 @@ class TestHttpxImportFallback:
 
     def test_httpx_timeout_exceptions_defined(self):
         """_HTTPX_TIMEOUT_EXCEPTIONS should always be defined (lines 59-61)."""
-        from nooa.strategies.pure_python import _HTTPX_TIMEOUT_EXCEPTIONS
+        from aster.strategies.pure_python import _HTTPX_TIMEOUT_EXCEPTIONS
 
         assert isinstance(_HTTPX_TIMEOUT_EXCEPTIONS, tuple)
         assert len(_HTTPX_TIMEOUT_EXCEPTIONS) > 0
@@ -3352,7 +3352,7 @@ class TestExecutionContextWithContext:
     @pytest.mark.asyncio
     async def test_execution_context_shows_pin_instructions_when_context_present(self):
         """Pin/unpin instructions shown when agent has context attr (lines 434-436)."""
-        from nooa.skill import Skill
+        from aster.skill import Skill
 
         class TestAgentWithContext(Agent, llm=_TEST_LLM):
             my_skill = Skill(content="skill docs")
@@ -3588,7 +3588,7 @@ class TestBuildBuiltinsModuleContext:
         agent = TestAgent(llm=_TEST_LLM)
         strat = CodeActStrategy()
 
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c1",
@@ -3709,8 +3709,8 @@ class TestCodeActHelperInstalledLogging:
     @pytest.mark.asyncio
     async def test_execute_code_with_helper_that_gets_installed(self):
         """When helper is installed, _execute_code should log it (lines 1877-1878)."""
-        from nooa.events import ExecutionResult
-        from nooa.strategies.generated_code import (
+        from aster.events import ExecutionResult
+        from aster.strategies.generated_code import (
             HelperApplyResult,
             HelperFunctionManager,
         )
@@ -3767,7 +3767,7 @@ class TestCodeActModuleContextBuilding:
         rt = MagicMock()
         rt.agent = agent
 
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c1",
@@ -3799,7 +3799,7 @@ class TestCodeActModuleContextBuilding:
         rt.agent = agent
         rt.event_manager = MagicMock()
 
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c1",
@@ -3813,7 +3813,7 @@ class TestCodeActModuleContextBuilding:
 
         # Patch inspect.signature to raise ValueError to exercise lines 2056-2057
         with patch(
-            "nooa.strategies.codeact.inspect.signature",
+            "aster.strategies.codeact.inspect.signature",
             side_effect=ValueError("no signature"),
         ):
             builtins = strat._build_builtins(rt, call)
@@ -3904,7 +3904,7 @@ class TestBuiltinsLocalFunctionBodies:
 
     def test_message_not_in_builtins(self):
         """message() was removed from builtins; verify it is absent."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig()))
@@ -4106,7 +4106,7 @@ class TestPurePythonTimeoutError:
     @pytest.mark.asyncio
     async def test_timeout_error_in_generate_code_counts_as_error(self):
         """TimeoutError in _generate_code should count as error and retry (lines 274-288)."""
-        from nooa.strategies.pure_python import _HTTPX_TIMEOUT_EXCEPTIONS
+        from aster.strategies.pure_python import _HTTPX_TIMEOUT_EXCEPTIONS
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(PurePythonStrategy(max_iterations=10, max_retries=3))
@@ -4321,7 +4321,7 @@ class TestPurePythonContinuationFeedbackStderr:
         rt.event_manager.add = MagicMock(return_value="evt1")
         strat.continuation_prompt = AsyncMock(return_value="Continue...")
 
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         result = ExecutionResult(
             stdout="normal output",
@@ -4370,7 +4370,7 @@ class TestCodeActInlineReturnResultWithError:
         result = await agent.compute()
         assert result == 99
 
-        from nooa.events import PythonOutput
+        from aster.events import PythonOutput
 
         failed_output = next(
             event
@@ -4400,7 +4400,7 @@ class TestPurePythonContinuationFeedbackStdout:
         rt.event_manager.add = MagicMock(return_value="evt1")
         strat.continuation_prompt = AsyncMock(return_value="Continue...")
 
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         # Result with both stdout and defined methods
         result = ExecutionResult(
@@ -4956,7 +4956,7 @@ class TestCodeActDistinctExecutionErrorEvents:
 
     @staticmethod
     def _failed_output(agent: Agent, call_id: str):
-        from nooa.events import PythonOutput
+        from aster.events import PythonOutput
 
         output = next(
             event
@@ -4970,7 +4970,7 @@ class TestCodeActDistinctExecutionErrorEvents:
     async def test_cell_timeout_reaches_python_output_as_actionable_concise_error(self):
         from types import SimpleNamespace
 
-        from nooa.events import ExecutionResult, PythonOutput
+        from aster.events import ExecutionResult, PythonOutput
 
         strat = CodeActStrategy()
         emitted = []

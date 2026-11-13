@@ -15,8 +15,8 @@ from __future__ import annotations
 import dataclasses
 from typing import Annotated
 
-from nooa.agentdoc import doc, spec
-from nooa.agentdoc._info import FieldInfo
+from aster.agentdoc import doc, spec
+from aster.agentdoc._info import FieldInfo
 
 # ---------------------------------------------------------------------------
 # Dataclass fields with Annotated descriptions
@@ -74,7 +74,7 @@ class TestDataclassAnnotatedFields:
 
     def test_agentdoc_info_types_are_self_documented(self):
         """The _info.py dataclasses use Annotated and render with descriptions."""
-        from nooa.agentdoc._info import CallableInfo, ModuleInfo, TypeInfo
+        from aster.agentdoc._info import CallableInfo, ModuleInfo, TypeInfo
 
         for cls in (FieldInfo, CallableInfo, TypeInfo, ModuleInfo):
             result = doc(cls)
@@ -157,7 +157,7 @@ class TestFunctionAnnotatedParams:
         get_type_hints() to resolve them.
         """
         # pformat() is defined in agentdoc and has Annotated descriptions on its params
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         result = doc(pformat)
         # pformat() has Annotated descriptions on its params
@@ -177,8 +177,8 @@ class TestFunctionAnnotatedParams:
 class TestCallableInstanceAnnotatedParams:
     def _get_docs_callable_info(self):
         """Get the CallableInfo for the spec singleton via extract_callable_info."""
-        from nooa.agentdoc import spec as spec_singleton
-        from nooa.agentdoc._structured import extract_callable_info
+        from aster.agentdoc import spec as spec_singleton
+        from aster.agentdoc._structured import extract_callable_info
 
         return extract_callable_info(spec_singleton)
 
@@ -199,7 +199,7 @@ class TestCallableInstanceAnnotatedParams:
 
     def test_docs_in_module_doc_has_no_annotated(self):
         """doc(agentdoc) rendering of the spec callable has no Annotated wrapper."""
-        from nooa import agentdoc
+        from aster import agentdoc
 
         result = doc(agentdoc, concise=True)
         # Extract just the spec() function line
@@ -212,7 +212,7 @@ class TestCallableInstanceAnnotatedParams:
 
     def test_agentdoc_module_presents_type_and_value_views(self):
         """doc(agentdoc) gives a concise, runnable mental model."""
-        from nooa import agentdoc
+        from aster import agentdoc
 
         result = doc(agentdoc)
         assert "Show an agent what an object can do" in result
@@ -242,7 +242,7 @@ class TestCallableInstanceAnnotatedParams:
 class TestExtractDataclassFields:
     def test_description_extracted_from_annotated(self):
         """_extract_dataclass_fields populates FieldInfo.description from Annotated."""
-        from nooa.agentdoc._structured import extract_type_info
+        from aster.agentdoc._structured import extract_type_info
 
         @dataclasses.dataclass
         class Point:
@@ -256,7 +256,7 @@ class TestExtractDataclassFields:
 
     def test_type_is_stripped_of_annotated_wrapper(self):
         """FieldInfo.type is the bare type, not Annotated[T, ...]."""
-        from nooa.agentdoc._structured import extract_type_info
+        from aster.agentdoc._structured import extract_type_info
 
         @dataclasses.dataclass
         class Point:
@@ -267,7 +267,7 @@ class TestExtractDataclassFields:
 
     def test_non_annotated_field_has_no_description(self):
         """Plain typed fields have description=None."""
-        from nooa.agentdoc._structured import extract_type_info
+        from aster.agentdoc._structured import extract_type_info
 
         @dataclasses.dataclass
         class Point:
@@ -581,7 +581,7 @@ class TestCExtFallbackMetadata:
 
     def test_docs_hidden_false_falls_back_to_class_metadata(self):
         """spec(fake_method, hidden=False) stores hidden=False on __objclass__."""
-        from nooa.agentdoc._metadata import get_field_metadata
+        from aster.agentdoc._metadata import get_field_metadata
 
         class Owner:
             def __init__(self) -> None:
@@ -595,7 +595,7 @@ class TestCExtFallbackMetadata:
 
     def test_decorator_form_falls_back_to_class_metadata(self):
         """@spec(hidden=False) on a fake C-ext method also uses the fallback."""
-        from nooa.agentdoc._metadata import get_field_metadata
+        from aster.agentdoc._metadata import get_field_metadata
 
         class Owner:
             def __init__(self) -> None:
@@ -611,8 +611,8 @@ class TestCExtFallbackMetadata:
 
     def test_class_metadata_hidden_false_shows_dunder_in_extract_methods(self):
         """_extract_methods third pass picks up a dunder stored via set_field_metadata."""
-        from nooa.agentdoc._metadata import set_field_metadata
-        from nooa.agentdoc._structured import extract_type_info
+        from aster.agentdoc._metadata import set_field_metadata
+        from aster.agentdoc._structured import extract_type_info
 
         class MyClass:
             def __init__(self, x: int = 0) -> None:
@@ -628,7 +628,7 @@ class TestCExtFallbackMetadata:
 
     def test_class_metadata_hidden_false_shows_dunder_in_doc(self):
         """doc(cls) shows a dunder that was stored via set_field_metadata(cls, name, hidden=False)."""
-        from nooa.agentdoc._metadata import set_field_metadata
+        from aster.agentdoc._metadata import set_field_metadata
 
         class MyClass2:
             def __init__(self, x: int = 0) -> None:
@@ -644,7 +644,7 @@ class TestCExtFallbackMetadata:
 
     def test_full_pipeline_fake_cext_method_shown_in_doc(self):
         """End-to-end: spec(fake_method, hidden=False) → method appears in doc(cls)."""
-        from nooa.agentdoc._metadata import set_field_metadata  # noqa: F401
+        from aster.agentdoc._metadata import set_field_metadata  # noqa: F401
 
         class Widget:
             def __init__(self, name: str = "w") -> None:

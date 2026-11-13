@@ -8,9 +8,9 @@ This test verifies that the LLM can:
 3. Use that persisted context to answer questions about stored notes
 """
 
-from nooa import Agent
-from nooa.agentdoc import spec
-from nooa.context_blocks import DynamicContext
+from aster import Agent
+from aster.agentdoc import spec
+from aster.context_blocks import DynamicContext
 
 
 class Notes:

@@ -5,10 +5,10 @@
 import pytest
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from nooa import Agent
-from nooa.storage import SQLiteStorageManager
-from nooa.storage.snapshot_vars import SnapshotVars
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.storage import SQLiteStorageManager
+from aster.storage.snapshot_vars import SnapshotVars
+from aster.unifiedllm import FakeLLMClient
 
 
 class _RequiredResult(BaseModel):

@@ -9,8 +9,8 @@ users forget to call super().__init__() in their custom Agent __init__ methods.
 
 import pytest
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 
 @pytest.mark.asyncio

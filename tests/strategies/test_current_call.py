@@ -11,7 +11,7 @@ class TestCurrentCallBasic:
 
     def test_create_with_required_fields(self):
         """CurrentCall should require id, method_name, decorator."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="call_123",
@@ -25,7 +25,7 @@ class TestCurrentCallBasic:
 
     def test_optional_fields_default_to_none_or_empty(self):
         """Optional fields should have sensible defaults."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="call_123",
@@ -41,7 +41,7 @@ class TestCurrentCallBasic:
 
     def test_create_with_all_fields(self):
         """CurrentCall should accept all fields."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="call_123",
@@ -69,7 +69,7 @@ class TestCurrentCallFromMethod:
 
     def test_from_method_extracts_signature(self):
         """from_method should extract method signature."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def example_method(self, data: str, count: int = 10) -> list:
             """Process data and return list."""
@@ -91,7 +91,7 @@ class TestCurrentCallFromMethod:
 
     def test_from_method_extracts_docstring(self):
         """from_method should extract method docstring."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def documented_method(self):
             """This is the docstring for the method."""
@@ -103,7 +103,7 @@ class TestCurrentCallFromMethod:
 
     def test_from_method_handles_no_docstring(self):
         """from_method should handle methods without docstrings."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def no_docs(self):
             pass
@@ -114,7 +114,7 @@ class TestCurrentCallFromMethod:
 
     def test_from_method_generates_unique_id(self):
         """from_method should generate unique call ID."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def test_method(self):
             pass
@@ -128,7 +128,7 @@ class TestCurrentCallFromMethod:
 
     def test_from_method_accepts_decorator_type(self):
         """from_method should accept decorator type."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def test_method(self):
             pass
@@ -139,7 +139,7 @@ class TestCurrentCallFromMethod:
 
     def test_from_method_accepts_parent_id(self):
         """from_method should accept parent_id for nested calls."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def child_method(self):
             pass
@@ -162,7 +162,7 @@ class TestCurrentCallBoundParameters:
 
     def test_positional_arg_mirrored_into_kwargs_appears_once(self):
         """The issue's core case: a positional arg is in both args and kwargs."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def analyze(self, image: str) -> dict:
             """Analyze {image}."""
@@ -182,7 +182,7 @@ class TestCurrentCallBoundParameters:
 
     def test_positional_and_keyword_mix(self):
         """Positional + keyword args map to the right names with no duplicates."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def analyze(self, data: str, count: int = 10) -> list:
             """..."""
@@ -194,7 +194,7 @@ class TestCurrentCallBoundParameters:
 
     def test_var_positional_args_each_appear_once(self):
         """*args values are preserved once as the tuple visible to the method."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def analyze(self, *imgs) -> dict:
             """..."""
@@ -208,7 +208,7 @@ class TestCurrentCallBoundParameters:
 
     def test_keyword_only_param(self):
         """Keyword-only param: no stray '*' key leaks into the mapping."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def analyze(self, *, image: str) -> dict:
             """..."""
@@ -221,7 +221,7 @@ class TestCurrentCallBoundParameters:
 
     def test_positional_only_param(self):
         """Positional-only params ('/') map to their names via param_names."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def analyze(self, a, b, /) -> dict:
             """..."""
@@ -234,7 +234,7 @@ class TestCurrentCallBoundParameters:
 
     def test_no_signature_uses_arg_index_names(self):
         """Without a signature, positionals become arg_<i> and kwargs keep names."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c",
@@ -254,7 +254,7 @@ class TestCurrentCallBoundParameters:
         splitting the signature string on commas), so a parameter annotated with a
         comma-containing generic still maps to the right name with no duplicates.
         """
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         def analyze(self, a: dict[str, int], b: int) -> dict:
             """..."""
@@ -268,7 +268,7 @@ class TestCurrentCallBoundParameters:
         """bound_parameters relies on the authoritative param_names field, not on
         parsing the (possibly awkward) signature string — so even a signature with
         a '->' inside a default value maps positionals to the right names."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c",
@@ -284,7 +284,7 @@ class TestCurrentCallBoundParameters:
 
     def test_kwarg_collision_with_synthetic_key_kwarg_wins(self):
         """A kwarg named arg_<i> overrides the synthetic positional key (documented)."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(
             id="c",
@@ -303,7 +303,7 @@ class TestCurrentCallEquality:
 
     def test_equality_by_id(self):
         """Two CurrentCall with same id should be equal."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call1 = CurrentCall(id="same_id", method_name="test", decorator="plan")
         call2 = CurrentCall(id="same_id", method_name="test", decorator="plan")
@@ -312,7 +312,7 @@ class TestCurrentCallEquality:
 
     def test_inequality_by_id(self):
         """Two CurrentCall with different id should not be equal."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call1 = CurrentCall(id="id_1", method_name="test", decorator="plan")
         call2 = CurrentCall(id="id_2", method_name="test", decorator="plan")
@@ -321,7 +321,7 @@ class TestCurrentCallEquality:
 
     def test_hashable(self):
         """CurrentCall should be hashable for use in sets/dicts."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(id="call_123", method_name="test", decorator="plan")
 
@@ -337,7 +337,7 @@ class TestCurrentCallLifecycle:
     """Strategies bind ordinary public fields as execution starts."""
 
     def test_execution_namespace_and_event_id_can_be_assigned(self):
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         call = CurrentCall(id="call_123", method_name="test", decorator="plan")
         namespace = {"input": 41}
@@ -361,8 +361,8 @@ def test_from_method_captures_param_names_from_live_signature():
     """
     from typing import Annotated
 
-    from nooa.agentdoc import spec
-    from nooa.strategies.current_call import CurrentCall
+    from aster.agentdoc import spec
+    from aster.strategies.current_call import CurrentCall
 
     def method(
         self,
@@ -389,7 +389,7 @@ def test_format_parameters_uses_param_names_not_signature_string():
     """
     import dataclasses
 
-    from nooa.strategies.current_call import CurrentCall
+    from aster.strategies.current_call import CurrentCall
 
     def method(self, a: int, b: str) -> None: ...
 

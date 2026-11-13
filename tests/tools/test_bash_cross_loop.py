@@ -15,8 +15,8 @@ The bug triggers specifically when:
 import asyncio
 import threading
 
-from nooa.tools._bash_session import BashSession
-from nooa.tools.shell_tools import ShellTools
+from aster.tools._bash_session import BashSession
+from aster.tools.shell_tools import ShellTools
 
 
 class TestCrossLoopLockContention:
@@ -49,7 +49,7 @@ class TestCrossLoopLockContention:
                     return results
 
                 results = loopA.run_until_complete(concurrent_commands())
-                outputs = {r[0] for r in results}
+                outputs = {r[0].strip() for r in results}
                 assert "first" in outputs
                 assert "second" in outputs
             except Exception as e:
@@ -84,7 +84,7 @@ class TestCrossLoopLockContention:
                     return results
 
                 results = loopB.run_until_complete(concurrent_commands())
-                outputs = {r[0] for r in results}
+                outputs = {r[0].strip() for r in results}
                 assert "third" in outputs
                 assert "fourth" in outputs
             except Exception as e:
@@ -118,6 +118,54 @@ class TestCrossLoopLockContention:
                 assert results[1][2] == 0
         finally:
             await session.close()
+
+    async def test_loop_change_reset_keeps_concurrent_runs_serialized(self, tmp_path, monkeypatch):
+        """A loop-change reset must not replace a lock held by run()."""
+        # Exercise the Bash backend even on Windows, where the public factory
+        # returns PowerShellSession. Startup and command IO are stubbed below.
+        session = object.__new__(BashSession)
+        BashSession.__init__(session, cwd=tmp_path)
+        session._started = True
+        session._started_on_loop = object()
+
+        restart_started = asyncio.Event()
+        allow_restart = asyncio.Event()
+        command_started = asyncio.Event()
+        allow_command = asyncio.Event()
+
+        async def start():
+            """Pause the simulated shell restart until the test allows it to finish."""
+            session._started = True
+            session._started_on_loop = asyncio.get_running_loop()
+            restart_started.set()
+            await allow_restart.wait()
+
+        async def send_and_wait(_script, _sentinel, timeout):
+            """Signal command execution and wait until the test allows it to finish."""
+            command_started.set()
+            await allow_command.wait()
+            return ["0", str(tmp_path)], "", "", False
+
+        monkeypatch.setattr(session, "start", start)
+        monkeypatch.setattr(session, "_send_and_wait", send_and_wait)
+
+        first = asyncio.create_task(session.run("echo first"))
+        await asyncio.wait_for(restart_started.wait(), timeout=1)
+        second = asyncio.create_task(session.run("echo second"))
+
+        entered_during_reset = False
+        try:
+            await asyncio.sleep(0)
+            entered_during_reset = command_started.is_set()
+        finally:
+            allow_restart.set()
+            allow_command.set()
+            results = await asyncio.wait_for(
+                asyncio.gather(first, second, return_exceptions=True), timeout=1
+            )
+
+        assert not entered_during_reset
+        assert results == [("", "", 0), ("", "", 0)]
 
     async def test_shell_tools_survives_loop_restart(self, tmp_path):
         """ShellTools concurrent usage survives loop restart."""

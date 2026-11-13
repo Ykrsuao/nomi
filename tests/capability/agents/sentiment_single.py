@@ -4,7 +4,7 @@
 
 from typing import Annotated, Literal
 
-from nooa import Agent
+from aster import Agent
 
 
 class SentimentSingleAgent(Agent):

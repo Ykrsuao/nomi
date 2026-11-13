@@ -11,13 +11,13 @@ from pathlib import Path
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.codeact_v2 import CodeActV2
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 pytestmark = pytest.mark.sandbox
 
@@ -119,7 +119,7 @@ async def test_async_tools_are_lazy_and_host_paths_round_trip(tmp_path):
 
 @pytest.mark.parametrize("nested_grant", [False, True], ids=["external-file", "workspace-file"])
 async def test_guest_file_and_network_limits(tmp_path, nested_grant):
-    from nooa.runtime.sandbox.config import FileRule
+    from aster.runtime.sandbox.config import FileRule
 
     workspace = tmp_path / "job"
     workspace.mkdir()
@@ -153,7 +153,7 @@ async def test_guest_file_and_network_limits(tmp_path, nested_grant):
 
 
 async def test_timeout_restarts_empty_and_close_wakes_unbounded_cell(tmp_path):
-    from nooa.runtime.sandbox.errors import CellTimeoutError, WorkerDiedError
+    from aster.runtime.sandbox.errors import CellTimeoutError, WorkerDiedError
 
     executor = SandboxedExecutor(
         Service(), SandboxConfig(workspace=str(tmp_path), timeout_grace_s=0), cell_timeout=0.3
@@ -182,7 +182,7 @@ async def test_timeout_restarts_empty_and_close_wakes_unbounded_cell(tmp_path):
 
 
 async def test_output_capture_is_bounded(tmp_path):
-    from nooa.config.truncation_config import CaptureConfig, TruncationConfig
+    from aster.config.truncation_config import CaptureConfig, TruncationConfig
 
     capture = TruncationConfig(capture=CaptureConfig(max_stdout=64, max_stderr=32))
     executor = SandboxedExecutor(
@@ -202,7 +202,7 @@ async def test_output_capture_is_bounded(tmp_path):
 
 
 async def test_cpu_and_memory_limits(tmp_path):
-    from nooa.runtime.sandbox.errors import CellTimeoutError
+    from aster.runtime.sandbox.errors import CellTimeoutError
 
     cpu = SandboxedExecutor(
         Service(),
@@ -231,7 +231,7 @@ async def test_local_parent_module_and_imported_numpy_function(tmp_path):
 
     from numpy import array
 
-    parent = types.ModuleType("nooa_local_parent_fixture")
+    parent = types.ModuleType("aster_local_parent_fixture")
     exec(
         "class Parent:\n    value = 5\n    def increment(self, number):\n        return number + self.value",
         parent.__dict__,

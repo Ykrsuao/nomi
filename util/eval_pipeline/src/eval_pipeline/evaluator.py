@@ -7,7 +7,7 @@ It is pure Python with no YAML knowledge - use config_adapter for YAML loading.
 
 Example:
     from eval_pipeline import Evaluator, ExactMatchScorer
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     evaluator = Evaluator(
         models={"gpt-4": CompletionClient(model="openai/gpt-4", ...)},
@@ -229,7 +229,7 @@ class Evaluator:
         Returns (backend, headless_base_url, use_viewer, external_otlp_endpoint).
         Caller is responsible for calling backend.stop() in a finally block.
         """
-        from nooa.tracing import enable_tracing, exporters
+        from aster.tracing import enable_tracing, exporters
 
         from .headless_backend import HeadlessOtlpBackend
 

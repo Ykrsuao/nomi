@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """Opt-in Hub reasoning/tool replay: two capped calls per model, no retries.
 
-NOOA_RUN_OPEN_MODEL_REPLAY=1 uv run --env-file ../.env pytest -m integration -s
+ASTER_RUN_OPEN_MODEL_REPLAY=1 uv run --env-file ../.env pytest -m integration -s
     tests/integration/test_open_model_tool_reasoning_live.py
 
 Tests raw reasoning_content on the next HTTP request after SQLite close/reopen,
 not merely its visibility somewhere in answer text. No opaque state is printed.
-Set NOOA_TEST_OMITTED_REASONING=1 for one additional continuation per model,
+Set ASTER_TEST_OMITTED_REASONING=1 for one additional continuation per model,
 removing reasoning_content after SDK serialization. It reports whether the route
 rejects the omitted field; it does not assume every gateway enforces it.
 """
@@ -18,17 +18,17 @@ import os
 import httpx
 import pytest
 
-from nooa.llm_types import LLMResponse
-from nooa.storage.sqlite import SQLiteStorageManager
-from nooa.unifiedllm import CompletionClient, Tool
-from nooa.unifiedllm.http_config import HttpConfig
-from nooa.unifiedllm.retry_config import RetryConfig
+from aster.llm_types import LLMResponse
+from aster.storage.sqlite import SQLiteStorageManager
+from aster.unifiedllm import CompletionClient, Tool
+from aster.unifiedllm.http_config import HttpConfig
+from aster.unifiedllm.retry_config import RetryConfig
 
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(
-        os.getenv("NOOA_RUN_OPEN_MODEL_REPLAY") != "1",
-        reason="set NOOA_RUN_OPEN_MODEL_REPLAY=1 to spend inference tokens",
+        os.getenv("ASTER_RUN_OPEN_MODEL_REPLAY") != "1",
+        reason="set ASTER_RUN_OPEN_MODEL_REPLAY=1 to spend inference tokens",
     ),
 ]
 
@@ -156,7 +156,7 @@ async def test_open_model_tool_reasoning_after_sqlite_resume(family, tmp_path, m
         ),
         flush=True,
     )
-    if os.getenv("NOOA_TEST_OMITTED_REASONING") == "1":
+    if os.getenv("ASTER_TEST_OMITTED_REASONING") == "1":
         omit_reasoning = True
         error_type = None
         omitted_result = None

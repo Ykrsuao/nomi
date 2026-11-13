@@ -12,10 +12,10 @@ from typing import Any
 import pytest
 from starlette.testclient import TestClient
 
-from nooa.llm_types import AssistantText, LLMResponse
-from nooa.unifiedllm import UnifiedLLM
+from aster.llm_types import AssistantText, LLMResponse
+from aster.unifiedllm import UnifiedLLM
 
-JOURNAL_KEY = "nooaJournal"
+JOURNAL_KEY = "asterJournal"
 
 
 class FakeGymLLM(UnifiedLLM):
@@ -25,7 +25,7 @@ class FakeGymLLM(UnifiedLLM):
         raise NotImplementedError
 
     async def acall(self, messages, tools=None, output_model=None, **kwargs):
-        from nooa.tracing import journal_llm_call
+        from aster.tracing import journal_llm_call
 
         response = LLMResponse(
             parts=(AssistantText(text=f"POLICY REPLY {len(messages)}"),),
@@ -44,9 +44,9 @@ class FakeGymLLM(UnifiedLLM):
 
 @pytest.fixture
 def viewer(tmp_path, monkeypatch):
-    from nooa.viewer import main as main_module
-    from nooa.viewer import otlp_store
-    from nooa.viewer.main import app
+    from aster.viewer import main as main_module
+    from aster.viewer import otlp_store
+    from aster.viewer.main import app
 
     monkeypatch.setattr(otlp_store, "DB_PATH", tmp_path / "viewer.db")
     monkeypatch.setattr(otlp_store, "_db", None)
@@ -70,7 +70,7 @@ async def _run_policy_calls(session_id: str, calls: int = 1) -> str:
     from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
     from opentelemetry import trace
 
-    from nooa.tracing import flush_traces, set_session
+    from aster.tracing import flush_traces, set_session
 
     set_session(session_id)
     llm = FakeGymLLM("gym-policy")
@@ -91,7 +91,7 @@ async def _run_policy_calls(session_id: str, calls: int = 1) -> str:
 
 
 def _import(client: TestClient, otlp_store, lines: list[str], session_id: str) -> None:
-    """What ``nooa import-traces`` does with one file, via the test client."""
+    """What ``aster import-traces`` does with one file, via the test client."""
     for line in lines:
         body = json.loads(line)
         record = body.get(JOURNAL_KEY)
@@ -129,7 +129,7 @@ def _spans_by_id(spans: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
 
 @pytest.mark.asyncio
 async def test_journal_file_from_non_litellm_client_reaches_viewer_calls(tmp_path: Path, viewer):
-    from nooa.tracing import enable_tracing, exporters
+    from aster.tracing import enable_tracing, exporters
 
     client, otlp_store = viewer
     traces = tmp_path / "traces"
@@ -137,7 +137,7 @@ async def test_journal_file_from_non_litellm_client_reaches_viewer_calls(tmp_pat
     session_id = "gym-row-0"
     generation_span_id = await _run_policy_calls(session_id)
 
-    lines = (traces / f"{session_id}.nooa.jsonl").read_text().splitlines()
+    lines = (traces / f"{session_id}.aster.jsonl").read_text().splitlines()
     _import(client, otlp_store, lines, session_id)
 
     calls = client.get(f"/api/traces/{session_id}/calls").json()
@@ -176,7 +176,7 @@ async def test_journal_file_from_non_litellm_client_reaches_viewer_calls(tmp_pat
 
 @pytest.mark.asyncio
 async def test_each_call_in_one_generation_gets_its_own_llm_span(tmp_path: Path, viewer):
-    from nooa.tracing import enable_tracing, exporters
+    from aster.tracing import enable_tracing, exporters
 
     client, otlp_store = viewer
     traces = tmp_path / "traces"
@@ -184,7 +184,7 @@ async def test_each_call_in_one_generation_gets_its_own_llm_span(tmp_path: Path,
     session_id = "gym-row-1"
     generation_span_id = await _run_policy_calls(session_id, calls=2)
 
-    lines = (traces / f"{session_id}.nooa.jsonl").read_text().splitlines()
+    lines = (traces / f"{session_id}.aster.jsonl").read_text().splitlines()
     _import(client, otlp_store, lines, session_id)
 
     calls = sorted(
@@ -208,7 +208,7 @@ async def test_a_client_inside_its_own_llm_span_is_linked_to_it(tmp_path: Path, 
     from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
     from opentelemetry import trace
 
-    from nooa.tracing import enable_tracing, exporters, flush_traces, set_session
+    from aster.tracing import enable_tracing, exporters, flush_traces, set_session
 
     client, otlp_store = viewer
     traces = tmp_path / "traces"
@@ -225,7 +225,7 @@ async def test_a_client_inside_its_own_llm_span_is_linked_to_it(tmp_path: Path, 
         own_span_id = format(own.get_span_context().span_id, "016x")
     flush_traces()
 
-    lines = (traces / f"{session_id}.nooa.jsonl").read_text().splitlines()
+    lines = (traces / f"{session_id}.aster.jsonl").read_text().splitlines()
     _import(client, otlp_store, lines, session_id)
 
     (call,) = client.get(f"/api/traces/{session_id}/calls").json()

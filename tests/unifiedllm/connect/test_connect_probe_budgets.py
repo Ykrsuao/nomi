@@ -4,7 +4,7 @@
 
 import pytest
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 
 
 def plan(**kwargs):

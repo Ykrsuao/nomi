@@ -46,7 +46,7 @@ class MockWriter:
         variants: list[str] | None = None,
     ) -> Path:
         self.started = True
-        return Path("/tmp/mock.noo-eval.jsonl")
+        return Path("/tmp/mock.aster-eval.jsonl")
 
     def append_result(self, result: EvalTestResult | dict[str, Any]) -> None:
         if isinstance(result, dict):

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from nooa.atif import (
+from aster.atif import (
     AgentSchema,
     FinalMetricsSchema,
     MetricsSchema,

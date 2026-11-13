@@ -20,13 +20,13 @@ import msgpack
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent, hidden
-from nooa.events import _NO_RETURN
-from nooa.runtime.sandbox import wire
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.errors import CellSerializationError, WorkerDiedError
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.runtime.sandbox.serialization import (
+from aster import Agent, hidden
+from aster.events import _NO_RETURN
+from aster.runtime.sandbox import wire
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.errors import CellSerializationError, WorkerDiedError
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.runtime.sandbox.serialization import (
     ErrorDTO,
     ResultDTO,
     SignalDTO,
@@ -34,7 +34,7 @@ from nooa.runtime.sandbox.serialization import (
     dto_to_result,
     dto_to_wire,
 )
-from nooa.unifiedllm.fake import FakeLLMClient
+from aster.unifiedllm.fake import FakeLLMClient
 
 CODEC = wire.Codec()
 
@@ -123,7 +123,7 @@ def test_value_types_round_trip(value):
 
 
 def test_path_mapping_preserves_nested_namedtuple_types():
-    from nooa.runtime.sandbox.paths import PathMap
+    from aster.runtime.sandbox.paths import PathMap
 
     paths = PathMap([("C:/work", "/workspace")], windows=True)
     codec = wire.Codec({wire.type_key(Pair): Pair}, path_transform=paths.to_host)
@@ -165,7 +165,7 @@ def test_unsupported_values_fail_at_encode(value):
 
 
 def test_reduce_is_never_consulted(monkeypatch):
-    marker = "NOOA_TEST_SANDBOX_ESCAPE"
+    marker = "ASTER_TEST_SANDBOX_ESCAPE"
     monkeypatch.delenv(marker, raising=False)
 
     class Bomb:
@@ -298,7 +298,7 @@ def _bare_executor() -> SandboxedExecutor:
 
 @pytest.mark.parametrize("raw", [b"\xc1", CODEC.dumps([1, 2])], ids=["corrupt", "non-dict"])
 async def test_recv_retires_worker_on_malformed_message(raw):
-    from nooa.runtime.sandbox.protocol import frame
+    from aster.runtime.sandbox.protocol import frame
 
     async def events():
         yield types.SimpleNamespace(event_type="stdout", data=frame(raw))
@@ -321,8 +321,8 @@ async def test_recv_retires_worker_on_malformed_message(raw):
     [(9, 3.0, True), (24, 3.0, True), (9, 2.5, False), (11, 3.0, False)],
 )
 async def test_kernel_cpu_limit_uses_final_guest_usage(signum, cpu, exceeded):
-    from nooa.runtime.sandbox.errors import CellTimeoutError
-    from nooa.runtime.sandbox.protocol import frame
+    from aster.runtime.sandbox.errors import CellTimeoutError
+    from aster.runtime.sandbox.protocol import frame
 
     async def events():
         yield types.SimpleNamespace(

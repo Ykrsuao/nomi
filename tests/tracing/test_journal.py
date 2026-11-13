@@ -3,7 +3,7 @@
 """Tests for the skeleton + content-addressed blocks journal protocol.
 
 The callback consumes a :class:`JournalPayload` from the sideband
-ContextVar (populated by the nooa actor) and posts:
+ContextVar (populated by the aster actor) and posts:
 
 1. New blocks to ``/v1/journal/blocks`` (dedup'd per session by hash).
 2. A call record (skeleton + output messages) to ``/v1/journal/calls``.
@@ -17,11 +17,11 @@ from unittest.mock import patch
 
 import pytest
 
-from nooa.tracing._context_sideband import (
+from aster.tracing._context_sideband import (
     JournalPayload,
     set_journal_payload,
 )
-from nooa.tracing._litellm_journal import (
+from aster.tracing._litellm_journal import (
     MessageJournalCallback,
     _extract_output_msgs,
     _safe_msg_to_dict,
@@ -66,7 +66,7 @@ def _posts():
 @pytest.fixture
 def session_ctx():
     """Install a known session for the callback to read via get_session()."""
-    from nooa.tracing._session import set_session
+    from aster.tracing._session import set_session
 
     set_session("test-session")
     yield "test-session"
@@ -99,7 +99,7 @@ class TestJournalCallbackPreApiCall:
         set_journal_payload(payload)
 
         with patch(
-            "nooa.tracing._litellm_journal._post_json",
+            "aster.tracing._litellm_journal._post_json",
             side_effect=fake_post,
         ):
             cb.log_pre_api_call("model-x", [], {"litellm_call_id": "cid1"})
@@ -121,7 +121,7 @@ class TestJournalCallbackPreApiCall:
 
         payload = JournalPayload(skeleton=[], blocks={"h1": "<b/>"})
         with patch(
-            "nooa.tracing._litellm_journal._post_json",
+            "aster.tracing._litellm_journal._post_json",
             side_effect=fake_post,
         ):
             set_journal_payload(payload)
@@ -141,7 +141,7 @@ class TestJournalCallbackPreApiCall:
         set_journal_payload(None)  # explicitly empty
         messages = [{"role": "user", "content": "hello"}]
         with patch(
-            "nooa.tracing._litellm_journal._post_json",
+            "aster.tracing._litellm_journal._post_json",
             side_effect=fake_post,
         ):
             cb.log_pre_api_call("m", messages, {"litellm_call_id": "cid"})
@@ -178,7 +178,7 @@ class TestJournalCallbackSuccessEvent:
             )
         )
         with patch(
-            "nooa.tracing._litellm_journal._post_json",
+            "aster.tracing._litellm_journal._post_json",
             side_effect=fake_post,
         ):
             cb.log_pre_api_call("m", [], {"litellm_call_id": "cid"})
@@ -216,7 +216,7 @@ class TestJournalCallbackSuccessEvent:
         )
 
         with patch(
-            "nooa.tracing._litellm_journal._post_json",
+            "aster.tracing._litellm_journal._post_json",
             side_effect=fake_post,
         ):
             cb.log_pre_api_call("m", [], {"litellm_call_id": "cid"})
@@ -239,7 +239,7 @@ def test_safe_msg_to_dict_redacts_json_encoded_opaque_state():
 
 @pytest.mark.parametrize("json_encoded", [False, True])
 def test_safe_msg_to_dict_redacts_private_replay_envelope(json_encoded):
-    from nooa.unifiedllm.replay_state import LLM_STATE_KEY
+    from aster.unifiedllm.replay_state import LLM_STATE_KEY
 
     message = {LLM_STATE_KEY: {"payload": {"future_provider_blob": "opaque-state"}}}
     original = {"content": json.dumps(message)} if json_encoded else message
@@ -277,14 +277,14 @@ class TestSentBlocksBounding:
 
     def test_session_switch_drops_old_hashes(self, session_ctx):
         """Switching sessions forgets the old session's hashes, so blocks are re-posted."""
-        from nooa.tracing._session import set_session
+        from aster.tracing._session import set_session
 
         cb = MessageJournalCallback("http://localhost:5001")
         calls, fake_post = _posts()
 
         payload = JournalPayload(skeleton=[], blocks={"h1": "block1"})
         with patch(
-            "nooa.tracing._litellm_journal._post_json",
+            "aster.tracing._litellm_journal._post_json",
             side_effect=fake_post,
         ):
             # Post block under session A
@@ -311,7 +311,7 @@ class TestSentBlocksBounding:
 
         payload = JournalPayload(skeleton=[], blocks={"h1": "block1"})
         with patch(
-            "nooa.tracing._litellm_journal._post_json",
+            "aster.tracing._litellm_journal._post_json",
             side_effect=failing_post,
         ):
             set_journal_payload(payload)

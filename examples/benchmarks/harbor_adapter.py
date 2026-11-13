@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Harbor adapter for the NOOA BenchAgent.
+"""Harbor adapter for the ASTER BenchAgent.
 
-Registers NOOA as a Harbor "installed agent" for the open-source Harbor
+Registers ASTER as a Harbor "installed agent" for the open-source Harbor
 benchmark harness (https://github.com/harbor-framework/harbor). Harbor calls
 :meth:`install` once inside each trial container (clone the repo, create a
-venv, install the ``nooa-bench`` package), then :meth:`run` invokes the
-``nemo-harbor`` CLI; per-task token usage is read back from ``result.json``.
+venv, install the ``aster-bench`` package), then :meth:`run` invokes the
+``aster-harbor`` CLI; per-task token usage is read back from ``result.json``.
 
 Usage — reference this file via ``import_path`` in your Harbor config
 (see ``harbor_minimal.yaml`` next to this file)::
@@ -35,8 +35,8 @@ from harbor.agents.installed.base import BaseInstalledAgent
 from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
 
-REPO_DIR = "/installed-agent/nooa"
-VENV = "/opt/nooa-venv"
+REPO_DIR = "/installed-agent/aster"
+VENV = "/opt/aster-venv"
 
 # Credentials forwarded from the host into the agent process. The NVIDIA
 # inference endpoints are public; add other provider keys here if needed.
@@ -46,13 +46,13 @@ FORWARDED_ENV_VARS = (
 )
 
 
-class NooaBenchAgent(BaseInstalledAgent):
-    """Runs the NOOA BenchAgent (``packages/nooa-bench``) under Harbor.
+class AsterBenchAgent(BaseInstalledAgent):
+    """Runs the ASTER BenchAgent (``packages/aster-bench``) under Harbor.
 
     YAML kwargs:
-        git_url:    clone URL of the NOOA repo (or env ``NOOA_GIT_URL``)
-        git_ref:    optional branch/tag/full commit SHA (or env ``NOOA_GIT_REF``)
-        agent_type: registry key passed to ``nemo-harbor`` (default ``bench``)
+        git_url:    clone URL of the ASTER repo (or env ``ASTER_GIT_URL``)
+        git_ref:    optional branch/tag/full commit SHA (or env ``ASTER_GIT_REF``)
+        agent_type: registry key passed to ``aster-harbor`` (default ``bench``)
         api_base:   optional OpenAI-compatible endpoint override
     """
 
@@ -68,20 +68,20 @@ class NooaBenchAgent(BaseInstalledAgent):
         **kwargs,
     ) -> None:
         super().__init__(logs_dir, *args, **kwargs)
-        self._git_url = git_url or os.environ.get("NOOA_GIT_URL")
+        self._git_url = git_url or os.environ.get("ASTER_GIT_URL")
         if not self._git_url:
             raise ValueError(
-                "NOOA repo URL required: pass the git_url kwarg in the Harbor "
-                "YAML or set the NOOA_GIT_URL environment variable."
+                "ASTER repo URL required: pass the git_url kwarg in the Harbor "
+                "YAML or set the ASTER_GIT_URL environment variable."
             )
-        self._git_ref = git_ref or os.environ.get("NOOA_GIT_REF")
+        self._git_ref = git_ref or os.environ.get("ASTER_GIT_REF")
         self._agent_type = agent_type
         self._api_base = api_base
         self._enable_atif = enable_atif
 
     @staticmethod
     def name() -> str:
-        return "nooa-bench"
+        return "aster-bench"
 
     async def install(self, environment: BaseEnvironment) -> None:
         """Clone the repo and install core + cli + bench into a fresh venv."""
@@ -110,8 +110,8 @@ class NooaBenchAgent(BaseInstalledAgent):
                 'export PATH="$HOME/.local/bin:$PATH" && '
                 f"uv venv {VENV} && "
                 f"uv pip install --python {VENV}/bin/python3 "
-                f"{REPO_DIR} {REPO_DIR}/packages/nooa-cli {REPO_DIR}/packages/nooa-bench && "
-                f"{VENV}/bin/python3 -c \"from nooa_bench.runner import main; print('nooa-bench installed OK')\""
+                f"{REPO_DIR} {REPO_DIR}/packages/aster-cli {REPO_DIR}/packages/aster-bench && "
+                f"{VENV}/bin/python3 -c \"from aster_bench.runner import main; print('aster-bench installed OK')\""
             ),
         )
 
@@ -126,14 +126,14 @@ class NooaBenchAgent(BaseInstalledAgent):
         # Exit code 1 means the agent reported task failure: map it to exit 0 so
         # the verifier scores reward=0 instead of raising a harness error.
         command = (
-            f"({VENV}/bin/nemo-harbor "
+            f"({VENV}/bin/aster-harbor "
             f"--instruction {shlex.quote(instruction)} "
             f"--model {shlex.quote(self.model_name or '')} "
             f"--agent-type {shlex.quote(self._agent_type)} "
             f"{api_base}"
             f"{enable_atif}"
             f"; EC=$?; [ $EC -eq 1 ] && exit 0 || exit $EC) "
-            f"2>&1 | tee /logs/agent/nooa_bench.log"
+            f"2>&1 | tee /logs/agent/aster_bench.log"
         )
         env = {k: v for k in FORWARDED_ENV_VARS if (v := os.environ.get(k))}
         # The NVIDIA endpoints are OpenAI-compatible; litellm reads the key

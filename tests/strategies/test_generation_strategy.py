@@ -13,14 +13,14 @@ class TestGenerationStrategyABC:
 
     def test_is_abstract(self):
         """GenerationStrategy should be abstract - cannot instantiate directly."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         with pytest.raises(TypeError):
             GenerationStrategy()
 
     def test_name_has_default_implementation(self):
         """GenerationStrategy.name has a default (class name)."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         class TestStrategy(GenerationStrategy):
             async def execute(self, runtime, call):
@@ -31,7 +31,7 @@ class TestGenerationStrategyABC:
 
     def test_get_block_overrides_has_default_implementation(self):
         """GenerationStrategy.get_block_overrides has a default (empty dict)."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         class TestStrategy(GenerationStrategy):
             async def execute(self, runtime, call):
@@ -42,7 +42,7 @@ class TestGenerationStrategyABC:
 
     def test_requires_execute_method(self):
         """GenerationStrategy subclasses must implement execute()."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         class IncompleteStrategy(GenerationStrategy):
             @property
@@ -58,7 +58,7 @@ class TestGenerationStrategyABC:
     @pytest.mark.asyncio
     async def test_complete_implementation_can_instantiate(self, mock_runtime):
         """Complete GenerationStrategy implementation should instantiate."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         class TestStrategy(GenerationStrategy):
             @property
@@ -77,7 +77,7 @@ class TestGenerationStrategyTraceable:
 
     def test_traceable_default_true(self):
         """GenerationStrategy.traceable should default to True."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         class TestStrategy(GenerationStrategy):
             async def execute(self, runtime, call):
@@ -92,7 +92,7 @@ class TestGenerationStrategyConfig:
 
     def test_strategy_accepts_max_iterations(self):
         """Strategy should accept max_iterations config."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         class ConfigurableStrategy(GenerationStrategy):
             def __init__(self, max_iterations: int = 10, max_retries: int = 3):
@@ -116,7 +116,7 @@ class TestGenerationStrategyConfig:
 
     def test_strategy_defaults_when_no_config(self):
         """Strategy should use defaults when no config provided."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         class ConfigurableStrategy(GenerationStrategy):
             def __init__(self, max_iterations: int = 10, max_retries: int = 3):

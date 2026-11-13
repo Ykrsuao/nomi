@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Single calculation agent - interprets natural language math."""
 
-from nooa import Agent
+from aster import Agent
 
 
 class CalculateSingleAgent(Agent):

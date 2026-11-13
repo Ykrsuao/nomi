@@ -6,7 +6,7 @@ import httpx
 import pytest
 import yaml
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -37,7 +37,7 @@ async def test_existing_include_without_evidence_does_not_lose_paid_result(monke
 
 @pytest.mark.parametrize("include", [[], (), set()])
 def test_empty_include_sequences_are_explicit_opt_outs(include):
-    from nooa.unifiedllm.replay_state import add_encrypted_reasoning_include
+    from aster.unifiedllm.replay_state import add_encrypted_reasoning_include
 
     params = {"include": include, "api_base": "https://api.openai.com/v1"}
     add_encrypted_reasoning_include(
@@ -83,7 +83,7 @@ async def test_422_is_rejected_not_unchecked(monkeypatch):
 
 
 def test_null_secrets_env_is_populated(tmp_path):
-    from nooa.secrets import write_secret_env
+    from aster.secrets import write_secret_env
 
     path = tmp_path / "secrets.yaml"
     path.write_text("env:\n")
@@ -143,8 +143,8 @@ def test_concurrent_registry_writers_serialize_the_entire_update(tmp_path):
 async def test_unobserved_unauthenticated_request_is_not_called_dropped_settings(monkeypatch):
     from unittest.mock import AsyncMock
 
-    from nooa.llm_types import LLMResponse
-    from nooa.unifiedllm import registry
+    from aster.llm_types import LLMResponse
+    from aster.unifiedllm import registry
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     real_factory = registry.client_from_config
@@ -153,7 +153,7 @@ async def test_unobserved_unauthenticated_request_is_not_called_dropped_settings
         client = real_factory(*args, **kwargs)
         assert client._http.async_client is None
         # Simulate a successful legacy fallback; no request traverses our owned pool.
-        from nooa.strategies.predict import PredictStrategy
+        from aster.strategies.predict import PredictStrategy
 
         client.acall = AsyncMock(
             return_value=LLMResponse(

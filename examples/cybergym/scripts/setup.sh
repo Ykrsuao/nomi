@@ -53,7 +53,8 @@ echo "==> [5/6] Downloading CyberGym server Docker images for the subset"
 (cd "$CYBERGYM_REPO" && python3 scripts/server_data/download_subset.py)
 
 echo "==> [6/6] Installing this runner and building the agent image"
-docker build -f "$AGENT_REPO/Dockerfile" -t "$RUNNER_IMAGE" "$AGENT_REPO"
+docker build -f "$AGENT_REPO/Dockerfile" -t "$RUNNER_IMAGE" \
+  --build-arg "ASTER_VERSION=$ASTER_VERSION" "$ASTER_SOURCE_ROOT"
 
 echo
 echo "==> Setup complete."

@@ -15,7 +15,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from nooa.atif import (
+from aster.atif import (
     AgentSchema,
     ContentPart,
     ImageSource,

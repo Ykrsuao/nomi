@@ -8,8 +8,8 @@ import json
 import httpx
 import pytest
 
-from nooa.unifiedllm import CompletionClient, RetryConfig, Tool
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster.unifiedllm import CompletionClient, RetryConfig, Tool
+from aster.unifiedllm.unifiedllm import _ClientHttp
 
 
 @pytest.mark.asyncio

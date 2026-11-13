@@ -9,13 +9,13 @@ specific run, so these work on any run and store results anywhere.
 |-----|------|-------|--------|-------------|
 | `red_team/` | `run_scan.sh <run> [out]` | agent cells + tool output | `evidence/*.json` + `escape_digest.md` | this venv (stdlib) |
 | `world_model/` | `analyze_world_models.py <run> [--out]` | helpers + executed cells | `world_model_usage.{md,json}` | this venv (stdlib) |
-| `memory/` | `analyze_memory.py <run> [--out]` | `team_nemo/shared/memory.sqlite` | `memory_usage.{md,json}` | this venv (stdlib) |
+| `memory/` | `analyze_memory.py <run> [--out]` | `team_aster/shared/memory.sqlite` | `memory_usage.{md,json}` | this venv (stdlib) |
 | `analysis/` | `build_comparison.py <run_b> [--baseline A] [--out]` | `events.jsonl` | `rhae_over_time.png`, `budget_over_time.png`, `comparison_summary.json` | **progressive-learning venv** (matplotlib + `arc_agi_3.rhae`) |
 
 ## Examples
 
 ```bash
-RUN=results/arc_agi_3/nemo_solver/<container>
+RUN=results/arc_agi_3/aster_solver/<container>
 OUT=/tmp/analysis_out
 
 # Red-team leakage/guardrail audit (internet / game-source / foreign-data / name-leak):

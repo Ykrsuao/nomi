@@ -21,21 +21,21 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.context_blocks.events import ToolCallEvent, ToolResult
-from nooa.context_blocks.formatter import (
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.context_blocks.events import ToolCallEvent, ToolResult
+from aster.context_blocks.formatter import (
     XMLBlockFormatter,
     _event_block_to_messages,
 )
-from nooa.context_blocks.models import (
+from aster.context_blocks.models import (
     ResolvedBlock,
     Role,
 )
-from nooa.errors import GenerationError
-from nooa.events import ResultStatus
-from nooa.strategies.codeact import CodeActStrategy, return_text_as_result
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.errors import GenerationError
+from aster.events import ResultStatus
+from aster.strategies.codeact import CodeActStrategy, return_text_as_result
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # ---------------------------------------------------------------------------
 # Helpers

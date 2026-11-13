@@ -4,7 +4,7 @@ import subprocess
 
 import pytest
 
-from nooa.runtime.restrictions import (
+from aster.runtime.restrictions import (
     DEFAULT_BLOCKED_CALLS,
     DEFAULT_BLOCKED_MODULES,
     RESTRICTED_MODULES,

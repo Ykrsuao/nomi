@@ -10,7 +10,7 @@ license = {text = "Apache-2.0"}
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "pyyaml>=6.0",
-    "nooa[viewer]",
+    "aster[viewer]",
     "uvicorn[standard]>=0.20.0",
     "fastapi>=0.109.1",
 ]
@@ -22,7 +22,7 @@ dev = [
 
 # Standard src layout
 [tool.uv.sources]
-nooa = { workspace = true }
+aster = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/eval_pipeline"]

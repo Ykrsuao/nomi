@@ -13,9 +13,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from pydantic import BaseModel
 
-from nooa.config.strategy_config import PredictConfig, ReflexionConfig
-from nooa.strategies.predict import PredictStrategy
-from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+from aster.config.strategy_config import PredictConfig, ReflexionConfig
+from aster.strategies.predict import PredictStrategy
+from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
 
 class _Resp(BaseModel):

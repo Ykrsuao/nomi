@@ -8,12 +8,12 @@ not on single-wrapper inputs (R3 bug fix).
 
 import pytest
 
-from nooa.runtime.harness_metrics import (
+from aster.runtime.harness_metrics import (
     _NULL_METRICS,
     _harness_metrics_var,
     start_harness_metrics,
 )
-from nooa.strategies.pure_python import PurePythonStrategy
+from aster.strategies.pure_python import PurePythonStrategy
 
 
 @pytest.fixture(autouse=True)

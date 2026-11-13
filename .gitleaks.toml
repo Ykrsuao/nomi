@@ -1,5 +1,5 @@
 # Gitleaks configuration for the CI secret-scan job.
-title = "NOOA gitleaks config"
+title = "ASTER gitleaks config"
 
 [extend]
 useDefault = true

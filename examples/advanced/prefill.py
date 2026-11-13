@@ -8,8 +8,8 @@ uv run python examples/advanced/prefill.py
 from dataclasses import dataclass, field
 from datetime import date
 
-from nooa import Agent
-from nooa.util.quickstart import autorun, llm
+from aster import Agent
+from aster.util.quickstart import autorun, llm
 
 
 @dataclass

@@ -30,10 +30,10 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent
-from nooa.storage import SQLiteStorageManager
-from nooa.storage.in_memory import InMemoryStorageManager
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent
+from aster.storage import SQLiteStorageManager
+from aster.storage.in_memory import InMemoryStorageManager
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # A distinctive string we can grep for in the serialized session 2 message list.
 _MARKER = "CROSS_SESSION_TOOLCALL_MARKER_d4e5f6"

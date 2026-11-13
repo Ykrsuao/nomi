@@ -4,7 +4,7 @@ import httpx
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from nooa.unifiedllm.http_config import HttpConfig
+from aster.unifiedllm.http_config import HttpConfig
 
 
 def _configured_keepalive(client) -> int:
@@ -34,7 +34,7 @@ def test_http_config_frozen():
 
 
 def test_completion_client_accepts_http_config():
-    from nooa.unifiedllm import CompletionClient, HttpConfig
+    from aster.unifiedllm import CompletionClient, HttpConfig
 
     # Should not raise — just verifies the constructor signature
     client = CompletionClient("gpt-4o-mini", http_config=HttpConfig(connect_timeout=5.0))
@@ -64,7 +64,7 @@ def test_enabling_keepalive_connections_reuses_by_default():
 
 def test_importing_unifiedllm_does_not_patch_httpx_asyncclient():
     """Importing unifiedllm must NOT monkey-patch httpx.AsyncClient (GitLab #329)."""
-    import nooa.unifiedllm.unifiedllm as u  # noqa: F401  (force import)
+    import aster.unifiedllm.unifiedllm as u  # noqa: F401  (force import)
 
     init = httpx.AsyncClient.__init__
     # The stdlib/httpx __init__ — not a closure installed by unifiedllm.
@@ -79,7 +79,7 @@ def test_importing_unifiedllm_does_not_patch_httpx_asyncclient():
 @pytest.mark.asyncio
 async def test_unrelated_httpx_client_is_unaffected():
     """A plain httpx.AsyncClient created by unrelated code keeps its own limits."""
-    import nooa.unifiedllm  # noqa: F401  (ensure the library is imported)
+    import aster.unifiedllm  # noqa: F401  (ensure the library is imported)
 
     # No http_config given anywhere; the user's explicit keepalive must survive.
     limits = httpx.Limits(max_keepalive_connections=17)
@@ -93,7 +93,7 @@ async def test_unrelated_httpx_client_is_unaffected():
 
 def test_two_clients_do_not_share_limits():
     """Two clients with different http_config get independent httpx limits (no bleed)."""
-    from nooa.unifiedllm import CompletionClient, HttpConfig
+    from aster.unifiedllm import CompletionClient, HttpConfig
 
     a = CompletionClient("gpt-4o-mini", http_config=HttpConfig(max_keepalive_connections=0))
     b = CompletionClient("gpt-4o-mini", http_config=HttpConfig(max_keepalive_connections=9))
@@ -113,7 +113,7 @@ def test_two_clients_do_not_share_limits():
 
 def test_no_pooling_client_has_keepalive_zero():
     """A client requesting no pooling produces httpx clients with keepalive=0."""
-    from nooa.unifiedllm import CompletionClient, HttpConfig, ResponsesClient
+    from aster.unifiedllm import CompletionClient, HttpConfig, ResponsesClient
 
     comp = CompletionClient("anthropic/claude-3-5-sonnet", http_config=HttpConfig())
     resp = ResponsesClient("openai/gpt-5.3-codex", http_config=HttpConfig())
@@ -132,7 +132,7 @@ def test_responses_client_passes_own_httpx_via_handler():
     """ResponsesClient wraps its own httpx client in litellm's AsyncHTTPHandler/HTTPHandler."""
     from litellm.llms.custom_httpx.http_handler import AsyncHTTPHandler, HTTPHandler
 
-    from nooa.unifiedllm import HttpConfig, ResponsesClient
+    from aster.unifiedllm import HttpConfig, ResponsesClient
 
     r = ResponsesClient("openai/gpt-5.3-codex", http_config=HttpConfig(max_keepalive_connections=3))
     try:
@@ -150,7 +150,7 @@ def test_handler_wrapper_does_not_create_throwaway_async_client(monkeypatch):
     """Building handler wrappers should not leak a throwaway AsyncHTTPHandler client."""
     from litellm.llms.custom_httpx.http_handler import AsyncHTTPHandler
 
-    from nooa.unifiedllm import ResponsesClient
+    from aster.unifiedllm import ResponsesClient
 
     def fail_create_client(*args, **kwargs):
         raise AssertionError("AsyncHTTPHandler.__init__ created a throwaway client")
@@ -167,7 +167,7 @@ def test_handler_wrapper_does_not_create_throwaway_async_client(monkeypatch):
 @pytest.mark.asyncio
 async def test_aclose_is_idempotent_after_aclose_and_close(monkeypatch):
     """aclose() should match close() idempotency and not double-close transports."""
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     c = CompletionClient("anthropic/claude-3-5-sonnet")
     calls = 0
@@ -188,7 +188,7 @@ async def test_aclose_is_idempotent_after_aclose_and_close(monkeypatch):
 @pytest.mark.asyncio
 async def test_aclose_releases_async_transport_after_close(monkeypatch):
     """close() must not prevent a later aclose() from releasing async resources."""
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     c = CompletionClient("anthropic/claude-3-5-sonnet")
     calls = 0
@@ -213,7 +213,7 @@ def test_completion_openai_family_uses_openai_sdk_wrapping_httpx(monkeypatch):
     """OpenAI-family completion clients wrap their httpx client in an AsyncOpenAI/OpenAI."""
     from openai import AsyncOpenAI, OpenAI
 
-    from nooa.unifiedllm import CompletionClient, HttpConfig
+    from aster.unifiedllm import CompletionClient, HttpConfig
 
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     c = CompletionClient("gpt-4o-mini", http_config=HttpConfig(max_keepalive_connections=0))
@@ -231,7 +231,7 @@ def test_completion_non_openai_uses_handler():
     """Anthropic/bedrock completion clients use the AsyncHTTPHandler/HTTPHandler wrappers."""
     from litellm.llms.custom_httpx.http_handler import AsyncHTTPHandler, HTTPHandler
 
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     c = CompletionClient("anthropic/claude-3-5-sonnet")
     try:
@@ -245,7 +245,7 @@ def test_completion_non_openai_uses_handler():
 @pytest.mark.asyncio
 async def test_aclose_closes_httpx_clients():
     """aclose() releases the per-client httpx resources."""
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     c = CompletionClient("anthropic/claude-3-5-sonnet")
     async_client = c._http.httpx_async
@@ -257,7 +257,7 @@ async def test_aclose_closes_httpx_clients():
 
 def test_httpx_clients_preserve_litellm_transport_hardening():
     """Per-client httpx clients keep litellm's SSL + redirect behaviour."""
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     c = CompletionClient("anthropic/claude-3-5-sonnet")
     try:
@@ -274,7 +274,7 @@ def test_call_forwards_client_to_litellm(monkeypatch):
     """CompletionClient.call must hand its own client object to litellm.completion."""
     import litellm
 
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     captured = {}
 
@@ -302,7 +302,7 @@ def test_responses_call_forwards_client_to_litellm(monkeypatch):
     """ResponsesClient.call must hand its own client object to litellm.responses."""
     import litellm
 
-    from nooa.unifiedllm import ResponsesClient
+    from aster.unifiedllm import ResponsesClient
 
     captured = {}
 

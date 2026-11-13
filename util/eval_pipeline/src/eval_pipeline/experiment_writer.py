@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Utility for writing .noo-eval.jsonl experiment files.
+"""Utility for writing .aster-eval.jsonl experiment files.
 
 Provides API for evaluation runners to write results incrementally using
 typed Pydantic models from eval_types.
@@ -65,7 +65,7 @@ class NullExperimentWriter:
 
 
 class ExperimentWriter:
-    """Manages writing .noo-eval.jsonl files incrementally.
+    """Manages writing .aster-eval.jsonl files incrementally.
 
     Uses typed Pydantic models for validation and consistent serialization.
     """
@@ -92,7 +92,7 @@ class ExperimentWriter:
 
         # Generate filename
         self.file_path = (
-            self.output_dir / f"{self.experiment_name}_{self.timestamp_str}.noo-eval.jsonl"
+            self.output_dir / f"{self.experiment_name}_{self.timestamp_str}.aster-eval.jsonl"
         )
         self.started = False
         self.finalized = False

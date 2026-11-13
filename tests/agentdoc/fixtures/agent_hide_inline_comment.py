@@ -5,8 +5,8 @@
 import math  # noqa: F401
 import sys  # agentdoc: hide  # noqa: F401
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 
 class AgentHideInlineComment(Agent, llm=FakeLLMClient()):

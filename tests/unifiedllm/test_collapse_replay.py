@@ -8,15 +8,15 @@ from types import SimpleNamespace
 import pytest
 from litellm.types.utils import Choices, Message, ModelResponse
 
-from nooa import Agent, Context
-from nooa.context_blocks.events import ToolCallEvent, ToolResult
-from nooa.llm_types import LLMResponse
-from nooa.runtime.actor import _current_llm_var, _current_method_var
-from nooa.storage.sqlite import SQLiteStorageManager
-from nooa.unifiedllm import CompletionClient, ResponsesClient
-from nooa.unifiedllm.chat_parts import capture_chat_parts
-from nooa.unifiedllm.replay_state import replay_scope
-from nooa.unifiedllm.response_parts import capture_parts
+from aster import Agent, Context
+from aster.context_blocks.events import ToolCallEvent, ToolResult
+from aster.llm_types import LLMResponse
+from aster.runtime.actor import _current_llm_var, _current_method_var
+from aster.storage.sqlite import SQLiteStorageManager
+from aster.unifiedllm import CompletionClient, ResponsesClient
+from aster.unifiedllm.chat_parts import capture_chat_parts
+from aster.unifiedllm.replay_state import replay_scope
+from aster.unifiedllm.response_parts import capture_parts
 
 
 def _native_turn(model, number):
@@ -150,6 +150,6 @@ async def test_collapse_keeps_only_complete_active_native_turns(
     assert "result-call_2" in encoded
     assert "Earlier work summarized." in encoded
     assert "trailing live state" in encoded
-    assert "nooa_turn" not in encoded
-    assert "nooa_cache_boundary" not in encoded
+    assert "aster_turn" not in encoded
+    assert "aster_cache_boundary" not in encoded
     assert ("incomplete visible execution batch" in caplog.text) is (collapse == "result_only")

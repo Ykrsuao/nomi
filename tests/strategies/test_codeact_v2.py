@@ -8,13 +8,13 @@ from typing import Any, cast
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.context_blocks import ToolCallEvent
-from nooa.events import PythonOutput, Task
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.codeact_v2 import CodeActV2
-from nooa.unifiedllm import (
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.context_blocks import ToolCallEvent
+from aster.events import PythonOutput, Task
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.unifiedllm import (
     AssistantReasoning,
     AssistantText,
     CacheBoundary,
@@ -83,7 +83,7 @@ async def test_current_call_id_matches_events(strategy_type, tool_name):
 
 @pytest.mark.parametrize("replacement", [42, [1, 2], json])
 def test_cell_state_uses_rebound_input_type(replacement):
-    from nooa.strategies.current_call import CurrentCall
+    from aster.strategies.current_call import CurrentCall
 
     call = CurrentCall(id="id", method_name="answer", decorator="strategy", kwargs={"value": "old"})
     call.execution_locals = {"value": replacement}
@@ -386,8 +386,8 @@ def test_prompt_and_execution_context_advertise_inline_return_result():
 
 
 def test_public_export_is_the_supported_strategy():
-    from nooa import CodeActV2 as top_level
-    from nooa.strategies import CodeActV2 as supported
+    from aster import CodeActV2 as top_level
+    from aster.strategies import CodeActV2 as supported
 
     assert top_level is supported is CodeActV2
     assert supported().name == "CODEACT_V2"
@@ -396,15 +396,15 @@ def test_public_export_is_the_supported_strategy():
 def test_lite_strategy_is_not_exported():
     import importlib.util
 
-    import nooa
-    import nooa.experimental
-    import nooa.strategies
-    import nooa.strategies.experimental
+    import aster
+    import aster.experimental
+    import aster.strategies
+    import aster.strategies.experimental
 
-    for module in (nooa, nooa.experimental, nooa.strategies, nooa.strategies.experimental):
+    for module in (aster, aster.experimental, aster.strategies, aster.strategies.experimental):
         assert not hasattr(module, "CodeActLiteStrategy")
         assert "CodeActLiteStrategy" not in module.__all__
-    assert importlib.util.find_spec("nooa.strategies.codeact_lite") is None
+    assert importlib.util.find_spec("aster.strategies.codeact_lite") is None
 
 
 @pytest.mark.asyncio
@@ -472,7 +472,7 @@ async def test_python_cell_context_includes_imported_symbols_and_respects_visibi
 ):
     import sys
 
-    from nooa.runtime.restrictions import DEFAULT_BLOCKED_MODULES, RestrictionsConfig
+    from aster.runtime.restrictions import DEFAULT_BLOCKED_MODULES, RestrictionsConfig
 
     parent = ModuleType("parent_capability_agent")
     leaf = ModuleType("leaf_capability_agent")
@@ -485,7 +485,7 @@ async def test_python_cell_context_includes_imported_symbols_and_respects_visibi
         "from decimal import Decimal as Number\n"
         "from subprocess import run as launch\n"
         "from typing import Annotated\n"
-        "from nooa import hidden\n"
+        "from aster import hidden\n"
         "secret: Annotated[object, hidden] = root\n"
         "class Leaf(Parent): pass\n",
         vars(leaf),
@@ -515,9 +515,9 @@ async def test_imported_capability_is_advertised_and_executes_without_generic_co
     monkeypatch.setitem(sys.modules, module.__name__, module)
     exec(
         "from math import sqrt as root\n"
-        "from nooa import Agent, strategy\n"
-        "from nooa.config import CodeActConfig\n"
-        "from nooa.strategies.codeact_v2 import CodeActV2\n"
+        "from aster import Agent, strategy\n"
+        "from aster.config import CodeActConfig\n"
+        "from aster.strategies.codeact_v2 import CodeActV2\n"
         "class ImportedAgent(Agent):\n"
         "    @strategy(CodeActV2(config=CodeActConfig(prefill=None)))\n"
         "    async def answer(self) -> float:\n"

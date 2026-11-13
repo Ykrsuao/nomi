@@ -6,9 +6,9 @@ These fields are already truncated at capture time by TruncatingIO.
 Repr-level truncation double-truncates them, losing content the LLM needs to see.
 """
 
-from nooa.agentdoc import pformat
-from nooa.context_blocks import ResultStatus
-from nooa.events import PythonOutput
+from aster.agentdoc import pformat
+from aster.context_blocks import ResultStatus
+from aster.events import PythonOutput
 
 
 def _make_event(stdout: str = "", stderr: str = "") -> PythonOutput:

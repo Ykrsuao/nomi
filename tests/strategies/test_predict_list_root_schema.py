@@ -15,12 +15,12 @@ from dataclasses import dataclass
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent
-from nooa.config.strategy_config import PredictConfig
-from nooa.decorators import strategy
-from nooa.strategies import PredictStrategy
-from nooa.strategies.predict import PredictStrategy as _PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent
+from aster.config.strategy_config import PredictConfig
+from aster.decorators import strategy
+from aster.strategies import PredictStrategy
+from aster.strategies.predict import PredictStrategy as _PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 @dataclass

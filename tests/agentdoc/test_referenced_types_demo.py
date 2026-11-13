@@ -6,7 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from nooa.agentdoc import doc
+from aster.agentdoc import doc
 
 
 class QueryRequest(BaseModel):

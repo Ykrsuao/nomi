@@ -3,24 +3,24 @@
 # ruff: noqa: F403,F405
 """Quickstart 06: Tracing — all method types traced with parent-child spans.
 
-Tracing is automatic when `nooa start-dev` is reachable and an application does
+Tracing is automatic when `aster start-dev` is reachable and an application does
 not configure its own exporters. This example explicitly writes a durable
 journal, which can then be imported into the viewer.
 
 Workflow:
-  1. uv run nooa start-dev   # start the trace viewer
+  1. uv run aster start-dev   # start the trace viewer
   2. uv run python examples/quickstart/06_tracing.py
-  3. uv run nooa import-traces traces/quickstart-06-journal
+  3. uv run aster import-traces traces/quickstart-06-journal
   4. View traces at http://localhost:5001
 """
 
-from nooa import hidden
-from nooa.util.quickstart import *
+from aster import hidden
+from aster.util.quickstart import *
 
 with hidden:
     from pathlib import Path
 
-    from nooa.tracing import enable_tracing, exporters
+    from aster.tracing import enable_tracing, exporters
 
     TRACE_DIR = Path("traces/quickstart-06-journal")
 
@@ -68,5 +68,5 @@ async def main():
     print("  - _format()    private helper (also traced)")
     print("=" * 80)
     print(f"\nJournal trace: {TRACE_DIR}")
-    print(f"Import with: nooa import-traces {TRACE_DIR}")
+    print(f"Import with: aster import-traces {TRACE_DIR}")
     print("=" * 80)

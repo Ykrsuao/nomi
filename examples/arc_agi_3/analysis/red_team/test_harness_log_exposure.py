@@ -56,7 +56,7 @@ import tempfile
 from pathlib import Path
 
 # import the production isolation helper (read-only use; we do not modify it)
-EXAMPLE = Path("/root/projects/nemo_oo_agents/examples/arc_agi_3")
+EXAMPLE = Path("/root/projects/aster/examples/arc_agi_3")
 sys.path.insert(0, str(EXAMPLE))
 import uid_sandbox  # noqa: E402
 

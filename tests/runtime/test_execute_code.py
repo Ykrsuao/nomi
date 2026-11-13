@@ -6,9 +6,9 @@ import asyncio
 
 import pytest
 
-from nooa import Agent
-from nooa.runtime.hooks import set_hooks
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.runtime.hooks import set_hooks
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM
 _TEST_LLM = FakeLLMClient()

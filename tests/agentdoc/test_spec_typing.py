@@ -13,7 +13,7 @@ def test_spec_preserves_decorated_types(tmp_path):
     source.write_text(
         """from typing import assert_type
 from pydantic import BaseModel
-from nooa.agentdoc._docs import SpecAnnotation, spec
+from aster.agentdoc._docs import SpecAnnotation, spec
 
 assert_type(spec(), SpecAnnotation)
 assert_type(spec(expand=False), SpecAnnotation)

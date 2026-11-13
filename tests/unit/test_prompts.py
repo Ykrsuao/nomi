@@ -1,24 +1,24 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for nooa.prompts — print_prompt() runtime API and rendering helpers."""
+"""Tests for aster.prompts — print_prompt() runtime API and rendering helpers."""
 
 from typing import Annotated
 
 import pytest
 
-import nooa
-from nooa import Agent, CodeActStrategy, PromptData, spec, strategy
-from nooa.config.truncation_config import FormatConfig, TruncationConfig
-from nooa.prompts import (
+import aster
+from aster import Agent, CodeActStrategy, PromptData, spec, strategy
+from aster.config.truncation_config import FormatConfig, TruncationConfig
+from aster.prompts import (
     _get_prefill,
     _get_task_prompt,
     build_prompt_data,
     print_prompt,
     render_prompt_data,
 )
-from nooa.strategies.current_call import CurrentCall
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster.strategies.current_call import CurrentCall
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 _LLM = FakeLLMClient()
 
@@ -149,7 +149,7 @@ class TestGetPrefill:
 
     def test_other_strategy_no_inspect_prefill(self):
         """Unknown strategy produces no inspect_prefill but preserves pre_ellipsis."""
-        from nooa import PredictStrategy
+        from aster import PredictStrategy
 
         strategy_obj = PredictStrategy()
         call = CurrentCall(id="c10", method_name="classify", decorator="plan", kwargs={"x": 1})
@@ -159,7 +159,7 @@ class TestGetPrefill:
 
     def test_codeact_config_prefill_none_disables_inspect(self):
         """#331: print_prompt must honor CodeActConfig.prefill=None (inspect disabled)."""
-        from nooa.config.strategy_config import CodeActConfig
+        from aster.config.strategy_config import CodeActConfig
 
         strategy_obj = CodeActStrategy(config=CodeActConfig(prefill=None))
         call = CurrentCall(
@@ -178,7 +178,7 @@ class TestGetPrefill:
             def get_code(self, call, config=None):
                 return "# custom-prefill-marker"
 
-        from nooa.config.strategy_config import CodeActConfig
+        from aster.config.strategy_config import CodeActConfig
 
         strategy_obj = CodeActStrategy(config=CodeActConfig(prefill=_CustomPrefill()))
         call = CurrentCall(
@@ -453,11 +453,11 @@ class TestPrintPromptRuntime:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_exported_from_nooa(self):
-        """print_prompt is available as nooa.print_prompt."""
-        assert hasattr(nooa, "print_prompt")
-        assert nooa.print_prompt is print_prompt
+    async def test_exported_from_aster(self):
+        """print_prompt is available as aster.print_prompt."""
+        assert hasattr(aster, "print_prompt")
+        assert aster.print_prompt is print_prompt
 
-    def test_prompt_data_exported_from_nooa(self):
-        """PromptData is importable from the top-level nooa namespace."""
-        assert nooa.PromptData is PromptData
+    def test_prompt_data_exported_from_aster(self):
+        """PromptData is importable from the top-level aster namespace."""
+        assert aster.PromptData is PromptData

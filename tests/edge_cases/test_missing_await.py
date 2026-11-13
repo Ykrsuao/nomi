@@ -10,10 +10,10 @@ instead of actual results.
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.errors import GenerationError
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent, strategy
+from aster.errors import GenerationError
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def _resp(content: str) -> LLMResponse:
@@ -192,7 +192,7 @@ return results
 @pytest.mark.asyncio
 async def test_validation_unit():
     """Unit test the validation method directly."""
-    from nooa.strategies.generated_code import GeneratedCodeValidator
+    from aster.strategies.generated_code import GeneratedCodeValidator
 
     validator = GeneratedCodeValidator()
 

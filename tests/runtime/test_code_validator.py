@@ -14,7 +14,7 @@ Each test class has two sections:
 
 import pytest
 
-from nooa.runtime.code_validator import (
+from aster.runtime.code_validator import (
     BlockingCallValidator,
     REPLPolicyValidator,
     SecurityValidator,
@@ -23,7 +23,7 @@ from nooa.runtime.code_validator import (
     ValidationError,
     strip_redundant_imports,
 )
-from nooa.unifiedllm import FakeLLMClient
+from aster.unifiedllm import FakeLLMClient
 
 # =============================================================================
 # Fixtures
@@ -63,7 +63,7 @@ def repl_validator() -> REPLPolicyValidator:
 @pytest.fixture
 def default_context() -> ValidationContext:
     """Create a default validation context with deny-list import restrictions."""
-    from nooa.runtime.restrictions import DEFAULT_BLOCKED_MODULES
+    from aster.runtime.restrictions import DEFAULT_BLOCKED_MODULES
 
     # Explicit deny list for testing — DEFAULT_RESTRICTED_IMPORTS is empty by design
     # (no restrictions by default), but tests need specific modules restricted.
@@ -81,7 +81,7 @@ def agent_context():
     Returns a tuple of (context, TestAgent_class) for tests that need to
     reference the class name in generated code.
     """
-    from nooa.agent import Agent
+    from aster.agent import Agent
 
     class TestAgent(Agent, llm=FakeLLMClient()):
         async def process(self) -> dict:
@@ -958,7 +958,7 @@ class TestREPLPolicyValidator:
         def test_reject_missing_await_on_async_method(self, full_validator: UnifiedCodeValidator):
             """Calling async method without await is an error."""
             # Create a mock agent class to test against
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class TestAgent(Agent, llm=FakeLLMClient()):
                 async def fetch_data(self):
@@ -1051,7 +1051,7 @@ result = helper(self, 5)
 
         def test_allow_await_on_async_method(self, full_validator: UnifiedCodeValidator):
             """Correctly awaited async method calls are allowed."""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class TestAgent(Agent, llm=FakeLLMClient()):
                 async def fetch_data(self):
@@ -1067,7 +1067,7 @@ result = helper(self, 5)
 
         def test_allow_async_method_in_gather(self, full_validator: UnifiedCodeValidator):
             """Async methods in gather patterns don't need individual await."""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class TestAgent(Agent, llm=FakeLLMClient()):
                 async def process(self, item):
@@ -1087,7 +1087,7 @@ results = await asyncio.gather(*tasks)
 
         def test_allow_async_method_in_generator(self, full_validator: UnifiedCodeValidator):
             """Async methods in generator expressions for gather are allowed."""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class TestAgent(Agent, llm=FakeLLMClient()):
                 async def process(self, item):
@@ -1212,7 +1212,7 @@ while True:
 
     def test_warn_unnecessary_await_on_sync_method(self, full_validator: UnifiedCodeValidator):
         """Awaiting a sync method is unnecessary and wastes tokens."""
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         class TestAgent(Agent, llm=FakeLLMClient()):
             def sync_method(self):
@@ -1428,7 +1428,7 @@ class TestClassAssignmentValidator:
 
         def test_reject_direct_class_assignment(self, validator: UnifiedCodeValidator):
             """Validator blocks: ClassName.method = value"""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class TestAgent(Agent, llm=FakeLLMClient()):
                 async def process(self) -> dict:
@@ -1445,7 +1445,7 @@ class TestClassAssignmentValidator:
 
         def test_reject_factory_pattern_class_assignment(self, validator: UnifiedCodeValidator):
             """Validator blocks factory function that assigns to class."""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class TestAgent(Agent, llm=FakeLLMClient()):
                 async def process(self) -> dict:
@@ -1469,7 +1469,7 @@ TestAgent.process = _make_method()
 
         def test_reject_subagent_class_assignment(self, validator: UnifiedCodeValidator):
             """Validator blocks assignment to sub-agent classes."""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class ChildAgent(Agent, llm=FakeLLMClient()):
                 async def work(self) -> str:
@@ -1494,7 +1494,7 @@ TestAgent.process = _make_method()
 
         def test_reject_augmented_class_assignment(self, validator: UnifiedCodeValidator):
             """Validator blocks augmented assignment to class attributes."""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class TestAgent(Agent, llm=FakeLLMClient()):
                 counter = 0
@@ -1526,7 +1526,7 @@ TestAgent.process = _make_method()
 
         def test_reject_parent_class_assignment_via_mro(self, validator: UnifiedCodeValidator):
             """Validator blocks assignment to parent classes via MRO."""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class BaseAgent(Agent, llm=FakeLLMClient()):
                 async def base_method(self) -> str:
@@ -1653,7 +1653,7 @@ result.value = 42
 
         def test_reject_setattr_to_subagent_class(self, validator: UnifiedCodeValidator):
             """setattr on sub-agent classes must also be rejected."""
-            from nooa.agent import Agent
+            from aster.agent import Agent
 
             class ChildAgent(Agent, llm=FakeLLMClient()):
                 async def work(self) -> str: ...
@@ -2283,7 +2283,7 @@ class TestReturnTypeShadowValidator:
         def test_redefinition_increments_harness_metric(self, validator: UnifiedCodeValidator):
             from pydantic import BaseModel
 
-            from nooa.runtime.harness_metrics import (
+            from aster.runtime.harness_metrics import (
                 HarnessMetrics,
                 _harness_metrics_var,
             )
@@ -2721,7 +2721,7 @@ class TestReturnTypeShadowValidator:
         """Direct unit tests for the type-name walker."""
 
         def test_collects_bare_user_class(self):
-            from nooa.runtime.code_validator import _collect_type_names
+            from aster.runtime.code_validator import _collect_type_names
 
             class Foo:
                 pass
@@ -2729,7 +2729,7 @@ class TestReturnTypeShadowValidator:
             assert _collect_type_names(Foo) == {"Foo"}
 
         def test_skips_builtins(self):
-            from nooa.runtime.code_validator import _collect_type_names
+            from aster.runtime.code_validator import _collect_type_names
 
             assert _collect_type_names(str) == set()
             assert _collect_type_names(int) == set()
@@ -2737,7 +2737,7 @@ class TestReturnTypeShadowValidator:
             assert _collect_type_names(list[int]) == set()
 
         def test_skips_none(self):
-            from nooa.runtime.code_validator import _collect_type_names
+            from aster.runtime.code_validator import _collect_type_names
 
             assert _collect_type_names(None) == set()
             assert _collect_type_names(type(None)) == set()
@@ -2745,7 +2745,7 @@ class TestReturnTypeShadowValidator:
         def test_unwraps_annotated(self):
             from typing import Annotated
 
-            from nooa.runtime.code_validator import _collect_type_names
+            from aster.runtime.code_validator import _collect_type_names
 
             class Foo:
                 pass
@@ -2755,7 +2755,7 @@ class TestReturnTypeShadowValidator:
         def test_collects_inside_optional_and_union(self):
             from typing import Optional
 
-            from nooa.runtime.code_validator import _collect_type_names
+            from aster.runtime.code_validator import _collect_type_names
 
             class Foo:
                 pass
@@ -2767,7 +2767,7 @@ class TestReturnTypeShadowValidator:
             assert _collect_type_names(Foo | Bar) == {"Foo", "Bar"}
 
         def test_recurses_into_generics(self):
-            from nooa.runtime.code_validator import _collect_type_names
+            from aster.runtime.code_validator import _collect_type_names
 
             class Item:
                 pass
@@ -2791,7 +2791,7 @@ class TestReturnTypeShadowValidator:
             production traces."""
             import inspect
 
-            from nooa.runtime import actor
+            from aster.runtime import actor
 
             src = inspect.getsource(actor)
             # actor.py builds a ValidationContext for the unified validator;

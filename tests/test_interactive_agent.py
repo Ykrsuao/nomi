@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for nooa.interactive — the dispatcher-driven agent base.
+"""Tests for aster.interactive — the dispatcher-driven agent base.
 
 Deeper behavioral coverage (dispatcher loop, snapshot restore, echo hooks)
 lives with the TUI package, whose BaseTUIAgent subclasses this. These tests
@@ -12,10 +12,10 @@ import json
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from nooa import hidden, strategy
-from nooa.context_blocks import ToolCallEvent
-from nooa.events import PythonOutput, ResultStatus
-from nooa.interactive import (
+from aster import hidden, strategy
+from aster.context_blocks import ToolCallEvent
+from aster.events import PythonOutput, ResultStatus
+from aster.interactive import (
     AgentMessage,
     AgentVars,
     Done,
@@ -25,9 +25,9 @@ from nooa.interactive import (
     Waiting,
     install_summarizer,
 )
-from nooa.runtime.context_vars import _parent_agent_var
-from nooa.strategies import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.runtime.context_vars import _parent_agent_var
+from aster.strategies import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 class _Host(InteractiveAgent, llm=FakeLLMClient()):
@@ -44,7 +44,7 @@ def forbid_implicit_llm(monkeypatch):
     def unexpected_client(*args, **kwargs):
         pytest.fail("InteractiveAgent must not create an implicit model client")
 
-    monkeypatch.setattr("nooa.unifiedllm.get_llm_client", unexpected_client)
+    monkeypatch.setattr("aster.unifiedllm.get_llm_client", unexpected_client)
 
 
 @pytest.mark.parametrize("falsey", [False, True])
@@ -101,7 +101,7 @@ def test_declares_only_the_user_channel(agent):
 
     Hosts declare whatever else they need. slash_commands and system_messages
     are coding-host concepts and live on CodingAgent — see
-    packages/nooa-cli/tests/test_coding_agent.py.
+    packages/aster-cli/tests/test_coding_agent.py.
     """
     assert agent.queue_manager.channels().keys() == {"user_messages"}
     # Reader facade exposed under the public name; producer side hidden.

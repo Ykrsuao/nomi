@@ -14,8 +14,8 @@ The config field accepts:
 
 from __future__ import annotations
 
-from nooa.config.strategy_config import CodeActConfig
-from nooa.strategies.prefill import InspectInputsPrefill
+from aster.config.strategy_config import CodeActConfig
+from aster.strategies.prefill import InspectInputsPrefill
 
 
 class TestPrefillConfigDefault:
@@ -87,10 +87,10 @@ class TestStrategyPromptOverrideUsesExistingAPI:
         apply it during phase 3 (decorator context). This is the documented path
         for replacing the default ``strategy_prompt`` block — guard it against
         accidental removal of the metadata-attachment behaviour."""
-        from nooa import Agent
-        from nooa.context_blocks import ScopedContext
-        from nooa.decorators import strategy
-        from nooa.strategies import CodeActStrategy
+        from aster import Agent
+        from aster.context_blocks import ScopedContext
+        from aster.decorators import strategy
+        from aster.strategies import CodeActStrategy
 
         class MyAgent(Agent):
             """Test agent."""

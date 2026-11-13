@@ -6,7 +6,7 @@ import httpx
 import pytest
 from mcp.types import CallToolResult, TextContent
 
-from nooa.mcp.tool import MCPTool
+from aster.mcp.tool import MCPTool
 
 
 def _http_401() -> httpx.HTTPStatusError:

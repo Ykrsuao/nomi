@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from nooa.agentdoc import doc, spec
-from nooa.agentdoc._structured import extract_type_info
-from nooa.agentdoc._visibility import hidden
+from aster.agentdoc import doc, spec
+from aster.agentdoc._structured import extract_type_info
+from aster.agentdoc._visibility import hidden
 
 # ---------------------------------------------------------------------------
 # Single-level inheritance
@@ -378,8 +378,8 @@ class TestInheritedUnannotatedAgentAttrs:
     """The real-world case: a base Agent with un-annotated tool attrs."""
 
     def test_agent_subclass_inherits_bare_tool_attrs(self):
-        from nooa import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         fake_llm = FakeLLMClient([])
 

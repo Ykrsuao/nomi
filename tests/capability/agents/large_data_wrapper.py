@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Large data test wrapper - generates test data on-the-fly."""
 
-from nooa import Agent
+from aster import Agent
 
 
 class LargeDataTestWrapper(Agent):

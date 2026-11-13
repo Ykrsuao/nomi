@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import random
 
-from nooa.tracing import _IsolatedIdGenerator
+from aster.tracing import _IsolatedIdGenerator
 
 
 def test_span_ids_unaffected_by_global_seed():

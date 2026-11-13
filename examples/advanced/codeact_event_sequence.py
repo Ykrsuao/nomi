@@ -15,9 +15,9 @@ Run with:
     uv run python examples/advanced/codeact_event_sequence.py
 """
 
-from nooa import Agent, CodeActStrategy, strategy
-from nooa.config import CodeActConfig
-from nooa.util.quickstart import autorun, llm
+from aster import Agent, CodeActStrategy, strategy
+from aster.config import CodeActConfig
+from aster.util.quickstart import autorun, llm
 
 
 class SimpleAgent(Agent, llm=llm):

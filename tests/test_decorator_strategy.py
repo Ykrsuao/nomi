@@ -5,8 +5,8 @@
 TDD: Write tests first, then implement to make them pass.
 """
 
-from nooa import strategy
-from nooa.strategies.pure_python import PurePythonStrategy
+from aster import strategy
+from aster.strategies.pure_python import PurePythonStrategy
 
 
 class TestStrategyDecoratorWithInstances:

@@ -12,20 +12,20 @@ import pytest
 from litellm.types.llms.openai import ResponsesAPIResponse
 from litellm.types.utils import ModelResponse
 
-from nooa.context_blocks.events import ToolCallEvent, ToolResult
-from nooa.context_blocks.formatter import (
+from aster.context_blocks.events import ToolCallEvent, ToolResult
+from aster.context_blocks.formatter import (
     OpenAIProviderFormatter,
     XMLBlockFormatter,
 )
-from nooa.context_blocks.models import ResolvedBlock, Role
-from nooa.llm_types import AssistantText, ToolCall
-from nooa.storage.sqlite import SQLiteEventBackend, _ensure_schema
-from nooa.unifiedllm import CompletionClient, LLMResponse, ResponsesClient, Tool
-from nooa.unifiedllm.replay_state import (
+from aster.context_blocks.models import ResolvedBlock, Role
+from aster.llm_types import AssistantText, ToolCall
+from aster.storage.sqlite import SQLiteEventBackend, _ensure_schema
+from aster.unifiedllm import CompletionClient, LLMResponse, ResponsesClient, Tool
+from aster.unifiedllm.replay_state import (
     ReasoningReplayError,
     replay_scope,
 )
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster.unifiedllm.unifiedllm import _ClientHttp
 
 REASONING = {
     "id": "rs_1",
@@ -578,7 +578,7 @@ async def test_async_responses_capture_matches_sync() -> None:
         ) as call:
             response = await client.acall([{"role": "user", "content": "think"}])
 
-        from nooa.unifiedllm.response_parts import project_turn
+        from aster.unifiedllm.response_parts import project_turn
 
         assert project_turn(response, response.replay_scope) == [REASONING, MESSAGE]
         assert "reasoning.encrypted_content" in call.call_args.kwargs["include"]
@@ -591,7 +591,7 @@ def test_mixed_summary_only_turn_drops_all_native_authority(caplog):
     beside an encrypted one is still an incomplete provider turn -- unlike on
     a gateway route that never returns encrypted_content at all (see
     test_summary_without_encrypted_content_is_native_on_gateway_routes)."""
-    from nooa.unifiedllm.response_parts import capture_parts, project_turn
+    from aster.unifiedllm.response_parts import capture_parts, project_turn
 
     scope = replay_scope("openai/gpt-5.6", "responses", {})
     summary = {"type": "reasoning", "summary": [{"type": "summary_text", "text": "why"}]}

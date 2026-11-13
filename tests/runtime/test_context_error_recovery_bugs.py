@@ -15,16 +15,16 @@ Two bugs:
 
 import pytest
 
-from nooa import Agent
-from nooa.events import Message
-from nooa.runtime.actor import (
+from aster import Agent
+from aster.events import Message
+from aster.runtime.actor import (
     _context_window_for_error,
     _current_llm_var,
     _current_method_var,
     _parse_context_window_tokens,
     _parse_prompt_tokens,
 )
-from nooa.unifiedllm import FakeLLMClient
+from aster.unifiedllm import FakeLLMClient
 
 
 class _ContextWindowExceededError(Exception):
@@ -155,7 +155,7 @@ class TestArchivalFiresOnContextError:
         try:
             with patch.object(llm, "acall", side_effect=error):
                 with patch(
-                    "nooa.runtime.actor._is_context_window_error",
+                    "aster.runtime.actor._is_context_window_error",
                     side_effect=lambda exc: isinstance(exc, _ContextWindowExceededError),
                 ):
                     with pytest.raises(_ContextWindowExceededError):
@@ -215,7 +215,7 @@ class TestArchivalFiresOnContextError:
         try:
             with patch.object(llm, "acall", side_effect=error):
                 with patch(
-                    "nooa.runtime.actor._is_context_window_error",
+                    "aster.runtime.actor._is_context_window_error",
                     side_effect=lambda exc: isinstance(exc, _ContextWindowExceededError),
                 ):
                     with pytest.raises(_ContextWindowExceededError):
@@ -263,7 +263,7 @@ class TestArchivalFiresOnContextError:
         try:
             with patch.object(llm, "acall", side_effect=error):
                 with patch(
-                    "nooa.runtime.actor._is_context_window_error",
+                    "aster.runtime.actor._is_context_window_error",
                     side_effect=lambda exc: isinstance(exc, _ContextWindowExceededError),
                 ):
                     with pytest.raises(_ContextWindowExceededError):
@@ -290,7 +290,7 @@ class TestContextWindowErrorDetection:
 
     def test_azure_context_length_exceeded_format(self):
         """Azure context-window messages must be recognized for fallback archival."""
-        from nooa.runtime.actor import _is_context_window_error
+        from aster.runtime.actor import _is_context_window_error
 
         exc = Exception(
             "litellm.BadRequestError: AzureException BadRequestError - "
@@ -305,7 +305,7 @@ class TestContextWindowErrorDetection:
 
     def test_context_length_exceeded_code_only(self):
         """Azure errors with only context_length_exceeded code must be recognized."""
-        from nooa.runtime.actor import _is_context_window_error
+        from aster.runtime.actor import _is_context_window_error
 
         exc = Exception('{"code": "context_length_exceeded", "message": "Bad request"}')
 
@@ -315,7 +315,7 @@ class TestContextWindowErrorDetection:
         """LiteLLM typed context-window errors are caught before provider text fallback."""
         from litellm.exceptions import ContextWindowExceededError
 
-        from nooa.runtime.actor import _is_context_window_error
+        from aster.runtime.actor import _is_context_window_error
 
         exc = ContextWindowExceededError(
             message="provider-specific wording not listed in our substring fallback",
@@ -329,7 +329,7 @@ class TestContextWindowErrorDetection:
         """Wrapped LiteLLM context-window errors are recognized through exception chaining."""
         from litellm.exceptions import ContextWindowExceededError
 
-        from nooa.runtime.actor import _is_context_window_error
+        from aster.runtime.actor import _is_context_window_error
 
         cause = ContextWindowExceededError(
             message="provider-specific wording not listed in our substring fallback",
@@ -355,7 +355,7 @@ class TestAnthropicPromptTooLongFormat:
 
     def test_detect_prompt_is_too_long(self):
         """'prompt is too long' must be recognized as a context-window error."""
-        from nooa.runtime.actor import _is_context_window_error
+        from aster.runtime.actor import _is_context_window_error
 
         exc = Exception(
             "litellm.BadRequestError: OpenAIException - litellm.BadRequestError: "
@@ -387,9 +387,9 @@ class TestAnthropicPromptTooLongFormat:
         """
         from unittest.mock import patch
 
-        from nooa import Agent
-        from nooa.events import Message
-        from nooa.runtime.actor import _current_llm_var, _current_method_var
+        from aster import Agent
+        from aster.events import Message
+        from aster.runtime.actor import _current_llm_var, _current_method_var
 
         llm = _mk_llm(1_000_000)
 

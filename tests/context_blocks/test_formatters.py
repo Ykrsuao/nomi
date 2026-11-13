@@ -10,21 +10,21 @@ blocks) and returns ``list[RenderedMessage]``. ProviderFormatter.format() takes
 import pytest
 from pydantic import ValidationError
 
-from nooa.context_blocks.events import ToolCallEvent, ToolResult
-from nooa.context_blocks.formatter import (
+from aster.context_blocks.events import ToolCallEvent, ToolResult
+from aster.context_blocks.formatter import (
     MarkdownBlockFormatter,
     OpenAIProviderFormatter,
     XMLBlockFormatter,
 )
-from nooa.context_blocks.models import (
+from aster.context_blocks.models import (
     BlockMetadata,
     RenderedMessage,
     ResolvedBlock,
     Role,
     ToolCallInfo,
 )
-from nooa.events import LLMResponse
-from nooa.unifiedllm import ToolCall
+from aster.events import LLMResponse
+from aster.unifiedllm import ToolCall
 
 
 def _tool_call_block(
@@ -59,13 +59,13 @@ def _system_content(messages: list[RenderedMessage]) -> str:
 
 class TestBlockFormatterABC:
     def test_is_abstract(self):
-        from nooa.context_blocks.formatter import BlockFormatter
+        from aster.context_blocks.formatter import BlockFormatter
 
         with pytest.raises(TypeError):
             BlockFormatter()  # type: ignore[abstract]
 
     def test_requires_format_method(self):
-        from nooa.context_blocks.formatter import BlockFormatter
+        from aster.context_blocks.formatter import BlockFormatter
 
         class IncompleteFormatter(BlockFormatter):
             pass
@@ -283,7 +283,7 @@ class TestXMLBlockFormatter:
     @pytest.mark.parametrize("field", ["reasoning", "llm_state"])
     def test_replay_only_response_creates_private_carrier(self, field):
         value = "private thought" if field == "reasoning" else {"opaque": "state"}
-        from nooa.llm_types import AssistantReasoning
+        from aster.llm_types import AssistantReasoning
 
         response = (
             LLMResponse(reasoning=value)
@@ -304,7 +304,7 @@ class TestXMLBlockFormatter:
         ) == value
 
     def test_event_type_spoof_does_not_impersonate_an_llm_response(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         event = Message(content="ordinary message", event_type="LLMResponse")
 
@@ -314,7 +314,7 @@ class TestXMLBlockFormatter:
         class CustomLLMResponse(LLMResponse):
             pass
 
-        from nooa.llm_types import AssistantReasoning
+        from aster.llm_types import AssistantReasoning
 
         response = CustomLLMResponse(
             parts=(AssistantReasoning(native={"opaque": "state"}),), replay_scope="chat:openai:test"
@@ -422,7 +422,7 @@ class TestMarkdownBlockFormatter:
 
 class TestProviderFormatterABC:
     def test_is_abstract(self):
-        from nooa.context_blocks.formatter import ProviderFormatter
+        from aster.context_blocks.formatter import ProviderFormatter
 
         with pytest.raises(TypeError):
             ProviderFormatter()  # type: ignore[abstract]
@@ -591,21 +591,21 @@ class TestBlockFormatterFormatEvent:
     """format_event() still serializes raw events to content strings."""
 
     def test_xml_format_event_user_event(self):
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="Hello world", tag="1")
         assert "Hello world" in XMLBlockFormatter().format_event(event)
 
     def test_markdown_format_event_user_event(self):
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="Hello world", tag="1")
         assert "Hello world" in MarkdownBlockFormatter().format_event(event)
 
     def test_format_event_has_default(self):
         """BlockFormatter.format_event() is concrete by default (agentdoc pformat)."""
-        from nooa.context_blocks.events import UserEvent
-        from nooa.context_blocks.formatter import BlockFormatter, FormatType
+        from aster.context_blocks.events import UserEvent
+        from aster.context_blocks.formatter import BlockFormatter, FormatType
 
         class MinimalFormatter(BlockFormatter):
             @property
@@ -620,7 +620,7 @@ class TestBlockFormatterFormatEvent:
 
 
 def _responses_wire(messages):
-    from nooa.unifiedllm import ResponsesClient
+    from aster.unifiedllm import ResponsesClient
 
     with ResponsesClient(model="openai/gpt-5.6") as client:
         wire, _ = client._transform_messages(OpenAIProviderFormatter().format(messages))
@@ -668,7 +668,7 @@ def test_synthetic_inline_return_is_observable_but_not_replayed_to_provider():
     )
     block = ResolvedBlock(key="completion", content="", role=Role.ASSISTANT, event=event)
 
-    from nooa.context_blocks.formatter import _event_block_to_messages
+    from aster.context_blocks.formatter import _event_block_to_messages
 
     assert _event_block_to_messages(block, wrap_content=None) == []
     rendered = XMLBlockFormatter().format([block])

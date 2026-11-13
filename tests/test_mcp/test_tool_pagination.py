@@ -18,8 +18,8 @@ from mcp import ClientSession, types  # noqa: E402
 from mcp.server.lowlevel import Server  # noqa: E402
 from mcp.types import PaginatedRequestParams  # noqa: E402
 
-import nooa.mcp.tool as tool_module  # noqa: E402
-from nooa.mcp.tool import MCPManager, _list_all_tools  # noqa: E402
+import aster.mcp.tool as tool_module  # noqa: E402
+from aster.mcp.tool import MCPManager, _list_all_tools  # noqa: E402
 
 
 def _remote_tool(name: str) -> SimpleNamespace:
@@ -212,7 +212,7 @@ async def test_async_factory_bounds_total_time_across_pages():
     client = SimpleNamespace(connect_to_server=connect)
 
     with (
-        patch("nooa.mcp.tool.create_mcp_client", return_value=client),
+        patch("aster.mcp.tool.create_mcp_client", return_value=client),
         pytest.raises(RuntimeError, match="overall 0.05-second timeout"),
     ):
         await MCPManager.create_stdio_server(
@@ -239,7 +239,7 @@ async def test_inner_timeout_is_not_reported_as_the_overall_deadline():
     client = SimpleNamespace(connect_to_server=connect)
 
     with (
-        patch("nooa.mcp.tool.create_mcp_client", return_value=client),
+        patch("aster.mcp.tool.create_mcp_client", return_value=client),
         pytest.raises(RuntimeError) as exc_info,
     ):
         await MCPManager.create_stdio_server(
@@ -263,7 +263,7 @@ async def test_async_factory_generates_methods_from_every_page():
     ]
     client = _client_for(session)
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client):
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client):
         tool = await MCPManager.create_stdio_server("paged", "paged-server")
 
     assert tool._tool_method_names == frozenset(  # type: ignore[attr-defined]
@@ -280,7 +280,7 @@ def test_sync_factory_generates_methods_from_every_page():
     ]
     client = _client_for(session)
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client):
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client):
         tool = MCPManager.create_from_server("paged", command="paged-server")
 
     assert tool._tool_method_names == frozenset(  # type: ignore[attr-defined]
@@ -301,7 +301,7 @@ async def test_sync_factory_preserves_timeout_inside_running_loop():
     client = _client_for(session)
 
     with (
-        patch("nooa.mcp.tool.create_mcp_client", return_value=client),
+        patch("aster.mcp.tool.create_mcp_client", return_value=client),
         pytest.raises(RuntimeError, match="overall 0.02-second timeout"),
     ):
         MCPManager.create_from_server(
@@ -335,10 +335,10 @@ def test_oauth_retry_generates_methods_from_every_page():
 
     with (
         patch(
-            "nooa.mcp.tool.create_mcp_client",
+            "aster.mcp.tool.create_mcp_client",
             side_effect=[first_client, refreshed_client],
         ),
-        patch("nooa.mcp.tool.handle_mcp_oauth", new=AsyncMock(return_value=token)),
+        patch("aster.mcp.tool.handle_mcp_oauth", new=AsyncMock(return_value=token)),
     ):
         tool = MCPManager.create_from_server(
             "paged",
@@ -371,8 +371,8 @@ def test_oauth_flow_uses_the_shared_discovery_deadline():
     first_client = SimpleNamespace(connect_to_server=fail_to_connect)
 
     with (
-        patch("nooa.mcp.tool.create_mcp_client", return_value=first_client),
-        patch("nooa.mcp.tool.handle_mcp_oauth", new=AsyncMock(side_effect=wait_for_user)) as oauth,
+        patch("aster.mcp.tool.create_mcp_client", return_value=first_client),
+        patch("aster.mcp.tool.handle_mcp_oauth", new=AsyncMock(side_effect=wait_for_user)) as oauth,
         pytest.raises(RuntimeError, match="overall 0.02-second timeout"),
     ):
         MCPManager.create_from_server(
@@ -389,7 +389,7 @@ def test_oauth_flow_uses_the_shared_discovery_deadline():
 def test_oauth_timeout_cannot_exceed_discovery_timeout():
     """Reject an OAuth wait that cannot fit within the discovery budget."""
     with (
-        patch("nooa.mcp.tool.create_mcp_client") as create_client,
+        patch("aster.mcp.tool.create_mcp_client") as create_client,
         pytest.raises(ValueError, match="oauth_timeout must not exceed discovery_timeout"),
     ):
         MCPManager.create_from_server(
@@ -408,7 +408,7 @@ async def test_discovery_timeout_must_be_positive():
     client = _client_for(AsyncMock())
 
     with (
-        patch("nooa.mcp.tool.create_mcp_client", return_value=client),
+        patch("aster.mcp.tool.create_mcp_client", return_value=client),
         pytest.raises(ValueError, match="discovery_timeout must be greater than zero"),
     ):
         await MCPManager.create_stdio_server(

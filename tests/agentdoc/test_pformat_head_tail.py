@@ -15,7 +15,7 @@ etc.) — the marker's *presence* is the truncation signal.
 
 import re
 
-from nooa.agentdoc import pformat, truncating_pformat
+from aster.agentdoc import pformat, truncating_pformat
 
 
 class TestListMarker:

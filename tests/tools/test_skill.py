@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from nooa.skill import Skill
+from aster.skill import Skill
 
 
 class TestSkillAsBaseClass:

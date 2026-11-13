@@ -4,7 +4,7 @@
 
 import pytest
 
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, LLMUsage
+from aster.unifiedllm import FakeLLMClient, LLMResponse, LLMUsage
 
 
 @pytest.mark.parametrize(

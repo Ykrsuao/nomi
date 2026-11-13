@@ -4,13 +4,13 @@
 
 import pytest
 
-from nooa.agent import Agent
-from nooa.config.strategy_config import ReflexionConfig
-from nooa.decorators import strategy
-from nooa.metaclass import no_trace
-from nooa.strategies import ReflexionStrategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster.agent import Agent
+from aster.config.strategy_config import ReflexionConfig
+from aster.decorators import strategy
+from aster.metaclass import no_trace
+from aster.strategies import ReflexionStrategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 _TEST_LLM = FakeLLMClient()
 
@@ -216,7 +216,7 @@ def test_multiple_inheritance_support():
 
 def test_strategy_class_autowrap():
     """GenerationStrategy methods also auto-wrap."""
-    from nooa.strategies.base import GenerationStrategy
+    from aster.strategies.base import GenerationStrategy
 
     class CustomStrategy(GenerationStrategy):
         async def generate_code(self, runtime): ...
@@ -228,7 +228,7 @@ def test_strategy_class_autowrap():
 
 def test_strategy_methods_not_traced():
     """Strategy methods are never traced (only Agent methods)."""
-    from nooa.strategies.base import GenerationStrategy
+    from aster.strategies.base import GenerationStrategy
 
     class CustomStrategy(GenerationStrategy):
         async def public_method(self): ...
@@ -344,7 +344,7 @@ async def test_metaclass_wrapper_calls_hooks():
     """
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Create mock hooks
     mock_hooks = MagicMock(spec=InstrumentationHooks)
@@ -395,7 +395,7 @@ async def test_private_methods_call_hooks():
     """
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Create mock hooks
     mock_hooks = MagicMock(spec=InstrumentationHooks)
@@ -442,7 +442,7 @@ async def test_strategy_decorator_calls_hooks():
     """@strategy decorator calls instrumentation hooks for AGENT spans."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Create mock hooks
     mock_hooks = MagicMock(spec=InstrumentationHooks)
@@ -533,7 +533,7 @@ async def test_auto_wrapped_and_decorated_both_call_hooks_same_way():
     """
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Agent with explicit @strategy decorator
     class DecoratedAgent(Agent, llm=_TEST_LLM):
@@ -608,7 +608,7 @@ async def test_regular_python_methods_are_traced_when_enable_tracing():
     """Regular Python methods (non-ellipsis) should be traced when _enable_tracing = True."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Create mock hooks
     mock_hooks = MagicMock(spec=InstrumentationHooks)
@@ -655,7 +655,7 @@ async def test_private_methods_are_traced_when_enable_tracing():
     """Private methods should be traced when _enable_tracing = True."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Create mock hooks
     mock_hooks = MagicMock(spec=InstrumentationHooks)
@@ -698,7 +698,7 @@ async def test_no_trace_decorator_works_on_regular_methods():
     """@no_trace should prevent tracing on regular Python methods."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Create mock hooks
     mock_hooks = MagicMock(spec=InstrumentationHooks)
@@ -735,7 +735,7 @@ async def test_parent_child_relationship_regular_calls_ellipsis():
     """Regular method calling ellipsis method should create parent-child span relationship."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Track all hook calls
     hook_calls = []
@@ -799,7 +799,7 @@ async def test_regular_methods_capture_source_code():
     """Regular Python methods should capture their source code in traces."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     # Create mock hooks
     mock_hooks = MagicMock(spec=InstrumentationHooks)
@@ -855,7 +855,7 @@ async def test_regular_methods_capture_source_code():
 
 def test_strategy_decorator_context_stored():
     """@strategy(context=...) stores context on the wrapper."""
-    from nooa.context_blocks import ScopedContext
+    from aster.context_blocks import ScopedContext
 
     class TestAgent(Agent, llm=_TEST_LLM):
         @strategy(PurePythonStrategy(), context=ScopedContext(context={"focus": "testing"}))
@@ -866,7 +866,7 @@ def test_strategy_decorator_context_stored():
 
 def test_strategy_decorator_context_with_dynamic():
     """@strategy(context=...) supports DynamicContext values."""
-    from nooa.context_blocks import DynamicContext, ScopedContext
+    from aster.context_blocks import DynamicContext, ScopedContext
 
     class TestAgent(Agent, llm=_TEST_LLM):
         @strategy(context=ScopedContext(context={"status": DynamicContext("self.get_status()")}))
@@ -900,8 +900,8 @@ async def test_no_trace_outer_strategy_inner_ordering_also_suppresses_hooks():
     """
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
-    from nooa.unifiedllm import FakeLLMClient, LLMResponse
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.unifiedllm import FakeLLMClient, LLMResponse
 
     def _resp(content):
         return LLMResponse(
@@ -937,8 +937,8 @@ async def test_no_trace_decorator_suppresses_hooks_on_generation_method():
     """@no_trace on a generation method (ellipsis body) must suppress before/after_agent_call hooks."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
-    from nooa.unifiedllm import FakeLLMClient, LLMResponse
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.unifiedllm import FakeLLMClient, LLMResponse
 
     def _resp(content):
         return LLMResponse(
@@ -974,8 +974,8 @@ async def test_no_trace_on_generation_method_in_enable_tracing_class_suppresses_
     """@no_trace on a generation method in an _enable_tracing class suppresses hooks."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
-    from nooa.unifiedllm import FakeLLMClient, LLMResponse
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.unifiedllm import FakeLLMClient, LLMResponse
 
     def _resp(content):
         return LLMResponse(
@@ -1034,8 +1034,8 @@ async def test_no_trace_plain_ellipsis_without_strategy_decorator_suppresses_hoo
     """
     from unittest.mock import MagicMock
 
-    from nooa.errors import GenerationError
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.errors import GenerationError
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     mock_hooks = MagicMock(spec=InstrumentationHooks)
 
@@ -1066,7 +1066,7 @@ def test_sync_method_traced_when_enable_tracing():
     """Sync methods on Agent subclasses are wrapped and call hooks (issue 181)."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     mock_hooks = MagicMock(spec=InstrumentationHooks)
     mock_hooks.before_agent_call.return_value = {"test": "context"}
@@ -1117,7 +1117,7 @@ def test_sync_private_method_traced_by_default():
     """Private sync methods (e.g. _search) are wrapped and traced (issue 181)."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     mock_hooks = MagicMock(spec=InstrumentationHooks)
     mock_hooks.before_agent_call.return_value = {}
@@ -1141,7 +1141,7 @@ def test_sync_method_source_code_captured():
     """source_code attribute is set on before_agent_call for sync methods."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     mock_hooks = MagicMock(spec=InstrumentationHooks)
     mock_hooks.before_agent_call.return_value = {}
@@ -1167,7 +1167,7 @@ def test_sync_method_no_trace_decorator_suppresses_hooks():
     """@no_trace on a sync method skips wrapping entirely (no hooks fire)."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     mock_hooks = MagicMock(spec=InstrumentationHooks)
 
@@ -1283,7 +1283,7 @@ async def test_sync_child_of_async_parent_has_correct_parent_call_id():
     """Sync helper called inside async method: sync's parent_call_id == async's call_id."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     hook_calls: list[tuple[str, dict]] = []
 
@@ -1326,7 +1326,7 @@ def test_sync_method_exception_pops_stack_and_fires_after_hook():
     """If a sync method raises: exception propagates, after_agent_call sees it, stack pops."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     mock_hooks = MagicMock(spec=InstrumentationHooks)
     mock_hooks.before_agent_call.return_value = {}
@@ -1362,7 +1362,7 @@ def test_sync_method_calling_sync_method_chains_parent_call_id():
     """Sync `outer` calling sync `inner`: inner's parent_call_id == outer's call_id."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     hook_calls: list[dict] = []
 
@@ -1396,7 +1396,7 @@ def test_agent_init_succeeds_with_sync_tracing_active():
     """Agent.__init__ calls sync helpers BEFORE self.runtime exists; must not crash."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks, set_hooks
+    from aster.runtime.hooks import InstrumentationHooks, set_hooks
 
     mock_hooks = MagicMock(spec=InstrumentationHooks)
     mock_hooks.before_agent_call.return_value = {}
@@ -1450,7 +1450,7 @@ def _record_hooks():
     """Return (mock_hooks, hook_calls) recording every before_agent_call kwargs."""
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import InstrumentationHooks
+    from aster.runtime.hooks import InstrumentationHooks
 
     hook_calls: list[dict] = []
 
@@ -1594,7 +1594,7 @@ def test_strategy_deterministic_generator_says_to_remove_decorator():
 @pytest.mark.asyncio
 async def test_async_generator_body_calls_parent_to_the_generator():
     """Issue #38: calls made *inside* an async generator body must parent to it."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, hook_calls = _record_hooks()
 
@@ -1644,7 +1644,7 @@ async def test_async_generator_body_calls_parent_to_the_generator():
 @pytest.mark.asyncio
 async def test_sync_generator_body_calls_parent_to_the_generator():
     """Same guarantee for `def` with yield."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, hook_calls = _record_hooks()
 
@@ -1693,7 +1693,7 @@ async def test_async_generator_keeps_its_calling_convention():
     """Wrapping must not turn an async generator into a coroutine."""
     import inspect as _inspect
 
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1716,7 +1716,7 @@ def test_sync_generator_keeps_its_calling_convention():
     """Wrapping must not eagerly drain a sync generator."""
     import inspect as _inspect
 
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1739,7 +1739,7 @@ def test_sync_generator_keeps_its_calling_convention():
 @pytest.mark.asyncio
 async def test_async_generator_span_closes_at_exhaustion_not_creation():
     """after_agent_call must fire once, when the generator is exhausted."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1775,7 +1775,7 @@ async def test_async_generator_span_closes_on_explicit_aclose():
     that is never closed keeps the span open — which leaks the generator itself,
     not just the span. Early close is not an error, so `exception` stays None.
     """
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1805,7 +1805,7 @@ async def test_async_generator_span_closes_when_break_uses_aclosing():
     """`aclosing()` + break is the deterministic way to close an abandoned generator."""
     import contextlib
 
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1830,7 +1830,7 @@ async def test_async_generator_span_closes_when_break_uses_aclosing():
 
 def test_sync_generator_span_closes_on_early_break():
     """Sync generators close deterministically at `break` — close() is synchronous."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1854,7 +1854,7 @@ def test_sync_generator_span_closes_on_early_break():
 @pytest.mark.asyncio
 async def test_async_generator_exception_reaches_after_hook():
     """A raising generator body must report the exception through after_agent_call."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1878,7 +1878,7 @@ async def test_async_generator_exception_reaches_after_hook():
 @pytest.mark.asyncio
 async def test_no_trace_generator_is_not_traced():
     """@no_trace must suppress the generator's span and keep parent linkage intact."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, hook_calls = _record_hooks()
 
@@ -1912,7 +1912,7 @@ async def test_no_trace_generator_is_not_traced():
 
 def test_generator_on_untraced_class_is_left_alone():
     """AgentMeta is generic; a class without _enable_tracing gets no wrapper at all."""
-    from nooa.metaclass import AgentMeta
+    from aster.metaclass import AgentMeta
 
     class Plain(metaclass=AgentMeta):
         def chunks(self, xs):
@@ -1929,7 +1929,7 @@ def test_generator_on_untraced_class_is_left_alone():
 @pytest.mark.asyncio
 async def test_async_generator_forwards_asend_values():
     """The wrapper must stay transparent to `asend()` — sent values reach the body."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1957,7 +1957,7 @@ async def test_async_generator_forwards_asend_values():
 @pytest.mark.asyncio
 async def test_async_generator_forwards_athrow_to_the_body():
     """The wrapper must stay transparent to `athrow()` — the body can catch it."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -1982,7 +1982,7 @@ async def test_async_generator_forwards_athrow_to_the_body():
 
 def test_sync_generator_forwards_send_values():
     """Same transparency guarantee for sync `send()`."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -2008,7 +2008,7 @@ def test_sync_generator_forwards_send_values():
 
 def test_sync_generator_forwards_throw_to_the_body():
     """Same transparency guarantee for sync `throw()`."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -2034,7 +2034,7 @@ def test_sync_generator_forwards_throw_to_the_body():
 @pytest.mark.asyncio
 async def test_generator_body_finally_runs_before_span_closes():
     """The wrapped generator's own cleanup must complete before the span closes."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     order: list[str] = []
 
@@ -2072,7 +2072,7 @@ async def test_async_generator_span_closes_when_unreachable():
     """
     import asyncio
 
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -2151,7 +2151,7 @@ def test_sync_generator_return_value_survives_the_wrapper():
 
 def test_generator_span_closes_even_when_body_cleanup_raises():
     """A close() that raises must not strand the span — the after hook still fires."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -2177,7 +2177,7 @@ def test_generator_span_closes_even_when_body_cleanup_raises():
 @pytest.mark.asyncio
 async def test_async_generator_span_closes_even_when_body_cleanup_raises():
     """Async counterpart: a failing aclose() must not leak the span."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, _ = _record_hooks()
 
@@ -2393,7 +2393,7 @@ def test_sync_dunder_generator_with_ellipsis_body_is_rejected():
 
 def test_ellipsis_generator_rejected_even_when_tracing_is_disabled():
     """The contradiction is about generation, not tracing — it must not depend on _enable_tracing."""
-    from nooa.metaclass import AgentMeta
+    from aster.metaclass import AgentMeta
 
     with pytest.raises(TypeError, match="cannot be LLM-generated"):
 
@@ -2426,7 +2426,7 @@ def test_generator_ellipsis_error_uses_correct_article():
 @pytest.mark.asyncio
 async def test_nested_generators_link_two_levels_deep():
     """outer(gen) -> inner(gen) -> leaf must chain, not collapse onto the drainer."""
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, hook_calls = _record_hooks()
 
@@ -2467,7 +2467,7 @@ async def test_concurrent_generators_do_not_share_a_call_stack():
     """The call id stack is a ContextVar; gathered drains must stay isolated."""
     import asyncio
 
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     mock_hooks, hook_calls = _record_hooks()
 

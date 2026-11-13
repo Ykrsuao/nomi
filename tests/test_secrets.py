@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for :func:`nooa.secrets.load_secrets_into_env`.
+"""Tests for :func:`aster.secrets.load_secrets_into_env`.
 
 Secrets live in layered ``secrets.yaml`` (user → project →
-``NEMO_OO_SECRETS``) with an ``env:`` mapping pushed into ``os.environ``
+``ASTER_SECRETS``) with an ``env:`` mapping pushed into ``os.environ``
 non-clobbering.
 """
 
@@ -15,10 +15,10 @@ import os
 
 import pytest
 
-from nooa.secrets import load_secrets_into_env, new_secret_env, write_secret_env
+from aster.secrets import load_secrets_into_env, new_secret_env, write_secret_env
 
-_KEY = "NEMO_TEST_SECRET_KEY"
-_KEY2 = "NEMO_TEST_SECRET_KEY2"
+_KEY = "ASTER_TEST_SECRET_KEY"
+_KEY2 = "ASTER_TEST_SECRET_KEY2"
 
 
 def test_write_secret_preserves_values_and_does_not_export(tmp_path, monkeypatch):
@@ -50,7 +50,7 @@ def test_invalid_secret_yaml_is_not_disclosed_or_replaced(tmp_path):
 def user_dir(tmp_path, monkeypatch):
     d = tmp_path / "user"
     d.mkdir()
-    monkeypatch.setenv("NEMO_OO_USER_DIR", str(d))
+    monkeypatch.setenv("ASTER_USER_DIR", str(d))
     return d
 
 
@@ -58,13 +58,13 @@ def user_dir(tmp_path, monkeypatch):
 def project_dir(tmp_path, monkeypatch):
     d = tmp_path / "project"
     d.mkdir()
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(d))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(d))
     return d
 
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch):
-    monkeypatch.delenv("NEMO_OO_SECRETS", raising=False)
+    monkeypatch.delenv("ASTER_SECRETS", raising=False)
     monkeypatch.delenv(_KEY, raising=False)
     monkeypatch.delenv(_KEY2, raising=False)
 
@@ -124,14 +124,14 @@ def test_env_var_override_layer(user_dir, project_dir, tmp_path, monkeypatch):
     _write(user_dir, f"env:\n  {_KEY}: user-val\n")
     override = tmp_path / "override.yaml"
     override.write_text(f"env:\n  {_KEY}: override-val\n")
-    monkeypatch.setenv("NEMO_OO_SECRETS", str(override))
+    monkeypatch.setenv("ASTER_SECRETS", str(override))
     load_secrets_into_env()
     assert os.environ[_KEY] == "override-val"
 
 
 def test_non_mapping_env_warns(user_dir, project_dir, caplog):
     _write(user_dir, "env:\n  - just\n  - a list\n")
-    with caplog.at_level(logging.WARNING, logger="nooa.secrets"):
+    with caplog.at_level(logging.WARNING, logger="aster.secrets"):
         assert load_secrets_into_env() == []
     assert "not a mapping" in caplog.text
 

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # TB1 Reliable Evaluation Monitor
-# Cron: */5 * * * * /localhome/local-rcabral/nooa/util/eval_pipeline/tb1_monitor.sh
+# Cron: */5 * * * * /localhome/local-rcabral/aster/util/eval_pipeline/tb1_monitor.sh
 set -euo pipefail
 
 # ── Source environment ────────────────────────────────────────────────────────
 export PATH="$HOME/.local/bin:$PATH"
-REPO_ROOT="/localhome/local-rcabral/nooa"
+REPO_ROOT="/localhome/local-rcabral/aster"
 # Source API keys from .env
 set -a
 source "$REPO_ROOT/.env"
 set +a
-export NEMO_OO_AGENTS_GIT_REF="${NEMO_OO_AGENTS_GIT_REF:-main}"
+export ASTER_GIT_REF="${ASTER_GIT_REF:-main}"
 export OPENAI_API_KEY="$NVIDIA_INTERNAL_API_KEY"
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -50,12 +50,12 @@ else
 fi
 
 # ── Step 2: Ensure agent pre-cached ──────────────────────────────────────────
-AGENT_CACHE="$BOOTSTRAP_OVERLAY/installed-agent/nooa"
+AGENT_CACHE="$BOOTSTRAP_OVERLAY/installed-agent/aster"
 if [ ! -d "$AGENT_CACHE/.git" ]; then
     log "Pre-caching agent..."
     mkdir -p "$(dirname "$AGENT_CACHE")"
-    git clone --depth 1 --branch "$NEMO_OO_AGENTS_GIT_REF" \
-        "$NEMO_OO_AGENTS_GIT_URL" "$AGENT_CACHE" >> "$LOG_FILE" 2>&1
+    git clone --depth 1 --branch "$ASTER_GIT_REF" \
+        "$ASTER_GIT_URL" "$AGENT_CACHE" >> "$LOG_FILE" 2>&1
     log "Agent cached"
 fi
 
@@ -122,7 +122,7 @@ cd "$REPO_ROOT"
 nohup harbor run \
     --path "$TASKS_CACHE" \
     --jobs-dir "$JOBS_DIR" \
-    -a nemo-oo-agents \
+    -a aster \
     -m aws/anthropic/bedrock-claude-sonnet-4-5-v1 \
     -e apptainer \
     --override-memory-mb $MEMORY_MB \
@@ -132,8 +132,8 @@ nohup harbor run \
     --ak agent_type=baseline \
     --ae OPENAI_API_KEY="$NVIDIA_INTERNAL_API_KEY" \
     --ae NVIDIA_INTERNAL_API_KEY="$NVIDIA_INTERNAL_API_KEY" \
-    --ae NEMO_OO_AGENTS_GIT_URL="$NEMO_OO_AGENTS_GIT_URL" \
-    --ae NEMO_OO_AGENTS_GIT_REF="$NEMO_OO_AGENTS_GIT_REF" \
+    --ae ASTER_GIT_URL="$ASTER_GIT_URL" \
+    --ae ASTER_GIT_REF="$ASTER_GIT_REF" \
     -n $N_CONCURRENT \
     --yes \
     >> "$LOG_FILE" 2>&1 &

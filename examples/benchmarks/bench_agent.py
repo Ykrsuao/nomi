@@ -4,10 +4,10 @@
 
 from pydantic import BaseModel, Field
 
-from nooa import Agent, CodeActStrategy, hidden, strategy
-from nooa.config import CodeActConfig
-from nooa.tools.shell_tools import ShellTools
-from nooa.tools.todo import TodoManager
+from aster import Agent, CodeActStrategy, hidden, strategy
+from aster.config import CodeActConfig
+from aster.tools.shell_tools import ShellTools
+from aster.tools.todo import TodoManager
 
 
 class TaskResult(BaseModel):

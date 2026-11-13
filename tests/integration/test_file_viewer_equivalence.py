@@ -27,7 +27,7 @@ import urllib.request
 import pytest
 from otlp_test_helpers import read_all_otlp_jsonl_spans
 
-from nooa.tracing import enable_tracing, exporters, set_session, shutdown_traces
+from aster.tracing import enable_tracing, exporters, set_session, shutdown_traces
 
 
 def _gather_otlp_from_jsonl(text: str) -> dict[str, dict]:
@@ -87,7 +87,7 @@ async def test_file_save_equals_viewer_download(live_viewer, monkeypatch):
     import litellm
     from opentelemetry import trace as otel_trace
 
-    from nooa.tracing._litellm_journal import MessageJournalCallback
+    from aster.tracing._litellm_journal import MessageJournalCallback
 
     with tempfile.TemporaryDirectory() as tmpdir, contextlib.ExitStack() as cleanup:
         # Both sinks active simultaneously: file + journal-to-viewer.
@@ -157,7 +157,7 @@ async def test_file_save_equals_viewer_download(live_viewer, monkeypatch):
                         end_time=1.0,
                     )
 
-        from nooa.tracing import _provider
+        from aster.tracing import _provider
 
         assert _provider is not None
         _provider.force_flush()

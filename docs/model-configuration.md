@@ -1,12 +1,12 @@
 # Model configuration
 
-Start with [nooa connect](model-connect.md) to configure the reply/output token
+Start with [aster connect](model-connect.md) to configure the reply/output token
 limit, known context window, media formats, and other model settings, and test
 your route. This page explains the saved settings and how configuration files
 are loaded.
 
 You can also edit `llm_config.yaml` directly, or use the
-[nooa-model-configuration](../skills/nooa-model-configuration/SKILL.md) skill.
+[aster-model-configuration](../skills/aster-model-configuration/SKILL.md) skill.
 
 Get the exact model ID, API format, and limits from the endpoint's
 documentation. Leave out anything you do not know.
@@ -33,7 +33,7 @@ models:
 | `api_base` | The API base URL, not the full request URL. Leave off `/chat/completions`, `/responses`, or `/messages`. |
 | `api_key_env` | The environment variable that holds the key. Never put the key itself in this file. Use `''` for a local server with no key. |
 | `max_tokens` | The reply limit per request, including reasoning. Use what you need, not the model's maximum. Connect suggests a published recommendation or 32,768, adjusted to known limits. |
-| `context_window` | Optional. The model's context window, if documented. |
+| `context_window` | Optional. An explicit input-window limit, overriding endpoint and LiteLLM metadata. |
 | `media_inputs` | Optional. Which media the model can receive. See [below](#explicit-media-inputs-migration). |
 
 Pick `model_name` and `client_type` by the endpoint's API:
@@ -59,6 +59,27 @@ This keeps the model's reasoning between turns. If the endpoint rejects
 To add reasoning levels, see [reasoning levels](reasoning-levels.md). Only add
 request settings whose exact form you know.
 
+### Automatic context metadata in the terminal
+
+When ACP opens a session or changes models, it makes an optional `GET /models`
+for explicitly configured OpenAI-compatible endpoints. It matches the exact wire
+model ID: `openai/auto/example` matches `auto/example`, not another route ending
+in `example`. Valid input/context limits update both the usage percentage and
+automatic summarization budgets. Explicit `context_window` settings take priority;
+LiteLLM model information supplies the fallback, using the configured provider.
+
+The lookup has a two-second total timeout and does not call the model or write
+configuration. Results belong to one client and route; model, endpoint and
+credential changes invalidate them. Custom SDK clients and additional header,
+organization or API-version scopes skip this optional lookup. Routes that rely
+on implicit SDK authentication or scope also skip it, so anonymous metadata is
+not mistaken for an authenticated model's limits. Library users can explicitly
+`await llm.refresh_model_info()` before using context limits.
+
+Prices remain separate: LiteLLM can calculate costs for a known pricing route,
+or the response can report a cost. A model listing that supplies a context limit
+without prices does not establish a charge or imply that calls are free.
+
 ### Decision models
 
 Decision models go in the same `models:` list, with `client_type: decision`:
@@ -73,7 +94,7 @@ models:
     api_key_env: OPENROUTER_API_KEY
 ```
 
-- `endpoint` is the full decisions request URL. NOOA adds nothing to it.
+- `endpoint` is the full decisions request URL. Aster adds nothing to it.
 - `api_style` is `systemone` for System One endpoints, or `openai` for OpenAI's
   Decisions API (for example `endpoint: https://api.openai.com/v1/decisions`
   with `model_name: gpt-6-luna`).
@@ -87,7 +108,7 @@ This loads the file and checks that the alias exists. It sends no requests:
 
 ```python
 from pathlib import Path
-from nooa.unifiedllm.registry import reload_registry
+from aster.unifiedllm.registry import reload_registry
 
 entries = reload_registry(Path("llm_config.yaml"))
 assert "my-model" in entries
@@ -101,22 +122,22 @@ This does not test the key or the endpoint. Use Connect to check the route.
 Automatic discovery reads existing files in this order (later aliases win):
 
 1. Bundled defaults from installed packages.
-2. User configuration: normally `~/.config/nooa/llm_config.yaml`; honors
-   `XDG_CONFIG_HOME` or the explicit `NEMO_OO_USER_DIR` directory override.
-3. Project configuration: normally `<project-root>/.nooa/llm_config.yaml`;
-   `NEMO_OO_PROJECT_DIR` overrides the directory containing this file.
-4. Comma-separated paths in `NEMO_OO_LLM_CONFIG`, in the order supplied.
+2. User configuration: normally `~/.config/aster/llm_config.yaml`; honors
+   `XDG_CONFIG_HOME` or the explicit `ASTER_USER_DIR` directory override.
+3. Project configuration: normally `<project-root>/.aster/llm_config.yaml`;
+   `ASTER_PROJECT_DIR` overrides the directory containing this file.
+4. Comma-separated paths in `ASTER_LLM_CONFIG`, in the order supplied.
 
 Later files replace the **whole model entry**. Call
-`nooa.llm_config.llm_config_chain()` to see which files your application reads.
-When running from source, NOOA uses the source checkout as the project root.
+`aster.llm_config.llm_config_chain()` to see which files your application reads.
+When running from source, Aster uses the source checkout as the project root.
 For a file elsewhere, use one of the explicit loading methods below.
 
 For the standalone file above, either explicitly reload it in each application
 as shown, or make it discoverable before launching the application:
 
 ```sh
-export NEMO_OO_LLM_CONFIG="$PWD/llm_config.yaml"
+export ASTER_LLM_CONFIG="$PWD/llm_config.yaml"
 ```
 
 `reload_registry(Path(...))` loads only the supplied file(s); call
@@ -125,12 +146,12 @@ Connect's `--output FILE` chooses where to write, not what Python will load.
 
 ## Skipping checks (reference)
 
-`nooa connect` can write the entry for you without test requests. Add
+`aster connect` can write the entry for you without test requests. Add
 `--no-probe` to skip model checks and `--no-catalogue` to skip public model
 details:
 
 ```sh
-uv run nooa connect your-model --as my-model \
+uv run aster connect your-model --as my-model \
   --endpoint https://gateway.example/v1 --api-style chat \
   --api-key-env MY_MODEL_KEY --no-probe --no-catalogue
 ```
@@ -138,7 +159,7 @@ uv run nooa connect your-model --as my-model \
 For a decision model:
 
 ```sh
-uv run nooa connect typesafe/jev-1.13 --as decisions \
+uv run aster connect typesafe/jev-1.13 --as decisions \
   --endpoint https://openrouter.ai/api/alpha/decisions \
   --api-style systemone --api-key-env OPENROUTER_API_KEY \
   --no-probe --no-catalogue
@@ -176,7 +197,7 @@ models:
 | `video` | Video |
 | `pdf` | Files with MIME type exactly `application/pdf` |
 
-- List only kinds the endpoint really supports. NOOA does not check.
+- List only kinds the endpoint really supports. Aster does not check.
 - `pdf` covers only `application/pdf`. Other files, such as Word documents, are
   never sent. A `.pdf` file name alone is not enough.
 - A model with no `media_inputs` setting logs a one-time warning that it is
@@ -187,7 +208,7 @@ models:
 For Python clients, pass the same list:
 
 ```python
-from nooa.unifiedllm import CompletionClient, ResponsesClient
+from aster.unifiedllm import CompletionClient, ResponsesClient
 
 chat = CompletionClient("openai/your-model", media_inputs=["image", "audio"])
 responses = ResponsesClient("openai/your-model", media_inputs=["image", "pdf"])
@@ -198,7 +219,7 @@ responses = ResponsesClient("openai/your-model", media_inputs=["image", "pdf"])
 ### What happens to media the model cannot receive
 
 Pass media as method arguments or use `show()` while CodeAct runs. When a
-format is missing from `media_inputs`, NOOA sends a short note instead of the
+format is missing from `media_inputs`, Aster sends a short note instead of the
 attachment, for example:
 
 - `[An image was removed here because this model is not set up to receive images.]`

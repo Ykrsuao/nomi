@@ -7,8 +7,8 @@ import json
 import httpx
 import pytest
 
-from nooa.agents import TokenBudgetSummarizer
-from nooa.unifiedllm import CompletionClient, ResponsesClient
+from aster.agents import TokenBudgetSummarizer
+from aster.unifiedllm import CompletionClient, ResponsesClient
 from tests.integration.test_summarizer_live import exercise_summarization
 
 

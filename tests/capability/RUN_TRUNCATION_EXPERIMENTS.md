@@ -6,25 +6,24 @@ This document is a step-by-step guide for re-running the truncation-comprehensio
 
 ## Prerequisites
 
-1. **Repo checkout** on the experiment branch:
+1. **Aster source checkout** — install the development tools from the repository root:
    ```bash
-   git fetch origin test/truncation-comprehension
-   git checkout test/truncation-comprehension
-   uv sync --all-extras --no-extra sandbox
+   uv sync --group dev --extra cli
    ```
 
-2. **API access** — these models route through the NVIDIA internal inference gateway. You need:
-   - `NVIDIA_INTERNAL_API_KEY` in your `.env` (or shell environment) for the Nemotron / Qwen / GPT-OSS / GPT-5 / Claude / Gemini routes.
-   - Optionally `NVIDIA_API_KEY` for the public NIM endpoint (a few `qwen` aliases use this).
+2. **API access** — supply credentials for the endpoints you will evaluate. The historical runs used the NVIDIA inference gateway (`NVIDIA_INTERNAL_API_KEY`) and some public NIM routes (`NVIDIA_API_KEY`). Configure the exact model IDs and endpoints available to your account.
 
-3. **Model aliases** (claude-haiku, nemotron3-nano-30b, …) ship in the `nemo-oo-agents-nvidia` package — install it (or the `[nvidia]` extra) and verify they're loaded:
+3. **Model aliases** — register your models with Connect, or add entries to `.aster/llm_config.yaml` following [model configuration](../../docs/model-configuration.md). Then inspect the loaded files:
    ```bash
-   uv run nooa config show
+   uv run aster connect
+   uv run aster config show
    ```
+
+   Match `agent_models` in `config_truncation.yaml` and the `--models` examples below to aliases you have configured. Names such as `claude-haiku` and `nemotron3-nano-30b` refer to the historical experiment's configuration; a fresh installation does not supply them.
 
 4. **Optional: trace viewer** for live trace inspection:
    ```bash
-   uv run python -m nooa.viewer &  # http://localhost:5001
+   uv run aster start-dev  # separate terminal; http://localhost:5001
    ```
 
 5. **Source your env**:
@@ -223,7 +222,7 @@ Each row shows: `passed/total (%)`. The `passed` count is the sum across `runs` 
 
 ## Troubleshooting
 
-- **`ValueError: Model 'X' not found.`** — run `nooa config show` to confirm the `nemo-oo-agents-nvidia` package is installed and its bundled defaults are loading.
+- **`ValueError: Model 'X' not found.`** — run `uv run aster config show`, configure the missing alias with `uv run aster connect`, and ensure the experiment's `agent_models` names match your registry.
 - **`AuthenticationError: key not allowed to access model`** — the API key doesn't have permission for that model. `gemini-3-pro` is one example; substitute `gemini-2.5-pro` or `gemini-3.1-pro-preview`.
 - **Empty `actual: None` for many results** — that model is failing the output-format protocol (PredictStrategy JSON or CodeAct tool-calling). See the limitations section of `EXPERIMENT_truncation_markers.md` for known cases (`llama-3.1-8b`, `gpt-oss-20b`, `qwen3.5-35b`).
 - **`Spec.__call__() got an unexpected keyword argument 'max_string'`** — the agent module is on a branch where `spec()` doesn't yet accept pformat hints. The current `truncation_comprehension.py` doesn't use those kwargs; if you're modifying it, leave the spec annotations off the parameters.
@@ -232,14 +231,15 @@ Each row shows: `passed/total (%)`. The `passed` count is the sum across `runs` 
 
 ## Adding new models
 
-1. Register the alias in `packages/nemo-oo-agents-nvidia/src/nooa_nvidia/data/llm_config_default.yaml` (the bundled default that ships in the NVIDIA package):
+1. Register the alias with `uv run aster connect`, or add it under `models:` in `.aster/llm_config.yaml`. Replace the example model ID and endpoint with values documented by your provider:
    ```yaml
-   my-new-model:
-     model_name: openai/path/to/model
-     api_base: https://inference-api.nvidia.com/v1
-     api_key_env: NVIDIA_INTERNAL_API_KEY
-     context_window: 131072
-     max_tokens: 16384
+   models:
+     my-new-model:
+       model_name: openai/your-model
+       client_type: completion
+       api_base: https://gateway.example/v1
+       api_key_env: MY_MODEL_KEY
+       max_tokens: 16384
    ```
 
 2. Add to `agent_models` in `tests/capability/config_truncation.yaml`.

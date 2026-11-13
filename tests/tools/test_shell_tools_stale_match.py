@@ -6,7 +6,7 @@ import shutil
 
 import pytest
 
-from nooa.tools.shell_tools import Match, ShellTools, StaleMatchError
+from aster.tools.shell_tools import Match, ShellTools, StaleMatchError
 
 
 @pytest.fixture
@@ -185,7 +185,7 @@ async def test_large_diff_bounded_or_omitted(
         def forbidden_diff(*args, **kwargs):
             pytest.fail("oversized regions must not enter diff computation")
 
-        monkeypatch.setattr("nooa.tools.shell_tools.difflib.unified_diff", forbidden_diff)
+        monkeypatch.setattr("aster.tools.shell_tools.difflib.unified_diff", forbidden_diff)
     with pytest.raises(StaleMatchError) as caught:
         await shell.replace(anchor, "replacement")
     error = caught.value

@@ -1,7 +1,7 @@
 ---
 name: context-blocks
-description: "How to manage context blocks (system prompt sections) in NOOA. Use when configuring what appears in an agent's LLM prompt — adding, overriding, suppressing, or positioning blocks. Covers the unified Context API, well-known framework keys, and the declarative/runtime interface."
-compatibility: nooa >= 0.x
+description: "How to manage context blocks (system prompt sections) in Aster. Use when configuring what appears in an agent's LLM prompt — adding, overriding, suppressing, or positioning blocks. Covers the unified Context API, well-known framework keys, and the declarative/runtime interface."
+compatibility: aster >= 0.x
 metadata:
   skill_type: api-reference
 user-invocable: false
@@ -16,7 +16,7 @@ Context blocks are named sections of the system prompt. They come from multiple 
 Every context block entry is a dict mapping `{key: value}`:
 
 ```python
-from nooa import Context
+from aster import Context
 
 context = {
     "role": "You are a security expert",                       # str: literal text, volatile suffix

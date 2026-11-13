@@ -24,8 +24,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-from nooa.storage.sqlite import SQLiteStorageManager
-from nooa.util.quickstart import *
+from aster.storage.sqlite import SQLiteStorageManager
+from aster.util.quickstart import *
 
 PAYLOAD = "A shipment of 400 units arrived two weeks late and 12 units are damaged."
 

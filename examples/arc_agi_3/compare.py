@@ -17,6 +17,8 @@ import statistics
 from collections import defaultdict
 from pathlib import Path
 
+from _run_layout import SOLVER, canonical_group, is_solver
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 METRICS = [
@@ -30,16 +32,18 @@ METRICS = [
 
 def load_runs(results_root: Path, groups: list[str] | None) -> list[dict]:
     runs = []
+    selected_groups = {canonical_group(group) for group in groups} if groups else None
     for result_path in sorted(results_root.glob("*/*/result.json")):
-        group = result_path.parent.parent.name
-        if groups and group not in groups:
+        group = canonical_group(result_path.parent.parent.name)
+        if selected_groups and group not in selected_groups:
             continue
         try:
             r = json.loads(result_path.read_text())
         except json.JSONDecodeError:
             continue
-        if r.get("solver") != "nemo_single_agent":
+        if not is_solver(r.get("solver")):
             continue
+        r["solver"] = SOLVER
         r["_run"] = result_path.parent.name
         r["_group"] = group
         r["_seeded"] = "seeded" in result_path.parent.name
@@ -69,7 +73,7 @@ def main() -> None:
 
     runs = load_runs(root, args.group)
     if not runs:
-        print(f"no nemo_single_agent runs under {root}")
+        print(f"no aster_single_agent runs under {root}")
         return
 
     by_key = defaultdict(list)
@@ -106,7 +110,7 @@ def main() -> None:
     }
     (root / "comparison.json").write_text(json.dumps(out, indent=2))
     (root / "comparison.md").write_text(
-        "# ARC-AGI-3 nemo solver — variant comparison\n\n" + table + "\n\n"
+        "# ARC-AGI-3 Aster solver — variant comparison\n\n" + table + "\n\n"
         "Per-run details in comparison.json.\n"
     )
     print(f"\nwrote {root}/comparison.json and comparison.md ({len(runs)} runs)")

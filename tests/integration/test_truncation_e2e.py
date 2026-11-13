@@ -23,16 +23,16 @@ Inline tests use FakeLLMClient (no API calls).
 
 import pytest
 
-from nooa import Agent
-from nooa.agentdoc import pformat
-from nooa.config.truncation_config import CaptureConfig, FormatConfig, TruncationConfig
-from nooa.context_blocks import BlockMetadata, ResolvedBlock, Role
-from nooa.context_blocks.events import ResultStatus
-from nooa.context_blocks.formatter import XMLBlockFormatter
-from nooa.context_blocks.renderer import render_context
-from nooa.events import PythonOutput
-from nooa.runtime.actor import _current_llm_var
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.agentdoc import pformat
+from aster.config.truncation_config import CaptureConfig, FormatConfig, TruncationConfig
+from aster.context_blocks import BlockMetadata, ResolvedBlock, Role
+from aster.context_blocks.events import ResultStatus
+from aster.context_blocks.formatter import XMLBlockFormatter
+from aster.context_blocks.renderer import render_context
+from aster.events import PythonOutput
+from aster.runtime.actor import _current_llm_var
+from aster.unifiedllm import FakeLLMClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -531,7 +531,7 @@ class TestL4EventArchival:
 
         # Simulate what happens on context overflow
         # Manually set context stats so _archive_on_context_error has data
-        from nooa.context_blocks.models import ContextWindowStats
+        from aster.context_blocks.models import ContextWindowStats
 
         agent.runtime._last_context_stats = ContextWindowStats(
             context_blocks_count=1,
@@ -695,7 +695,7 @@ class TestCrossLayerPipeline:
     async def test_head_tail_structure_preserved_through_pipeline(self):
         """The head/tail structure from L2's TruncatingStringIO must survive
         all the way through L3 event rendering into the context."""
-        from nooa.agentdoc import TruncatingStringIO
+        from aster.agentdoc import TruncatingStringIO
 
         # Create a head/tail truncated output directly
         buf = TruncatingStringIO(limit=200)
@@ -717,7 +717,7 @@ class TestCrossLayerPipeline:
     def test_l3_rendering_preserves_l2_truncation_notice_in_event_format(self):
         """format_event with event_format must preserve the L2 truncation
         notice verbatim, not wrap it in str(len=...) markers."""
-        from nooa.agentdoc import TruncatingStringIO
+        from aster.agentdoc import TruncatingStringIO
 
         # Produce realistic L2 output
         buf = TruncatingStringIO(limit=500)
@@ -772,7 +772,7 @@ class TestCrossLayerPipeline:
         assert stats is not None
 
         # Now simulate L4.2 — archive events
-        from nooa.context_blocks.models import ContextWindowStats
+        from aster.context_blocks.models import ContextWindowStats
 
         agent.runtime._last_context_stats = ContextWindowStats(
             context_blocks_count=1,
@@ -799,6 +799,6 @@ class TestCrossLayerPipeline:
 
 def _openai_formatter():
     """Return an OpenAI provider formatter."""
-    from nooa.context_blocks.formatter import OpenAIProviderFormatter
+    from aster.context_blocks.formatter import OpenAIProviderFormatter
 
     return OpenAIProviderFormatter()

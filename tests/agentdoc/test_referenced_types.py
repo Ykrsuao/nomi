@@ -7,8 +7,8 @@ from typing import Annotated
 import pytest
 from pydantic import BaseModel, Field
 
-from nooa.agentdoc import doc
-from nooa.agentdoc._discover import _is_custom_type, discover_referenced_types
+from aster.agentdoc import doc
+from aster.agentdoc._discover import _is_custom_type, discover_referenced_types
 
 
 # Test fixtures
@@ -170,7 +170,7 @@ def test_doc_includes_referenced_types():
 
 def test_instance_hidden_field_type_not_in_referenced_types():
     """Instance-hidden field types must not leak through referenced docs."""
-    from nooa.agentdoc import spec
+    from aster.agentdoc import spec
 
     class Secret:
         def reveal(self) -> str:

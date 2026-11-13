@@ -6,8 +6,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from nooa import Agent, strategy
-from nooa.strategies import PredictStrategy
+from aster import Agent, strategy
+from aster.strategies import PredictStrategy
 
 
 class UserInfo(BaseModel):

@@ -13,11 +13,11 @@ import inspect
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent, hidden
-from nooa.agentdoc import doc
-from nooa.agentdoc.visibility import filter_module_globals
-from nooa.runtime.actor import ActorRuntime
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, hidden
+from aster.agentdoc import doc
+from aster.agentdoc.visibility import filter_module_globals
+from aster.runtime.actor import ActorRuntime
+from aster.unifiedllm import FakeLLMClient
 
 _TEST_LLM = FakeLLMClient()
 

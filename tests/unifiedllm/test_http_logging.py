@@ -9,7 +9,7 @@ from threading import Thread
 import httpx
 import pytest
 
-from nooa.unifiedllm.http_logging import enable_http_request_logging
+from aster.unifiedllm.http_logging import enable_http_request_logging
 
 
 def test_opaque_reasoning_state_is_redacted_from_http_debug_payloads(
@@ -21,7 +21,7 @@ def test_opaque_reasoning_state_is_redacted_from_http_debug_payloads(
             {"type": "thinking", "thinking": "visible", "signature": "anthropic-secret"},
             {"type": "redacted_thinking", "data": "anthropic-redacted"},
             {"thought_signature": "gemini-secret"},
-            {"_nooa_llm_state": {"payload": {"items": ["opaque"]}}},
+            {"_aster_llm_state": {"payload": {"items": ["opaque"]}}},
         ]
     }
 
@@ -37,7 +37,7 @@ def test_opaque_reasoning_state_is_redacted_from_http_debug_payloads(
         {"type": "thinking", "thinking": "visible", "signature": "[REDACTED]"},
         {"type": "redacted_thinking", "data": "[REDACTED]"},
         {"thought_signature": "[REDACTED]"},
-        {"_nooa_llm_state": "[REDACTED]"},
+        {"_aster_llm_state": "[REDACTED]"},
     ]
 
 

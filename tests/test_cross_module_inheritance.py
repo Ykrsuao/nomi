@@ -14,12 +14,12 @@ import json
 
 import pytest
 
-from nooa.agentdoc.visibility import (
+from aster.agentdoc.visibility import (
     filter_mro_module_globals,
     iter_agent_mro_modules,
 )
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 from tests.helpers import cross_module_child, cross_module_parent
 from tests.helpers.cross_module_child import ChildAgent
 from tests.helpers.cross_module_parent import ParentAgent
@@ -49,11 +49,11 @@ def test_mro_modules_include_parent_and_child():
 
 
 def test_mro_modules_exclude_framework_and_builtins():
-    """Framework (nooa*) and builtins modules are excluded from the MRO list."""
+    """Framework (aster*) and builtins modules are excluded from the MRO list."""
     names = {m.__name__ for m in iter_agent_mro_modules(ChildAgent)}
     # The framework Agent base module and builtins must be filtered out.
     assert "builtins" not in names
-    assert not any(n == "nooa" or n.startswith("nooa.") for n in names)
+    assert not any(n == "aster" or n.startswith("aster.") for n in names)
 
 
 def test_parent_module_symbols_present():

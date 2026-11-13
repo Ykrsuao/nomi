@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from nooa.trace_explorer import TraceExplorer
+    from aster.trace_explorer import TraceExplorer
 
 # Type alias for task input: (args, kwargs) tuple for method invocation
 TaskInput = tuple[tuple[Any, ...], dict[str, Any]]

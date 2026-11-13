@@ -7,7 +7,7 @@ from typing import Annotated
 import pytest
 from pydantic import BaseModel
 
-from nooa.agentdoc import hidden, pformat, spec
+from aster.agentdoc import hidden, pformat, spec
 
 
 @pytest.mark.parametrize("wrap", [lambda obj: [obj], lambda obj: {"nested": obj}])
@@ -184,7 +184,7 @@ def test_pformat_excludes_callable_instance_attribute():
 
 def test_pformat_excludes_spec_hidden_true_annotation():
     """Annotated[T, spec(hidden=True)] must hide the field — not just Annotated[T, hidden]."""
-    from nooa.agentdoc import doc, spec
+    from aster.agentdoc import doc, spec
 
     class Agent:
         label: str = "ok"
@@ -202,7 +202,7 @@ def test_pformat_excludes_spec_hidden_true_annotation():
 
 def test_pformat_type_mode_excludes_hidden_dict_attrs():
     """doc(instance) must not leak Annotated[T, hidden] fields via __dict__ extra-attr path."""
-    from nooa.agentdoc import doc
+    from aster.agentdoc import doc
 
     class Agent:
         label: str = "default"

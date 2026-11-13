@@ -39,9 +39,9 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from starlette.testclient import TestClient
 
-from nooa.viewer import main as main_module
-from nooa.viewer import otlp_store
-from nooa.viewer.main import app
+from aster.viewer import main as main_module
+from aster.viewer import otlp_store
+from aster.viewer.main import app
 
 
 @pytest.fixture

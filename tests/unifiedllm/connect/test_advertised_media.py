@@ -7,7 +7,7 @@ from copy import deepcopy
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 from tests.unifiedllm.connect.connect_http import mock_http
 
 SOURCE = "https://api.test/v1/models"

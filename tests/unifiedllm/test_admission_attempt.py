@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from nooa.unifiedllm.admission import _run_admitted_attempt
+from aster.unifiedllm.admission import _run_admitted_attempt
 
 
 @pytest.mark.asyncio

@@ -21,7 +21,7 @@ import asyncio
 
 import pytest
 
-from nooa.runtime.channels import Channel, QueueManager
+from aster.runtime.channels import Channel, QueueManager
 
 # ---------------------------------------------------------------------------
 # Helpers

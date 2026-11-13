@@ -1,16 +1,16 @@
 # Media inputs: images, audio, video, and PDFs
 
-Import `Image`, `Audio`, `Video`, and PDF `File` from `nooa.media` and pass them
+Import `Image`, `Audio`, `Video`, and PDF `File` from `aster.media` and pass them
 as agent method arguments. For media created while CodeAct runs, use `show()`.
 
 ## Configure the model
 
-Agents: follow [nooa-connect](../skills/nooa-connect/SKILL.md), the canonical
+Agents: follow [aster-connect](../skills/aster-connect/SKILL.md), the canonical
 permission-first headless guide, before model configuration, network/media
 checks or registry writes. Bound samples and private user media separately.
-For guided human setup, [nooa connect](model-connect.md) chooses media formats,
+For guided human setup, [aster connect](model-connect.md) chooses media formats,
 configures the reply limit and known context size, and tests the route.
-NOOA assumes models are text-only until configured. Set `media_inputs` in the
+Aster assumes models are text-only until configured. Set `media_inputs` in the
 model's registry entry or client constructor. Supported values are `image`,
 `audio`, `video`, and `pdf`. Omitted, null, or empty lists mean text-only.
 Use a list (or a tuple in Python); bare strings, duplicates, and unknown values
@@ -29,7 +29,7 @@ models:
 
 Replace placeholders with your provider's settings; keep the key in `MODEL_KEY`.
 See [model configuration](model-configuration.md) and [Connect](model-connect.md).
-Agents follow the canonical [headless Connect skill](../skills/nooa-connect/SKILL.md):
+Agents follow the canonical [headless Connect skill](../skills/aster-connect/SKILL.md):
 get permission for configuration, network checks, media samples and writes.
 
 ## Run an image example
@@ -37,7 +37,7 @@ get permission for configuration, network checks, media samples and writes.
 The [multimodal quickstart](../examples/quickstart/13_multimodal.py) shows
 CodeAct describing an image and Predict returning structured image analysis.
 
-Configure an image-capable model with `nooa connect`, save it as `vision`,
+Configure an image-capable model with `aster connect`, save it as `vision`,
 and enable `image`. From a source checkout, run:
 
 ```sh
@@ -61,7 +61,7 @@ figure. `show()` attaches it for the next model turn. Show individual objects;
 for a list, loop over its items.
 
 Generated code can call `show()` without an import. Hand-written helpers use
-`from nooa.runtime.media_capture import show` and run inside a CodeAct cell.
+`from aster.runtime.media_capture import show` and run inside a CodeAct cell.
 Outside execution, `show()` prints a not-captured notice. If you replace or
 disable CodeAct's input inspection, show the media arguments yourself.
 
@@ -72,7 +72,7 @@ and `from_url(url, *, media_type=...)`:
 
 ```python
 from pathlib import Path
-from nooa.media import Image, Audio, Video, File
+from aster.media import Image, Audio, Video, File
 
 photo = Image.from_file("photo.png")
 clip = Audio.from_bytes(Path("clip.wav").read_bytes(), media_type="audio/wav")
@@ -111,12 +111,12 @@ Default CodeAct capture keeps the first **5 attachments per cell**, including
 input inspection. Later `show()` calls print a limit notice; repeated objects
 count again. Set `TruncationConfig(media_capture=MediaCaptureConfig(
 max_attachments_per_execution=3))` through the agent's `truncation=` setting to
-change this positive count; both classes are in `nooa.config.truncation_config`.
+change this positive count; both classes are in `aster.config.truncation_config`.
 Limit file sizes separately. Predict's direct arguments have no per-cell cap.
 
 ## Text-only requests and replay
 
-For formats missing from `media_inputs`, NOOA replaces attachments with text
+For formats missing from `media_inputs`, Aster replaces attachments with text
 notices when sending the request, including attachments from earlier turns:
 
 ```text
@@ -141,7 +141,7 @@ and saving. Audio/video checks currently run only for Chat. See
 For focused diagnostics, use a media stage:
 
 ```sh
-uv run nooa connect your-model --stage media --as vision \
+uv run aster connect your-model --stage media --as vision \
   --endpoint https://gateway.example/v1 --api-style chat \
   --api-key-env MODEL_KEY --test-media-inputs image,pdf \
   --max-tokens 4096 --budget-tokens 32768 > media-result.json
@@ -150,7 +150,7 @@ uv run nooa connect your-model --stage media --as vision \
 This runs a text baseline and media checks without confirmation or automatic
 saving. Review passed, failed, and skipped checks, then save separately with
 `--stage save --input media-result.json --output llm_config.yaml`. Load the file
-with `reload_registry(Path("llm_config.yaml"))` or set `NEMO_OO_LLM_CONFIG` to
+with `reload_registry(Path("llm_config.yaml"))` or set `ASTER_LLM_CONFIG` to
 its absolute path.
 
 For an unsaved proposal, use `--stage plan --media-inputs image,pdf` instead.

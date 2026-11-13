@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Integration test for event management with Event-based API."""
 
-from nooa import Agent, strategy
-from nooa.events import LLMResponse, Task
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, strategy
+from aster.events import LLMResponse, Task
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 
 def _format_events_for_test(events: list) -> list[dict]:

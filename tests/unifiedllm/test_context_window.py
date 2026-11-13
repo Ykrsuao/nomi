@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import litellm
 import pytest
 
-from nooa.unifiedllm import CompletionClient, ResponsesClient, get_llm_client
+from aster.unifiedllm import CompletionClient, ResponsesClient, get_llm_client
 
 
 def _completion_response() -> litellm.ModelResponse:
@@ -65,7 +65,7 @@ def test_registry_only_context_window_still_resolves():
 
 
 def test_get_llm_client_override_is_metadata_not_request_config(monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     monkeypatch.setattr(registry, "_loaded", True)
     monkeypatch.setitem(

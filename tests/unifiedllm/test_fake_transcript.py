@@ -10,7 +10,7 @@ from dataclasses import FrozenInstanceError
 import pytest
 from pydantic import BaseModel
 
-from nooa.unifiedllm import (
+from aster.unifiedllm import (
     FakeLLMClient,
     FakeLLMResponseExhaustedError,
     FakeLLMToolSnapshot,

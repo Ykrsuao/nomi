@@ -9,8 +9,8 @@ import sys
 import pytest
 from pydantic import ValidationError
 
-from nooa._immutable_json import freeze, json_containers
-from nooa.llm_types import AssistantText
+from aster._immutable_json import freeze, json_containers
+from aster.llm_types import AssistantText
 
 
 @pytest.mark.parametrize(

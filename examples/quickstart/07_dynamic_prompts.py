@@ -6,7 +6,7 @@
 uv run python examples/quickstart/07_dynamic_prompts.py
 """
 
-from nooa.util.quickstart import *
+from aster.util.quickstart import *
 
 
 class TranslatorAgent(Agent, llm=llm):

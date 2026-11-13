@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import litellm
 
-from nooa.tracing._litellm_journal import MessageJournalCallback
+from aster.tracing._litellm_journal import MessageJournalCallback
 
 # The list of litellm callback lists the conftest is responsible for
 # stripping.  If this drifts from what ``conftest._reset_tracing_module_state``

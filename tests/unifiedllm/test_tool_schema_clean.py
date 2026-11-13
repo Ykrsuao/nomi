@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, create_model
 
-from nooa.unifiedllm import Tool
+from aster.unifiedllm import Tool
 
 
 class TestToolSchemaSimple:

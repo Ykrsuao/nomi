@@ -15,7 +15,7 @@ This test pins exactly that round-trip:
       -> the file on disk has full messages on its LLM span (T1 covers
       that file is complete).
   2.  Spin up an *empty* viewer-B.
-  3.  ``nooa import-traces <saved.jsonl> --endpoint <viewer-B>``
+  3.  ``aster import-traces <saved.jsonl> --endpoint <viewer-B>``
   4.  ``GET /api/trace/export?session_id=...`` from viewer-B.
   5.  Compare span-by-span with the original file: same span ids, same
       ``llm.input_messages.*`` / ``llm.output_messages.*``.
@@ -83,8 +83,8 @@ def _otlp_body(index: int) -> dict:
 
 def test_import_179_records_stores_every_span(fresh_viewer, tmp_path):
     """A file larger than the viewer queue is batched, synced, and complete."""
+    from aster_cli.commands.import_traces import command
     from click.testing import CliRunner
-    from nooa_cli.commands.import_traces import command
 
     session_id = "large-import"
     trace_file = tmp_path / f"{session_id}.jsonl"
@@ -112,8 +112,8 @@ def test_import_179_records_stores_every_span(fresh_viewer, tmp_path):
 
 def test_import_reports_viewer_ingest_failure(fresh_viewer, tmp_path):
     """Queue drain is not success when the viewer rejected the queued payload."""
+    from aster_cli.commands.import_traces import command
     from click.testing import CliRunner
-    from nooa_cli.commands.import_traces import command
 
     good_body = _otlp_body(1)
     malformed_body = _otlp_body(2)
@@ -146,7 +146,7 @@ async def test_save_then_import_then_download_preserves_messages(fresh_viewer):
     pytest.importorskip("openinference.instrumentation.litellm")
     import litellm
 
-    from nooa.tracing import enable_tracing, exporters, set_session
+    from aster.tracing import enable_tracing, exporters, set_session
 
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
@@ -164,7 +164,7 @@ async def test_save_then_import_then_download_preserves_messages(fresh_viewer):
             mock_response="T6_OUTPUT 4",
         )
 
-        from nooa.tracing import _provider
+        from aster.tracing import _provider
 
         assert _provider is not None
         _provider.force_flush()
@@ -203,8 +203,8 @@ async def test_save_then_import_then_download_preserves_messages(fresh_viewer):
         )
 
         # 3. Import the file into a fresh viewer via the actual CLI command.
+        from aster_cli.commands.import_traces import command
         from click.testing import CliRunner
-        from nooa_cli.commands.import_traces import command
 
         # The file's basename becomes the session_id during import; rename
         # to a known session id we can query.

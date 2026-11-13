@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for nooa.Skill — path-based loading."""
+"""Tests for aster.Skill — path-based loading."""
 
 import math
 from pathlib import Path
 
 import pytest
 
-from nooa import Skill, TextSkill
+from aster import Skill, TextSkill
 
 
 @pytest.fixture
@@ -165,6 +165,17 @@ async def test_run_script_raises_for_path_traversal(skill_with_scripts):
 
 def test_read_file_returns_content(skill_dir):
     assert "Best practices for Git" in TextSkill(path=skill_dir).read_file("SKILL.md")
+
+
+@pytest.mark.parametrize("default_encoding", ["cp1252", "gbk"])
+def test_read_file_preserves_utf8_with_legacy_default(skill_dir, monkeypatch, default_encoding):
+    content = "Budget: 50€ → café 中文 🚀\n"
+    (skill_dir / "reference.txt").write_text(content, encoding="utf-8")
+    monkeypatch.setattr(
+        "io.text_encoding", lambda encoding, stacklevel=2: encoding or default_encoding
+    )
+
+    assert TextSkill(path=skill_dir).read_file("reference.txt") == content
 
 
 def test_read_file_raises_for_path_traversal(skill_dir):

@@ -16,9 +16,9 @@ from __future__ import annotations
 
 import pytest
 
-from nooa.agent import Agent
-from nooa.runtime.actor import ActorRuntime
-from nooa.unifiedllm import FakeLLMClient
+from aster.agent import Agent
+from aster.runtime.actor import ActorRuntime
+from aster.unifiedllm import FakeLLMClient
 
 
 class _RecorderAgent(Agent, llm=FakeLLMClient()):

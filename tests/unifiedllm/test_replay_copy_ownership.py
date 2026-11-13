@@ -7,11 +7,11 @@ from typing import Any
 
 import pytest
 
-from nooa.llm_types import AssistantReasoning, AssistantText, LLMResponse, ToolCall
-from nooa.unifiedllm import ResponsesClient
-from nooa.unifiedllm.chat_parts import project_chat_turn
-from nooa.unifiedllm.replay_state import LLM_STATE_KEY, ReasoningReplayError, prepare_chat_messages
-from nooa.unifiedllm.response_parts import project_turn
+from aster.llm_types import AssistantReasoning, AssistantText, LLMResponse, ToolCall
+from aster.unifiedllm import ResponsesClient
+from aster.unifiedllm.chat_parts import project_chat_turn
+from aster.unifiedllm.replay_state import LLM_STATE_KEY, ReasoningReplayError, prepare_chat_messages
+from aster.unifiedllm.response_parts import project_turn
 
 SCOPE = "responses:openai:sha256:test"
 

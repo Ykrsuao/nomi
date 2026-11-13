@@ -1,6 +1,6 @@
-# NOOA CyberGym Agent
+# Aster CyberGym Agent
 
-[NOOA](https://github.com/NVIDIA-NeMo/labs-OO-Agents)-based agent for the [CyberGym](https://github.com/sunblaze-ucb/cybergym) benchmark.
+[Aster](../../README.md)-based agent for the [CyberGym](https://github.com/sunblaze-ucb/cybergym) benchmark.
 
 This README walks through the minimal path for running CyberGym's official
 10-task subset behind the CyberGym firewall/proxy. It uses only the task data and
@@ -18,16 +18,17 @@ Each step is a small script under [`scripts/`](scripts/). Read
 [`scripts/config.sh`](scripts/config.sh) to see (and override) every path, model,
 and server setting; the other scripts source it.
 
-See the [technical report](Technical_Report.md) for its architecture, runtime
-boundary, reproducibility design, and verification coverage.
+See the [technical report](Technical_Report.md) for the architecture and historical
+upstream evaluation. Those results have not been rerun on the current Aster checkout.
 
 ## Requirements
 
 - Linux host with Docker
+- A full Aster source checkout; this example uses the framework two directories above it
 - Python 3.12 or 3.13
 - [uv](https://docs.astral.sh/uv/)
 - Git LFS (`git lfs version` should work)
-- LLM credentials (put in `.env`) for all models configured in [`nooa_cybergym/llm_config.yaml`](nooa_cybergym/llm_config.yaml)
+- LLM credentials (put in `.env`) for all models configured in [`aster_cybergym/llm_config.yaml`](aster_cybergym/llm_config.yaml)
 
 The default configuration uses three finder models—GLM-5.2, Nemotron 3 Ultra,
 and DeepSeek V4 Flash—with GLM-5.2 as the orchestrator, reviewer, and expander
@@ -40,18 +41,18 @@ OPENAI_BASE_URL=https://your-openai-compatible-gateway.example/v1
 ```
 
 Configure the models available through your LLM provider in
-[`nooa_cybergym/llm_config.yaml`](nooa_cybergym/llm_config.yaml). Model names and
+[`aster_cybergym/llm_config.yaml`](aster_cybergym/llm_config.yaml). Model names and
 providers must be supported by [LiteLLM](https://docs.litellm.ai/docs/providers).
 The aliases referenced by the finder
-lanes in [`agent.py`](nooa_cybergym/agent.py) must match entries in that file.
+lanes in [`agent.py`](aster_cybergym/agent.py) must match entries in that file.
 
 | Setting | Where to configure it |
 |---|---|
 | Provider credentials and shared endpoint | `.env` |
-| Model aliases, provider model names, and token limits | `nooa_cybergym/llm_config.yaml` |
-| Finder models | `LANES` in `nooa_cybergym/agent.py` |
+| Model aliases, provider model names, and token limits | `aster_cybergym/llm_config.yaml` |
+| Finder models | `LANES` in `aster_cybergym/agent.py` |
 | Orchestrator and reviewer model | `--model` (default: `glm-5.2`) |
-| Expander model | `DEFAULT_MODEL_NAME` in `nooa_cybergym/agent.py` |
+| Expander model | `DEFAULT_MODEL_NAME` in `aster_cybergym/agent.py` |
 | Reasoning effort | `REASONING_EFFORT` (default: `xhigh`) |
 
 The current plumbing passes one endpoint and credential to every configured
@@ -68,14 +69,32 @@ between the server and the validation step on your machine.
 ## Step 1 — Set up (one time)
 
 ```bash
+cd examples/cybergym  # from the Aster repository root
 scripts/setup.sh
 ```
 
 This creates a uv virtualenv, generates a local CyberGym API key in `.env`,
 installs and clones CyberGym, fetches the subset via Git LFS, pulls the matching
-Docker images, installs the runner from this example's frozen `uv.lock`, and
-builds the agent image with the pinned NOOA revision. The script is safe to
-re-run.
+Docker images, and installs the runner from this example's frozen `uv.lock`,
+with Aster linked from the current checkout. The agent image builds its Aster
+wheel from the same source and installs third-party runtime dependencies from
+the root `uv.lock`. The script can be rerun.
+
+The scripts use the repository root as the Docker build context. The
+[`Dockerfile.dockerignore`](Dockerfile.dockerignore) allowlist excludes local
+environments, credentials, benchmark data, and run artifacts. To build only the
+agent image from the repository root:
+
+```bash
+docker build -f examples/cybergym/Dockerfile -t aster/aster-cybergym:latest .
+```
+
+Source images report version `0.0.0+checkout`; set `ASTER_VERSION` when invoking
+the scripts (or `--build-arg ASTER_VERSION=...` with Docker) to label a known
+release. Rebuild after source changes. If dependencies change, refresh this
+example's lock with `uv lock --project examples/cybergym` from the root before
+running setup again. Keep the root and example lockfiles with the evaluated
+source revision to reproduce a run.
 
 The subset it installs:
 
@@ -157,7 +176,7 @@ one task, run the runner yourself (venv active, server running):
 ```bash
 source .venv/bin/activate
 
-python3 -m nooa_cybergym.run \
+python3 -m aster_cybergym.run \
   --use-firewall \
   --model glm-5.2 \
   --reasoning-effort xhigh \

@@ -11,8 +11,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-import nooa.nemo_relay_middleware as nm
-from nooa.unifiedllm import AssistantReasoning, AssistantText, LLMResponse, LLMUsage, ToolCall
+import aster.nemo_relay_middleware as nm
+from aster.unifiedllm import AssistantReasoning, AssistantText, LLMResponse, LLMUsage, ToolCall
 
 
 def test_canonical_response_projects_to_relay_shape_without_private_state():
@@ -87,7 +87,7 @@ class TestImportErrorWhenMissing:
     @pytest.mark.usefixtures("_no_nemo_relay")
     def test_install_nemo_relay_raises_import_error(self):
         """install_nemo_relay() raises ImportError when nemo_relay is not installed."""
-        from nooa.runtime.event_manager import EventManager
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         with pytest.raises(ImportError, match="nemo_relay is required"):

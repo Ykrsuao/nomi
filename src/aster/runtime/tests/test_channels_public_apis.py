@@ -1,0 +1,291 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+"""Tests for the public core APIs added for issue #318.
+
+These accessors replace TUI reads of ``Channel``/``QueueManager``
+private members. Each test asserts the public API reproduces the exact
+behaviour the TUI previously reimplemented inline.
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+import pytest
+
+from aster.runtime.channels import Channel, QueueManager
+from aster.runtime.event_manager import EventManager
+
+# ---------------------------------------------------------------------------
+# Channel.drain
+# ---------------------------------------------------------------------------
+
+
+def test_drain_returns_items_fifo_and_empties():
+    q: Channel[str] = Channel("q", "queue")
+    q.put("a")
+    q.put("b")
+    q.put("c")
+    assert q.drain() == ["a", "b", "c"]
+    assert q.qsize() == 0
+    assert q.drain() == []  # already drained
+
+
+def test_drain_fires_on_get_once_per_item():
+    seen: list[str] = []
+    q: Channel[str] = Channel("q", "queue", on_get=seen.append)
+    q.put("x")
+    q.put("y")
+    drained = q.drain()
+    # Same firing path as get()/race winner: on_get fires once per item,
+    # in dequeue order, and the returned list matches what fired.
+    assert drained == ["x", "y"]
+    assert seen == ["x", "y"]
+
+
+def test_drain_on_get_exception_does_not_lose_items():
+    def boom(_item: str) -> None:
+        raise RuntimeError("hook failed")
+
+    q: Channel[str] = Channel("q", "queue", on_get=boom)
+    q.put("a")
+    q.put("b")
+    # _fire_on_get swallows hook exceptions; items still drained.
+    assert q.drain() == ["a", "b"]
+
+
+def test_drain_event_mode_returns_empty():
+    class _EM:
+        def add(self, _event: object) -> None:  # pragma: no cover - not exercised
+            pass
+
+    ch: Channel[str] = Channel("e", "event", event_manager=_EM())
+    assert ch.drain() == []
+
+
+# ---------------------------------------------------------------------------
+# QueueManager.channels / running_handles
+# ---------------------------------------------------------------------------
+
+
+def test_channels_snapshot_is_copy_in_registration_order():
+    qm = QueueManager()
+    a = qm.queue("a")
+    b = qm.queue("b")
+    snap = qm.channels()
+    assert list(snap.keys()) == ["a", "b"]
+    assert snap["a"] is a and snap["b"] is b
+    # Mutating the snapshot must not touch the live registry.
+    snap.clear()
+    assert qm.names() == ["a", "b"]
+
+
+@pytest.mark.asyncio
+async def test_running_handles_filters_by_state():
+    qm = QueueManager()
+    qm.queue("jobs")
+
+    async def _forever() -> None:
+        await asyncio.Event().wait()
+
+    async def _quick() -> str:
+        return "done"
+
+    h_run = qm.spawn(_forever(), channel="jobs")
+    h_done = qm.spawn(_quick(), channel="jobs")
+    await asyncio.sleep(0.01)  # let _quick finish
+
+    running = qm.running_handles()
+    assert h_run in running
+    assert h_done not in running
+    assert all(h.state == "running" for h in running)
+
+    await qm.shutdown()
+
+
+async def test_job_handles_retains_same_channel_jobs_without_exposing_the_registry() -> None:
+    qm = QueueManager()
+    channel = qm.queue("jobs")
+    started = asyncio.Event()
+
+    async def long_job() -> None:
+        started.set()
+        await asyncio.Event().wait()
+
+    async def short_job() -> str:
+        return "done"
+
+    first = qm.spawn(long_job(), channel="jobs")
+    try:
+        await asyncio.wait_for(started.wait(), 2)
+        second = qm.spawn(short_job(), channel="jobs")
+        assert await asyncio.wait_for(channel.get(), 2) == "done"
+        assert first.state == "running"
+        assert second.state == "done"
+        snapshot = qm.job_handles()
+        assert snapshot == [first, second]
+
+        snapshot.clear()
+        assert qm.job_handles() == [first, second]
+
+        qm.remove_channel("jobs")
+        await first.cancel()
+        assert qm.job_handles() == []
+    finally:
+        await qm.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# QueueManager.set_notify_callback
+# ---------------------------------------------------------------------------
+
+
+def test_notify_callback_fires_before_race_pair_exists():
+    """The host callback must fire even on the first put, when the internal
+    notify pair has not been created yet (race() has never run). This is the
+    behaviour the TUI monkey-patch relied on to start the dispatcher."""
+    qm = QueueManager()
+    q = qm.queue("q")
+    calls: list[int] = []
+    qm.set_notify_callback(lambda: calls.append(1))
+    q.put("first")
+    assert calls == [1]
+
+
+@pytest.mark.asyncio
+async def test_notify_callback_fires_after_internal_wakeup():
+    qm = QueueManager()
+    ev_ch = qm.queue("q")
+    calls: list[int] = []
+    qm.set_notify_callback(lambda: calls.append(1))
+
+    # Prime the notify pair via a race() that we immediately satisfy.
+    async def _producer() -> None:
+        await asyncio.sleep(0.01)
+        ev_ch.put("item")
+
+    task = asyncio.create_task(_producer())
+    result = await qm.race()
+    await task
+    assert result == [("q", "item")]
+    # put() fired the callback in addition to waking race().
+    assert calls == [1]
+
+
+def test_notify_callback_none_clears():
+    qm = QueueManager()
+    q = qm.queue("q")
+    calls: list[int] = []
+    qm.set_notify_callback(lambda: calls.append(1))
+    qm.set_notify_callback(None)
+    q.put("x")
+    assert calls == []
+
+
+# ---------------------------------------------------------------------------
+# ChannelItemConsumed / ChannelItemsDiscarded, published through event_manager
+# ---------------------------------------------------------------------------
+
+
+def _watched(name: str = "q") -> tuple[QueueManager, Channel[object], list[tuple[str, object]]]:
+    """A queue channel on a real EventManager, and the channel events it publishes."""
+    manager = EventManager()
+    seen: list[tuple[str, object]] = []
+    manager.on("ChannelItemConsumed", lambda e: seen.append(("consumed", e.item)))
+    manager.on("ChannelItemsDiscarded", lambda e: seen.append(("discarded", e.items)))
+    qm = QueueManager(event_manager=manager)
+    return qm, qm.queue(name), seen
+
+
+async def test_consumed_items_are_published_once_each():
+    qm, q, seen = _watched()
+    for item in ("a", "b", "c"):
+        q.put(item)
+    assert await q.get() == "a"
+    assert q.drain() == ["b", "c"]
+    q.put("d")
+    assert await qm.race() == [("q", "d")]
+    assert seen == [("consumed", "a"), ("consumed", "b"), ("consumed", "c"), ("consumed", "d")]
+
+
+def test_items_dropped_without_a_consumer_are_published():
+    qm, q, seen = _watched()
+    for item in ("a", "b", "c"):
+        q.put(item)
+    q.put("e")
+    assert q.flush() == 4
+    q.put("f")
+    q.clear()
+    q.flush()  # nothing left: nothing published
+    q.put("g")
+    qm.remove_channel("q")
+    assert seen == [
+        ("discarded", ["a", "b", "c", "e"]),
+        ("discarded", ["f"]),
+        ("discarded", ["g"]),
+    ]
+
+
+def test_pop_last_publishes_nothing():
+    """``pop_last`` hands the item back to the caller, so nothing was dropped."""
+    _qm, q, seen = _watched()
+    q.put("a")
+    q.put("b")
+    assert q.pop_last() == "b"
+    assert q.snapshot() == ["a"]
+    assert seen == []
+
+
+def test_channel_events_are_never_recorded_and_subscriber_errors_are_contained():
+    qm, q, _seen = _watched()
+    manager = qm._event_manager
+
+    def boom(_event: object) -> None:
+        raise RuntimeError("subscriber failed")
+
+    manager.on("ChannelItemsDiscarded", boom)
+    before = len(manager.all_events())
+    q.put("a")
+    assert q.drain() == ["a"]
+    q.put("b")
+    assert q.flush() == 1
+    assert len(manager.all_events()) == before
+
+
+def test_a_channel_without_an_event_manager_publishes_nothing():
+    q: Channel[str] = Channel("q", "queue")
+    q.put("a")
+    assert q.drain() == ["a"]
+    q.put("b")
+    assert q.flush() == 1
+
+
+# ---------------------------------------------------------------------------
+# Channel.remove
+# ---------------------------------------------------------------------------
+
+
+def test_remove_withdraws_one_item_by_identity_and_publishes_nothing():
+    got: list[object] = []
+    _qm, q, seen = _watched()
+    q.set_on_get(got.append)
+    first, second, equal_not_same = ["a"], ["b"], ["a"]
+    q.put(first)
+    q.put(second)
+    q.put(first)
+
+    assert q.remove(equal_not_same) is False  # equality is not enough
+    assert q.remove(first) is True  # the head occurrence goes first
+    assert q.snapshot() == [second, first]
+    assert q.snapshot()[1] is first
+    assert q.remove(first) is True
+    assert q.remove(first) is False
+    assert q.snapshot() == [second]
+    # A withdraw is neither a consume nor a discard.
+    assert got == []
+    assert seen == []
+
+
+def test_remove_on_event_channel_returns_false():
+    q: Channel[str] = Channel("e", "event")
+    assert q.remove("x") is False

@@ -8,7 +8,7 @@ uv run python examples/quickstart/03_codeact_tools.py
 
 from typing import TypedDict
 
-from nooa.util.quickstart import *
+from aster.util.quickstart import *
 
 
 class Result(TypedDict):

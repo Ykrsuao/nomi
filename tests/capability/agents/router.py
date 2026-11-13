@@ -10,7 +10,7 @@ Uses TypedDict for explicit return types to catch errors at type-check time.
 
 from typing import TypedDict
 
-from nooa import Agent
+from aster import Agent
 
 # ============================================================================
 # Typed return structures - makes expected output explicit

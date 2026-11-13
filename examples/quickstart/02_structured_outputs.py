@@ -8,7 +8,7 @@ uv run python examples/quickstart/02_structured_outputs.py
 
 from typing import Literal
 
-from nooa.util.quickstart import *
+from aster.util.quickstart import *
 
 
 class FeedbackAnalysis(BaseModel):

@@ -10,7 +10,7 @@ from kwargs (``max_string`` / ``max_length`` / ``max_depth``). The optional
 
 import pytest
 
-from nooa.context_blocks.utils import truncating_pformat
+from aster.context_blocks.utils import truncating_pformat
 
 
 class TestStringPassthrough:

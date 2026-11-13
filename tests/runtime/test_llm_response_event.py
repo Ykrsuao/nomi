@@ -15,11 +15,11 @@ from typing import Any
 
 import pytest
 
-from nooa import strategy
-from nooa.llm_types import AssistantReasoning, AssistantText
-from nooa.runtime.event_manager import EventManager
-from nooa.strategies import PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import strategy
+from aster.llm_types import AssistantReasoning, AssistantText
+from aster.runtime.event_manager import EventManager
+from aster.strategies import PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 def _resp(
@@ -107,7 +107,7 @@ class TestLLMResponseEvent:
         # Hook the standalone agent's event manager: we wrap the standalone
         # wrapper so we can install the handler on the fresh child agent
         # before generation runs.
-        from nooa.standalone import _atif_exporter_var
+        from aster.standalone import _atif_exporter_var
 
         class _Capture:
             def _attach_child(self, em, child_agent_name: str = "") -> None:
@@ -151,7 +151,7 @@ class TestLLMResponseEvent:
             """{prompt}"""
             ...
 
-        from nooa.standalone import _atif_exporter_var
+        from aster.standalone import _atif_exporter_var
 
         class _Capture:
             def _attach_child(self, em, child_agent_name: str = "") -> None:
@@ -206,7 +206,7 @@ class TestLLMResponseEvent:
             """Do something."""
             ...
 
-        from nooa.standalone import _atif_exporter_var
+        from aster.standalone import _atif_exporter_var
 
         class _Capture:
             def _attach_child(self, em, child_agent_name: str = "") -> None:
@@ -245,7 +245,7 @@ class TestLLMResponseEvent:
             """Do something."""
             ...
 
-        from nooa.standalone import _atif_exporter_var
+        from aster.standalone import _atif_exporter_var
 
         class _Capture:
             def _attach_child(self, em, child_agent_name: str = "") -> None:
@@ -270,14 +270,14 @@ class TestAtifExporterContextVar:
 
     def test_default_value_is_none(self) -> None:
         """Outside an install_atif scope, the var resolves to None."""
-        from nooa.standalone import _atif_exporter_var
+        from aster.standalone import _atif_exporter_var
 
         assert _atif_exporter_var.get() is None
 
     @pytest.mark.asyncio
     async def test_set_value_visible_to_standalone_wrapper(self) -> None:
         """Setting the var BEFORE a standalone call exposes it during wrapper exec."""
-        from nooa.standalone import _atif_exporter_var
+        from aster.standalone import _atif_exporter_var
 
         seen_event_managers: list[Any] = []
 
@@ -311,7 +311,7 @@ class TestAtifExporterContextVar:
     @pytest.mark.asyncio
     async def test_reset_restores_to_none(self) -> None:
         """After reset/exit, the var is back to None and wrapper does not call attach."""
-        from nooa.standalone import _atif_exporter_var
+        from aster.standalone import _atif_exporter_var
 
         attach_calls: list[Any] = []
 

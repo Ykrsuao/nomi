@@ -23,6 +23,8 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
+from _run_layout import SOLVER, canonical_team
+
 
 def _now() -> tuple[str, float]:
     return datetime.now(UTC).isoformat(), time.time()
@@ -54,7 +56,7 @@ class RunRecorder:
         *,
         game_id: str,
         alias: str = "",
-        team: str = "nemo",
+        team: str = "aster",
         llm_uri: str = "",
         variant: str = "",
     ):
@@ -63,7 +65,7 @@ class RunRecorder:
         # agent-readable solver_start event carries `alias` instead.
         self.game_id = game_id
         self.alias = alias or game_id
-        self.team = team
+        self.team = team = canonical_team(team)
         self.llm_uri = llm_uri
         self.variant = variant
         self.steps_dir = self.run_dir / "steps"
@@ -106,7 +108,7 @@ class RunRecorder:
             # ai_actions) to compute RHAE_L/U. Viewer-only: not on the agent surface.
             baseline_actions=list(baseline_actions or []),
             depth=1,
-            config={"solver": "nemo_single_agent", "variant": self.variant, **(config or {})},
+            config={"variant": self.variant, **(config or {}), "solver": SOLVER},
         )
 
     def level_score(
@@ -263,12 +265,12 @@ class RunRecorder:
             "operation_mode": "offline",
             "seed": 0,
             "llm_uri": self.llm_uri,
-            "solver": "nemo_single_agent",
             "variant": self.variant,
             "levels_completed": levels_completed,
             "total_steps": total_steps,
             "wall_time_seconds": round(time.time() - self._t0, 3),
             "termination_reason": termination_reason,
             **(extras or {}),
+            "solver": SOLVER,
         }
         (self.run_dir / "result.json").write_text(json.dumps(payload, indent=2))

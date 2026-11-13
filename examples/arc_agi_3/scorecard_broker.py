@@ -19,7 +19,7 @@ scorecard's lifetime to this helper. This process:
 Usage (normally started by run_multi.py):
 
     python examples/arc_agi_3/scorecard_broker.py \
-        --tags nemo_solver,competition
+        --tags aster_solver,competition
 """
 
 from __future__ import annotations

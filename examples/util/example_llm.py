@@ -6,7 +6,7 @@ import os
 
 from dotenv import load_dotenv
 
-from nooa.unifiedllm import CompletionClient
+from aster.unifiedllm import CompletionClient
 
 load_dotenv(override=True)
 

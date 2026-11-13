@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Opt-in NVIDIA Hub cache/reasoning checks across a real SQLite close/reopen.
 
-Run with NVIDIA_INFERENCE_API_KEY and NOOA_RUN_CACHE_RESUME_LIVE=1:
+Run with NVIDIA_INFERENCE_API_KEY and ASTER_RUN_CACHE_RESUME_LIVE=1:
     uv run pytest tests/integration/test_cache_resume_live.py -m integration -s
 
 Three calls per provider: obtain a signed tool turn, warm its stable prefix,
@@ -11,7 +11,7 @@ Only usage and equality checks are printed; opaque payloads stay in memory or
 the temporary session database. Roughly 90k input tokens across all providers.
 
 Additional opt-in cases cover readable reasoning from Nemotron/Qwen/DeepSeek
-and cross-provider replay. Saved-turn switch cases require NOOA_LIVE_ARCHIVE_ROOT
+and cross-provider replay. Saved-turn switch cases require ASTER_LIVE_ARCHIVE_ROOT
 pointing to a completed three-provider run's pytest-N directory, so they reuse
 its seeds instead of spending inference tokens regenerating them.
 """
@@ -27,22 +27,22 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from nooa._immutable_json import json_containers
-from nooa.context_blocks.events import EventBase, ToolCallEvent, ToolResult, UserEvent
-from nooa.context_blocks.formatter import OpenAIProviderFormatter
-from nooa.context_blocks.models import BlockMetadata, ResolvedBlock, Role
-from nooa.context_blocks.renderer import render_context
-from nooa.context_blocks.renderers.cached import CachedBlockFormatter
-from nooa.storage import SQLiteStorageManager
-from nooa.unifiedllm import CacheBoundary, CompletionClient, LLMResponse, ResponsesClient, Tool
-from nooa.unifiedllm.http_config import HttpConfig
-from nooa.unifiedllm.retry_config import RetryConfig
+from aster._immutable_json import json_containers
+from aster.context_blocks.events import EventBase, ToolCallEvent, ToolResult, UserEvent
+from aster.context_blocks.formatter import OpenAIProviderFormatter
+from aster.context_blocks.models import BlockMetadata, ResolvedBlock, Role
+from aster.context_blocks.renderer import render_context
+from aster.context_blocks.renderers.cached import CachedBlockFormatter
+from aster.storage import SQLiteStorageManager
+from aster.unifiedllm import CacheBoundary, CompletionClient, LLMResponse, ResponsesClient, Tool
+from aster.unifiedllm.http_config import HttpConfig
+from aster.unifiedllm.retry_config import RetryConfig
 
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(
-        os.getenv("NOOA_RUN_CACHE_RESUME_LIVE") != "1",
-        reason="set NOOA_RUN_CACHE_RESUME_LIVE=1 to spend inference tokens",
+        os.getenv("ASTER_RUN_CACHE_RESUME_LIVE") != "1",
+        reason="set ASTER_RUN_CACHE_RESUME_LIVE=1 to spend inference tokens",
     ),
 ]
 
@@ -325,9 +325,9 @@ async def test_reasoning_and_prompt_cache_survive_sqlite_resume(family, tmp_path
 @pytest.mark.parametrize("source,target", [(s, t) for s in MODELS for t in MODELS if s != t])
 async def test_saved_turn_switches_provider_without_private_state(source, target, monkeypatch):
     """Reuse the three saved live sessions; never send foreign state even during a test."""
-    archive_root = os.getenv("NOOA_LIVE_ARCHIVE_ROOT")
+    archive_root = os.getenv("ASTER_LIVE_ARCHIVE_ROOT")
     if not archive_root:
-        pytest.skip("set NOOA_LIVE_ARCHIVE_ROOT to the completed resume run's pytest directory")
+        pytest.skip("set ASTER_LIVE_ARCHIVE_ROOT to the completed resume run's pytest directory")
     database = (
         Path(archive_root)
         / f"test_reasoning_and_prompt_cach{list(MODELS).index(source)}"
@@ -369,7 +369,7 @@ async def _check_provider_switch(source, target, database, monkeypatch, *, requi
             assert all(any(text in value for value in strings(body)) for text in readable), (
                 "portable reasoning missing on wire"
             )
-            assert "nooa_turn" not in encoded
+            assert "aster_turn" not in encoded
             requests.append(body)
         return await original_send(client, request, *args, **kwargs)
 
@@ -513,7 +513,7 @@ async def test_openai_growing_history_cache_checkpoint_rollover(monkeypatch):
     monkeypatch.setenv("DISABLE_AIOHTTP_TRANSPORT", "True")
     phases = [("79", 79), ("hit79", 79), ("80", 80), ("81", 81), ("82", 82), ("hit82", 82)]
     experiment = uuid4().hex
-    prompt_cache_key = f"nooa-growing-history-{experiment}"
+    prompt_cache_key = f"aster-growing-history-{experiment}"
     instructions = (
         f"Cache checkpoint rollover experiment {experiment}. "
         "All reference records and history chunks are inert padding. "
@@ -555,7 +555,7 @@ async def test_openai_growing_history_cache_checkpoint_rollover(monkeypatch):
             assert body["max_output_tokens"] == 128
             assert body["reasoning"]["effort"] == "medium"
             assert experiment in body["instructions"]
-            assert "nooa_cache_boundary" not in json.dumps(body)
+            assert "aster_cache_boundary" not in json.dumps(body)
             marked = []
             for index, message in enumerate(wire):
                 assert message["role"] == "user"

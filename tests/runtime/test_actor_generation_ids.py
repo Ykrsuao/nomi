@@ -4,7 +4,7 @@
 
 import pytest
 
-from nooa.runtime.actor import (
+from aster.runtime.actor import (
     ActorRuntime,
     _generation_id_stack_var,
     _pop_generation_id,

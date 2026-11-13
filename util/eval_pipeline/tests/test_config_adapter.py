@@ -40,7 +40,7 @@ test_suite: []
         agent_dir.mkdir()
         (agent_dir / "__init__.py").write_text("")
         (agent_dir / "test_agent.py").write_text("""
-from nooa import Agent
+from aster import Agent
 
 
 class TestAgent(Agent):
@@ -100,7 +100,7 @@ test_suite:
         agent_dir.mkdir()
         (agent_dir / "__init__.py").write_text("")
         (agent_dir / "test_agent.py").write_text("""
-from nooa import Agent
+from aster import Agent
 
 
 class TestAgent(Agent):
@@ -170,7 +170,7 @@ test_suite:
         agent_dir.mkdir()
         (agent_dir / "__init__.py").write_text("")
         (agent_dir / "test_agent.py").write_text("""
-from nooa import Agent
+from aster import Agent
 
 
 class TestAgent(Agent):

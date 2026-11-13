@@ -20,13 +20,13 @@ from __future__ import annotations
 import pytest
 from pydantic import BaseModel, ConfigDict
 
-from nooa import Agent
-from nooa.decorators import strategy
-from nooa.errors import GenerationError
-from nooa.strategies import PredictStrategy
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient
-from nooa.unifiedllm.unifiedllm import _resolve_schema_refs, _schema_strict_compatible
+from aster import Agent
+from aster.decorators import strategy
+from aster.errors import GenerationError
+from aster.strategies import PredictStrategy
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient
+from aster.unifiedllm.unifiedllm import _resolve_schema_refs, _schema_strict_compatible
 
 np = pytest.importorskip("numpy")
 pd = pytest.importorskip("pandas")
@@ -173,7 +173,7 @@ class TestCodeActReturnTypeDocFallback:
         # @spec.define_doc decorators re-run (register_all alone is a no-op once imported).
         import importlib
 
-        import nooa.agentdoc.adapters.pandas as _pandas_adapter
+        import aster.agentdoc.adapters.pandas as _pandas_adapter
 
         importlib.reload(_pandas_adapter)
 
@@ -207,9 +207,9 @@ class TestPrefillNestedReturnType:
     """
 
     def test_prefill_renders_nested_referenced_types(self):
-        from nooa.agentdoc import doc
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.prefill import InspectInputsPrefill
+        from aster.agentdoc import doc
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.prefill import InspectInputsPrefill
 
         call = CurrentCall(
             id="c",

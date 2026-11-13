@@ -6,8 +6,8 @@ import httpx
 import pytest
 from pydantic import ValidationError
 
-from nooa.config.model_config import ModelConfig
-from nooa.unifiedllm.registry import get_decision_model, reload_registry
+from aster.config.model_config import ModelConfig
+from aster.unifiedllm.registry import get_decision_model, reload_registry
 
 
 @pytest.fixture

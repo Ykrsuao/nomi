@@ -21,8 +21,8 @@ from typing import Annotated, Optional, Union
 
 import pytest
 
-from nooa.agent import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster.agent import Agent
+from aster.unifiedllm import FakeLLMClient
 
 _TEST_LLM = FakeLLMClient()
 
@@ -34,7 +34,7 @@ _TEST_LLM = FakeLLMClient()
 
 def test_try_auto_enable_tracing_noop_on_second_call():
     """Second call to _try_auto_enable_tracing returns early (flag already set)."""
-    import nooa.agent as agent_mod
+    import aster.agent as agent_mod
 
     # Reset to ensure clean state
     original = agent_mod._auto_tracing_attempted
@@ -51,7 +51,7 @@ def test_try_auto_enable_tracing_noop_on_second_call():
 
 def test_try_auto_enable_tracing_sets_flag():
     """_try_auto_enable_tracing sets _auto_tracing_attempted on first call."""
-    import nooa.agent as agent_mod
+    import aster.agent as agent_mod
 
     original = agent_mod._auto_tracing_attempted
     agent_mod._auto_tracing_attempted = False
@@ -70,7 +70,7 @@ def test_try_auto_enable_tracing_sets_flag():
 
 def test_validate_llm_param_raises_for_none():
     """_validate_llm_param raises ValueError when llm=None."""
-    from nooa.agent import _validate_llm_param
+    from aster.agent import _validate_llm_param
 
     with pytest.raises(ValueError, match="llm=None is not allowed"):
         _validate_llm_param(None, "MyAgent")
@@ -78,14 +78,14 @@ def test_validate_llm_param_raises_for_none():
 
 def test_validate_llm_param_ok_for_fake_llm():
     """_validate_llm_param does not raise for a valid LLM client."""
-    from nooa.agent import _validate_llm_param
+    from aster.agent import _validate_llm_param
 
     _validate_llm_param(FakeLLMClient(), "MyAgent")  # should not raise
 
 
 def test_validate_llm_param_ok_for_inherit():
     """_validate_llm_param does not raise for the INHERIT sentinel."""
-    from nooa.agent import INHERIT, _validate_llm_param
+    from aster.agent import INHERIT, _validate_llm_param
 
     _validate_llm_param(INHERIT, "MyAgent")  # should not raise
 
@@ -97,7 +97,7 @@ def test_validate_llm_param_ok_for_inherit():
 
 def test_init_subclass_sets_agent_event_query():
     """Agent subclass with event_query= gets _agent_event_query set."""
-    from nooa.runtime.event_query import EventQuery
+    from aster.runtime.event_query import EventQuery
 
     class EQAgent(Agent, llm=_TEST_LLM, event_query=EventQuery(call_id="current")):
         async def work(self) -> str: ...
@@ -114,7 +114,7 @@ def test_init_subclass_sets_agent_event_query():
 
 def test_resolve_event_query_instance_overrides_class():
     """Instance-level event_query overrides the class-level one."""
-    from nooa.runtime.event_query import EventQuery
+    from aster.runtime.event_query import EventQuery
 
     class ClassEQAgent(Agent, llm=_TEST_LLM, event_query=EventQuery(call_id="current")):
         async def work(self) -> str: ...
@@ -127,7 +127,7 @@ def test_resolve_event_query_instance_overrides_class():
 
 def test_resolve_event_query_class_level_used_when_no_instance():
     """Class-level event_query is used when none is given at instantiation."""
-    from nooa.runtime.event_query import EventQuery
+    from aster.runtime.event_query import EventQuery
 
     class ClassOnlyEQAgent(Agent, llm=_TEST_LLM, event_query=EventQuery(type="Task")):
         async def work(self) -> str: ...
@@ -153,7 +153,7 @@ def test_resolve_event_query_none_when_not_specified():
 
 def test_type_info_excludes_hidden_fields():
     """__type_info__ filters out Annotated[T, hidden] fields."""
-    from nooa.agentdoc import doc, hidden
+    from aster.agentdoc import doc, hidden
 
     class TypeInfoAgent(Agent, llm=_TEST_LLM):
         hidden_field: Annotated[str, hidden] = "secret"
@@ -169,7 +169,7 @@ def test_type_info_excludes_hidden_fields():
 
 def test_type_info_includes_classmethods():
     """__type_info__ includes @classmethod entries."""
-    from nooa.agentdoc import doc
+    from aster.agentdoc import doc
 
     class CMAgent(Agent, llm=_TEST_LLM):
         @classmethod
@@ -191,7 +191,7 @@ def test_type_info_includes_classmethods():
 
 def test_instance_values_swallows_unexpected_exception():
     """doc() preserves property docs without propagating property errors."""
-    from nooa.agentdoc import doc
+    from aster.agentdoc import doc
 
     class BrokenAgent(Agent, llm=_TEST_LLM):
         @property
@@ -243,7 +243,7 @@ class _MyGeneric(typing.Generic[T]):
 
 def test_get_complex_type_unwraps_optional():
     """Optional[MyModel] -> MyModel."""
-    from nooa.strategies.prefill import _get_complex_type
+    from aster.strategies.prefill import _get_complex_type
 
     result = _get_complex_type(Optional[_MyModel])
     assert result is _MyModel
@@ -251,7 +251,7 @@ def test_get_complex_type_unwraps_optional():
 
 def test_get_complex_type_returns_none_for_multiple_union():
     """Union[MyModel, str] (multiple non-None) -> None."""
-    from nooa.strategies.prefill import _get_complex_type
+    from aster.strategies.prefill import _get_complex_type
 
     result = _get_complex_type(Union[_MyModel, str])
     assert result is None
@@ -259,7 +259,7 @@ def test_get_complex_type_returns_none_for_multiple_union():
 
 def test_get_complex_type_complex_generic_origin():
     """MyGeneric[int] -> MyGeneric (the origin class)."""
-    from nooa.strategies.prefill import _get_complex_type
+    from aster.strategies.prefill import _get_complex_type
 
     result = _get_complex_type(_MyGeneric[int])
     assert result is _MyGeneric
@@ -267,7 +267,7 @@ def test_get_complex_type_complex_generic_origin():
 
 def test_get_complex_type_returns_none_for_non_type():
     """A non-type annotation (lambda) -> None."""
-    from nooa.strategies.prefill import _get_complex_type
+    from aster.strategies.prefill import _get_complex_type
 
     result = _get_complex_type(lambda: None)
     assert result is None
@@ -275,7 +275,7 @@ def test_get_complex_type_returns_none_for_non_type():
 
 def test_get_complex_type_returns_none_for_simple_generic():
     """list[str] -> None (simple generic origin)."""
-    from nooa.strategies.prefill import _get_complex_type
+    from aster.strategies.prefill import _get_complex_type
 
     result = _get_complex_type(list[str])
     assert result is None
@@ -283,7 +283,7 @@ def test_get_complex_type_returns_none_for_simple_generic():
 
 def test_get_complex_type_plain_model():
     """A plain class (non-simple) -> that class."""
-    from nooa.strategies.prefill import _get_complex_type
+    from aster.strategies.prefill import _get_complex_type
 
     result = _get_complex_type(_MyModel)
     assert result is _MyModel
@@ -291,7 +291,7 @@ def test_get_complex_type_plain_model():
 
 def test_get_complex_type_plain_simple_type():
     """str -> None (simple type)."""
-    from nooa.strategies.prefill import _get_complex_type
+    from aster.strategies.prefill import _get_complex_type
 
     result = _get_complex_type(str)
     assert result is None
@@ -299,7 +299,7 @@ def test_get_complex_type_plain_simple_type():
 
 def test_get_complex_type_none_annotation():
     """None annotation -> None."""
-    from nooa.strategies.prefill import _get_complex_type
+    from aster.strategies.prefill import _get_complex_type
 
     assert _get_complex_type(None) is None
     assert _get_complex_type(type(None)) is None
@@ -312,7 +312,7 @@ def test_get_complex_type_none_annotation():
 
 def test_format_parameters_as_code_fallback_uses_kwargs():
     """When signature is absent, format_parameters_as_code uses kwargs only."""
-    from nooa.strategies.current_call import CurrentCall
+    from aster.strategies.current_call import CurrentCall
 
     call = CurrentCall(
         id="test-id",
@@ -328,7 +328,7 @@ def test_format_parameters_as_code_fallback_uses_kwargs():
 
 def test_format_parameters_as_code_no_signature_no_kwargs():
     """No signature and no kwargs returns empty string."""
-    from nooa.strategies.current_call import CurrentCall
+    from aster.strategies.current_call import CurrentCall
 
     call = CurrentCall(
         id="test-id",
@@ -343,7 +343,7 @@ def test_format_parameters_as_code_no_signature_no_kwargs():
 
 def test_format_parameters_as_code_with_signature():
     """With a valid signature, positional args are mapped by name."""
-    from nooa.strategies.current_call import CurrentCall
+    from aster.strategies.current_call import CurrentCall
 
     def my_method(self, x: int, y: str): ...
 

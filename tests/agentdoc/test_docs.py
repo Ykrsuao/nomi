@@ -9,8 +9,8 @@ from typing import Annotated
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
 
-from nooa.agentdoc._docs import SpecAnnotation, spec
-from nooa.agentdoc._metadata import get_docs_metadata, get_field_metadata
+from aster.agentdoc._docs import SpecAnnotation, spec
+from aster.agentdoc._metadata import get_docs_metadata, get_field_metadata
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -159,7 +159,7 @@ class TestDocsAnnotatedDescription:
 
     def test_plain_string_annotation(self):
         """Annotated[T, 'string'] works as description."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config:
             name: Annotated[str, "the user name"] = ""  # type: ignore[assignment]
@@ -170,7 +170,7 @@ class TestDocsAnnotatedDescription:
 
     def test_annotated_docs_description_shown_in_doc(self):
         """Annotated[T, spec(description=...)] shown as # comment."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config:
             query: Annotated[str, spec(description="The search query")] = ""  # type: ignore[assignment]
@@ -181,7 +181,7 @@ class TestDocsAnnotatedDescription:
 
     def test_pydantic_field_description_on_plain_class(self):
         """Annotated[T, Field(description=...)] works on plain (non-BaseModel) classes."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config:
             name: Annotated[str, PydanticField(description="the user name")] = ""  # type: ignore[assignment]
@@ -192,7 +192,7 @@ class TestDocsAnnotatedDescription:
 
     def test_pydantic_field_description_on_base_model(self):
         """Field(description=...) on BaseModel still works."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config(BaseModel):
             name: str = PydanticField(default="", description="the user name")
@@ -202,7 +202,7 @@ class TestDocsAnnotatedDescription:
 
     def test_imperative_docs_description_shown_in_doc(self):
         """spec(Cls, 'field', description=...) shown as # comment."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config:
             batch_size: int = 64
@@ -213,7 +213,7 @@ class TestDocsAnnotatedDescription:
 
     def test_type_stripped_not_annotated_in_output(self):
         """Type shown as plain base type, not the full Annotated[...] wrapper."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config:
             count: Annotated[int, PydanticField(description="item count")] = 0  # type: ignore[assignment]
@@ -255,7 +255,7 @@ class TestDocsImperative:
 
     def test_imperative_hidden_respected_by_doc(self):
         """spec(Class, 'field', hidden=True) must hide the field from doc() output."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config:
             host: str = "localhost"
@@ -268,7 +268,7 @@ class TestDocsImperative:
 
     def test_imperative_hidden_respected_by_pformat(self):
         """spec(Class, 'field', hidden=True) must hide the field from pformat() output."""
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         class Config:
             host: str = "localhost"
@@ -285,7 +285,7 @@ class TestDocsImperative:
 
     def test_imperative_hidden_consistent_doc_and_pformat(self):
         """hidden=True via imperative form hides from both doc() and pformat()."""
-        from nooa.agentdoc import doc, pformat
+        from aster.agentdoc import doc, pformat
 
         class Credentials:
             username: str = ""
@@ -313,7 +313,7 @@ class TestDocsImperative:
 
     def test_imperative_description_in_doc(self):
         """spec(Class, 'field', description=...) shows as inline comment in doc()."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Server:
             host: str = "localhost"
@@ -344,7 +344,7 @@ class TestDocsDefine:
 class TestImperativeSpecMROIsolation:
     def test_spec_child_does_not_mutate_parent_metadata(self):
         """spec(Child, field, hidden=True) must not touch Parent's metadata dict."""
-        from nooa.agentdoc._metadata import get_field_metadata
+        from aster.agentdoc._metadata import get_field_metadata
 
         class Parent:
             x: int = 1
@@ -358,7 +358,7 @@ class TestImperativeSpecMROIsolation:
 
     def test_spec_parent_hidden_child_spec_visible(self):
         """spec(Parent, field, hidden=True) + spec(Child, field, hidden=False) → visible in doc(Child)."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Parent:
             secret: str = "shh"
@@ -373,7 +373,7 @@ class TestImperativeSpecMROIsolation:
 
     def test_hidden_false_on_parent_method_not_inherited_by_child(self):
         """spec(Parent, '_method', hidden=False) must not make _method visible on Child."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Parent:
             def _internal(self): ...
@@ -390,7 +390,7 @@ class TestPydanticReprFalse:
     """Fields with repr=False should be hidden in doc() output."""
 
     def test_repr_false_hidden_in_doc(self):
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config(BaseModel):
             visible: str = PydanticField(default="shown")
@@ -401,7 +401,7 @@ class TestPydanticReprFalse:
         assert "secret" not in result
 
     def test_repr_true_shown_in_doc(self):
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Config(BaseModel):
             name: str = PydanticField(default="alice", repr=True)
@@ -413,9 +413,9 @@ class TestPydanticReprFalse:
 class TestDefineDocEndToEnd:
     def test_define_doc_type_only_path(self):
         """spec.define_doc() with a plain TypeInfo return is used by doc(MyClass)."""
-        from nooa.agentdoc import doc
-        from nooa.agentdoc.ext import FieldInfo, TypeInfo
-        from nooa.agentdoc.registry import clear_registry
+        from aster.agentdoc import doc
+        from aster.agentdoc.ext import FieldInfo, TypeInfo
+        from aster.agentdoc.registry import clear_registry
 
         class ThirdParty:
             pass
@@ -439,9 +439,9 @@ class TestDefineDocEndToEnd:
 
     def test_define_doc_tuple_path_for_instance(self):
         """spec.define_doc() returning (TypeInfo, values_dict) is used by doc(instance)."""
-        from nooa.agentdoc import doc
-        from nooa.agentdoc.ext import FieldInfo, TypeInfo
-        from nooa.agentdoc.registry import clear_registry
+        from aster.agentdoc import doc
+        from aster.agentdoc.ext import FieldInfo, TypeInfo
+        from aster.agentdoc.registry import clear_registry
 
         class ThirdParty:
             def __init__(self, value):

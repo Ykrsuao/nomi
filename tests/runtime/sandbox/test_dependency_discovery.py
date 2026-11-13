@@ -11,9 +11,9 @@ from types import ModuleType
 
 import pytest
 
-from nooa.agentdoc import visibility
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.microsandbox_executor import SandboxedExecutor
+from aster.agentdoc import visibility
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.microsandbox_executor import SandboxedExecutor
 
 
 def _distribution(root: Path, name: str, records: list[str]) -> Path:

@@ -7,7 +7,7 @@ Stdlib-only — run with any python:
     python examples/arc_agi_3/run_solver.py --game ls20 --variant memory
 
 What it does:
-1. creates ``results/arc_agi_3/nemo_solver/<ts>_<game>_<variant>/`` (+ ipc/),
+1. creates ``results/arc_agi_3/aster_solver/<ts>_<game>_<variant>/`` (+ ipc/),
 2. starts launcher.py as a headless subprocess (no TUI / tmux required),
 3. starts harness.py in this venv (the `arc` extra provides the arcade SDK),
 4. waits for the harness to finish and prints the result summary.
@@ -29,6 +29,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(EXAMPLE_DIR))  # for `from sandbox import ...`
+from _run_layout import canonical_group  # noqa: E402
+
 MAIN_PY = sys.executable
 # The harness runs from this directory; the ARC-AGI SDK looks for (and downloads)
 # offline game files AND the per-level RHAE baselines under
@@ -51,7 +53,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--variant", choices=["memory", "mdfiles"], required=True)
     p.add_argument("--results-root", default=str(REPO_ROOT / "results" / "arc_agi_3"))
     p.add_argument(
-        "--group", default="nemo_solver", help="grouping dir under results-root (viewer type_dir)"
+        "--group",
+        type=canonical_group,
+        default="aster_solver",
+        help="grouping dir under results-root (viewer type_dir)",
     )
     p.add_argument(
         "--max-turns",
@@ -124,7 +129,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--seed-knowledge",
         default=None,
-        help="prior run's team_nemo/shared dir to seed knowledge from",
+        help="prior run's team_aster/shared dir to seed knowledge from",
     )
     p.add_argument("--operation-mode", default="offline")
     p.add_argument(
@@ -236,7 +241,7 @@ def main() -> int:
     # embeds the real game name. The results dir keeps only the run_multi/viewer
     # structure and receives the durable artifacts at run end. The subdirs the
     # live viewer tails (agent_logs/traces/steps) and the agent+harness share
-    # (ipc, team_nemo, agent_logs) are symlinked from results -> neutral so the
+    # (ipc, team_aster, agent_logs) are symlinked from results -> neutral so the
     # dashboard reads them live; the symlinks are replaced by real copies at the
     # end (see _copy_back). The agent itself only ever sees the neutral path.
     import re as _re
@@ -250,7 +255,7 @@ def main() -> int:
     neutral = neutral_parent / f"arc_run_{safe_alias}"
     if neutral.exists():
         shutil.rmtree(neutral, ignore_errors=True)
-    for sub in ("ipc", "team_nemo/shared", "agent_logs/nemo/team_leader", "traces", "steps"):
+    for sub in ("ipc", "team_aster/shared", "agent_logs/aster/team_leader", "traces", "steps"):
         (neutral / sub).mkdir(parents=True, exist_ok=True)
     (neutral / "ipc" / "states.jsonl").touch()
     (neutral / "ipc" / "actions.jsonl").touch()
@@ -259,10 +264,10 @@ def main() -> int:
     # now means carve_own hands it to the agent uid, so the agent can write it and
     # root always can — otherwise whichever writes first owns it and the other
     # EACCESes. (No-op cost outside drop mode.)
-    (neutral / "agent_logs" / "nemo" / "team_leader" / "events.jsonl").touch()
+    (neutral / "agent_logs" / "aster" / "team_leader" / "events.jsonl").touch()
 
     run_dir.mkdir(parents=True, exist_ok=True)
-    _LINKS = ("ipc", "team_nemo", "agent_logs", "traces", "steps")
+    _LINKS = ("ipc", "team_aster", "agent_logs", "traces", "steps")
     for name in _LINKS:
         link = run_dir / name
         if link.is_symlink() or link.exists():
@@ -454,12 +459,12 @@ def main() -> int:
     # neutral dir is deleted so nothing lingers under /tmp. Idempotent.
     def _copy_back() -> None:
         # 1) Memory fallback: the launcher normally checkpoints its store (under
-        #    neutral/store, owned by the agent) into neutral/team_nemo/shared at
+        #    neutral/store, owned by the agent) into neutral/team_aster/shared at
         #    its own teardown. If that didn't run (killed mid-write), copy the raw
         #    store files here so the memory is never lost. root reads the agent-uid
         #    files (bypasses DAC); a raw db+wal+shm copy is a valid database.
         if args.variant == "memory":
-            ws_store = neutral / "team_nemo" / "shared" / "memory.sqlite"
+            ws_store = neutral / "team_aster" / "shared" / "memory.sqlite"
             live = neutral / "store" / "memory.sqlite"
             if not ws_store.exists() and live.exists():
                 ws_store.parent.mkdir(parents=True, exist_ok=True)
@@ -472,7 +477,7 @@ def main() -> int:
                             print(f"[run] warning: memory fallback copy failed: {e}")
         # 2) move neutral -> results, swapping each symlink for a real copy.
         if neutral.exists():
-            for name in ("team_nemo", "agent_logs", "traces", "steps", "ipc"):
+            for name in ("team_aster", "agent_logs", "traces", "steps", "ipc"):
                 src, dst = neutral / name, run_dir / name
                 if dst.is_symlink() or dst.is_file():
                     dst.unlink()

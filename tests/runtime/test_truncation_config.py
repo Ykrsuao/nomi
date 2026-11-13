@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for TruncationConfig."""
 
-from nooa.config.truncation_config import (
+from aster.config.truncation_config import (
     DEFAULT_TRUNCATION_CONFIG,
     CaptureConfig,
     FormatConfig,

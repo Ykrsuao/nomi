@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from litellm.types.utils import Choices
 from openinference.semconv.trace import OpenInferenceMimeTypeValues, SpanAttributes
 
-from nooa.tracing._litellm_patch import (
+from aster.tracing._litellm_patch import (
     _patched_set_output_message_value,
     apply_litellm_patch,
 )

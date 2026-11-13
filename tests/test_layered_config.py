@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for :mod:`nooa.layered_config`.
+"""Tests for :mod:`aster.layered_config`.
 
 Two entry points:
 
@@ -9,8 +9,8 @@ Two entry points:
 - :func:`load_layered_yaml` — deep-merge of every layer into one dict
   (last wins; ``null`` deletes).
 
-Like ``test_llm_config_chain``, these use the ``NEMO_OO_USER_DIR`` /
-``NEMO_OO_PROJECT_DIR`` overrides so they never touch the real config
+Like ``test_llm_config_chain``, these use the ``ASTER_USER_DIR`` /
+``ASTER_PROJECT_DIR`` overrides so they never touch the real config
 directory.
 """
 
@@ -21,9 +21,9 @@ from pathlib import Path
 
 import pytest
 
-from nooa.layered_config import layered_paths, load_layered_yaml
+from aster.layered_config import layered_paths, load_layered_yaml
 
-_ENV_VAR = "NEMO_OO_SETTINGS"
+_ENV_VAR = "ASTER_SETTINGS"
 _FILENAME = "settings.yaml"
 
 
@@ -31,7 +31,7 @@ _FILENAME = "settings.yaml"
 def user_dir(tmp_path, monkeypatch):
     d = tmp_path / "user"
     d.mkdir()
-    monkeypatch.setenv("NEMO_OO_USER_DIR", str(d))
+    monkeypatch.setenv("ASTER_USER_DIR", str(d))
     return d
 
 
@@ -39,7 +39,7 @@ def user_dir(tmp_path, monkeypatch):
 def project_dir(tmp_path, monkeypatch):
     d = tmp_path / "project"
     d.mkdir()
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(d))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(d))
     return d
 
 
@@ -77,7 +77,7 @@ class TestLayeredPaths:
         self, user_dir, project_dir, tmp_path
     ):
         process_project = project_dir / _FILENAME
-        workspace_config = tmp_path / "workspace" / ".nooa"
+        workspace_config = tmp_path / "workspace" / ".aster"
         workspace_project = workspace_config / _FILENAME
         _write(process_project, "source: process\n")
         _write(workspace_project, "source: workspace\n")
@@ -121,7 +121,7 @@ class TestLayeredPaths:
 
     def test_env_missing_path_warns(self, user_dir, project_dir, monkeypatch, caplog):
         monkeypatch.setenv(_ENV_VAR, "/nope/nope.yaml")
-        with caplog.at_level(logging.WARNING, logger="nooa.layered_config"):
+        with caplog.at_level(logging.WARNING, logger="aster.layered_config"):
             assert layered_paths(_FILENAME, _ENV_VAR) == []
         assert "does not exist" in caplog.text
 
@@ -144,7 +144,7 @@ class TestLoadLayeredYaml:
 
     def test_explicit_project_dir_is_loaded(self, user_dir, project_dir, tmp_path):
         _write(project_dir / _FILENAME, "model: process\n")
-        workspace_config = tmp_path / "workspace" / ".nooa"
+        workspace_config = tmp_path / "workspace" / ".aster"
         _write(workspace_config / _FILENAME, "model: workspace\n")
 
         assert (
@@ -173,7 +173,7 @@ class TestLoadLayeredYaml:
     def test_non_mapping_skipped(self, user_dir, project_dir, caplog):
         _write(user_dir / _FILENAME, "model: foo\n")
         _write(project_dir / _FILENAME, "- just\n- a\n- list\n")
-        with caplog.at_level(logging.WARNING, logger="nooa.layered_config"):
+        with caplog.at_level(logging.WARNING, logger="aster.layered_config"):
             merged = load_layered_yaml(_FILENAME, _ENV_VAR)
         assert merged == {"model": "foo"}
         assert "not a YAML mapping" in caplog.text

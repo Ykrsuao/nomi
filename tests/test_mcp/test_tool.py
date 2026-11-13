@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for mcp_nooa.tool.MCPTool interface.
+"""Tests for mcp_aster.tool.MCPTool interface.
 
 Contract-focused: assert public interface (construction, factory method,
 generated methods delegate) without depending on implementation details.
@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager  # noqa: E402
 from typing import Any  # noqa: E402
 from unittest.mock import AsyncMock, MagicMock  # noqa: E402
 
-from nooa.mcp.tool import MCPTool, MCPToolSpec, _make_dynamic_class  # noqa: E402
+from aster.mcp.tool import MCPTool, MCPToolSpec, _make_dynamic_class  # noqa: E402
 
 # ============================================================================
 # Helper Functions

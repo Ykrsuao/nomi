@@ -1,0 +1,408 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+"""
+Harbor agent runner for ASTER — executed inside the Harbor container.
+
+Harbor invokes this as a CLI process::
+
+    aster-harbor \\
+        --instruction '...' \\
+        --model 'anthropic/claude-opus-4-6' \\
+        --agent-type bench
+
+The runner is benchmark-agnostic. Its only jobs are:
+
+1. Instantiate the right agent class from ``--agent-type``.
+2. Call ``agent._run_evaluation({"user_message": instruction})``.
+3. Write ``result.json`` to ``/logs/agent/`` and answer text to ``/app/answer.txt``.
+
+Benchmark-specific logic (system prompts, instruction parsing, data paths) lives
+inside each agent class, not here.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import importlib
+import inspect
+import json
+import logging
+import os
+import sys
+from pathlib import Path
+from typing import Any
+
+import click
+from pydantic import BaseModel
+
+from aster.agentdoc._visibility import is_hidden_field
+
+logger = logging.getLogger("aster_bench.runner")
+
+# Harbor container path conventions.
+#
+# Harbor bind-mounts ONLY /logs/agent and /logs/verifier from the host
+# (harbor.models.trial.paths). Everything else under /logs lives in the
+# container's own writable layer and is destroyed when the trial container is
+# removed -- which is the default. Traces therefore have to be written inside
+# /logs/agent to survive the run; /logs/artifacts silently discarded them.
+LOGS_DIR = Path("/logs/agent")
+TRACES_DIR = LOGS_DIR / "traces"
+ANSWER_FILE = Path("/app/answer.txt")
+
+
+def _setup_logging() -> None:
+    handlers: list[logging.Handler] = [logging.StreamHandler(sys.stderr)]
+    try:
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        handlers.append(logging.FileHandler(str(LOGS_DIR / "aster_bench.log")))
+    except OSError:
+        # Outside a Harbor container /logs may not exist or be writable — stderr only.
+        pass
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        handlers=handlers,
+    )
+
+
+def _setup_tracing(model: str, agent_type: str) -> None:
+    """Enable OTel tracing, always on disk and additionally live when reachable.
+
+    JSONL files under ``/logs/agent/traces/`` (a host-mounted directory)
+    are written unconditionally — they are the record failure analysis runs on,
+    and they are importable later via ``aster import-harbor``.  When
+    ``OTLP_ENDPOINT`` (default ``http://localhost:5001``) is reachable the
+    journal exporter is added *alongside* the file exporter so the viewer sees
+    spans live without that becoming the only copy.
+
+    Streaming used to replace the file exporter rather than supplement it, so a
+    run against a reachable viewer left no trajectory on disk at all.
+
+    Note: Apptainer containers share the host network namespace, so
+    ``localhost:5001`` inside the container resolves to the developer's host.
+    For Docker containers set ``OTLP_ENDPOINT=http://host.docker.internal:5001``.
+    """
+    try:
+        import aster.tracing
+        from aster.tracing import exporters as aster_exporters
+    except ImportError:
+        logger.warning("aster.tracing not available, no tracing")
+        return
+
+    endpoint = os.environ.get("OTLP_ENDPOINT", "http://localhost:5001/v1/traces")
+
+    TRACES_DIR.mkdir(parents=True, exist_ok=True)
+    exporters = [aster_exporters.jsonl(TRACES_DIR)]
+
+    # The same resolution as aster.tracing's own set-up, including the upgrade
+    # of an http:// endpoint whose server only speaks HTTPS.
+    resolved = aster.tracing.resolve_otlp_endpoint(endpoint)
+    if resolved is not None:
+        exporters.append(aster_exporters.journal(endpoint=resolved))
+        logger.info("OTLP endpoint reachable (%s) — also streaming live", resolved)
+    else:
+        logger.info("OTLP endpoint unreachable (%s) — writing files only", endpoint)
+
+    aster.tracing.enable_tracing(
+        exporters=exporters,
+        extra_resource_attrs={"eval.model": model, "eval.agent_type": agent_type},
+    )
+    logger.info("OTel tracing enabled → %s (%d exporter(s))", TRACES_DIR, len(exporters))
+
+
+def _import_agent_class(agent_type: str) -> type:
+    from aster_bench import AGENT_CLASSES
+
+    entry = AGENT_CLASSES.get(agent_type)
+    if entry is None:
+        raise ValueError(
+            f"Unknown agent_type: {agent_type!r}.  Must be one of: {sorted(AGENT_CLASSES)}"
+        )
+    module_path, class_name = entry.rsplit(":", 1)
+    mod = importlib.import_module(module_path)
+    return getattr(mod, class_name)
+
+
+def _write_result(result: dict[str, Any], model: str, agent_type: str) -> None:
+    """Write result metadata to LOGS_DIR/result.json."""
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "model": model,
+        "agent_type": agent_type,
+        "success": result.get("success", False),
+        "response": result.get("response", ""),
+        "error": result.get("error"),
+        "n_input_tokens": result.get("n_input_tokens"),
+        "n_output_tokens": result.get("n_output_tokens"),
+    }
+    out = LOGS_DIR / "result.json"
+    out.write_text(json.dumps(payload, indent=2))
+    logger.info("Result written → %s", out)
+
+
+def _public_json_default(value: Any) -> Any:
+    """Keep nested models as JSON objects without exporting hidden archive fields.
+
+    Use live public values, not model_dump(): dumping a containing model first
+    would expose any nested response's provider state before we can filter it.
+    json.dumps recursively applies this function to each nested model.
+    """
+    if isinstance(value, BaseModel):
+        fields = type(value).model_fields
+        values = (
+            value.__instance_values__()
+            if callable(getattr(type(value), "__instance_values__", None))
+            else {name: getattr(value, name) for name in fields}
+        )
+        return {
+            name: item
+            for name, item in values.items()
+            if (name not in fields or (fields[name].repr and not fields[name].exclude))
+            and not is_hidden_field(value, name)
+        }
+    return str(value)
+
+
+def _write_trajectory(agent: Any, *, filename: str = "trajectory.json") -> bool:
+    """Dump the agent's full event history to a ASTER trajectory JSON file.
+
+    The OTLP spans under ``agent/traces/`` remain the canonical record, but
+    failure analysis starts in the per-task ``agent/`` directory — which
+    otherwise holds only ``aster_bench.log`` and a ``result.json`` carrying just
+    the final response.  Anyone looking there for the turn-by-turn trajectory
+    previously found nothing.
+    """
+    # Reused log directories must not label a previous task's data as this run.
+    out = LOGS_DIR / filename
+    try:
+        out.unlink(missing_ok=True)
+        (LOGS_DIR / "behavior.json").unlink(missing_ok=True)
+    except OSError as e:
+        logger.warning("Could not invalidate old trajectory artifacts: %s", e)
+        return False
+    manager = getattr(agent, "event_manager", None)
+    if manager is None:
+        logger.warning("Agent exposes no event_manager — no trajectory written")
+        return False
+
+    try:
+        events = [
+            {
+                "event_id": event.id,
+                "event_type": type(event).__name__,
+                # Opaque provider replay state belongs only in the durable event
+                # backend and compatible provider requests, never debug exports.
+                **_public_json_default(event),
+                # Export only the framework classification flags needed by metrics;
+                # the rest of metadata may contain private provider state.
+                "prefill": bool(event.metadata.get("prefill")),
+                "synthetic": bool(event.metadata.get("synthetic")),
+            }
+            for event in manager.all_events()
+        ]
+    except Exception as e:  # never fail the task over a debug artifact
+        logger.warning("Could not serialise trajectory: %s", e)
+        return False
+
+    try:
+        out.write_text(json.dumps(events, indent=2, default=_public_json_default))
+    except Exception as e:  # debug serialization must not invalidate a completed task
+        logger.warning("Could not write %s: %s", out, e)
+        return False
+    logger.info("Trajectory written → %s (%d events)", out, len(events))
+    return True
+
+
+def _write_behavior_report(
+    model: str, agent_type: str, *, trajectory_filename: str = "trajectory.json"
+) -> None:
+    """Write deterministic interface-behavior metrics beside the trajectory.
+
+    Behavior analysis is observability only: malformed or missing artifacts must
+    never turn a completed benchmark task into a failure.
+    """
+    trajectory = LOGS_DIR / trajectory_filename
+    try:
+        from aster_bench.behavior_analyzer import analyze_trajectory
+
+        change_id = os.environ.get("ASTER_INTERFACE_CHANGE_ID", "baseline")
+        report = analyze_trajectory(
+            trajectory,
+            model=model,
+            agent_type=agent_type,
+            change_id=change_id,
+            task_id=os.environ.get("ASTER_TASK_ID"),
+        )
+        out = LOGS_DIR / "behavior.json"
+        out.write_text(json.dumps(report.to_dict(), indent=2))
+    except Exception as e:  # noqa: BLE001 - analysis must not fail the benchmark
+        logger.warning("Could not write interface behavior report: %s", e)
+        return
+    logger.info("Behavior report written → %s", out)
+
+
+def _write_answer(result: dict[str, Any]) -> None:
+    """Write the agent's answer to /app/answer.txt for Harbor's verifier."""
+    answer = result.get("answer") or result.get("response", "")
+    if not answer:
+        logger.warning("No answer to write to %s", ANSWER_FILE)
+        return
+    try:
+        ANSWER_FILE.parent.mkdir(parents=True, exist_ok=True)
+        ANSWER_FILE.write_text(str(answer))
+        logger.info("Answer written → %s", ANSWER_FILE)
+    except OSError as e:
+        logger.warning("Could not write answer file %s: %s", ANSWER_FILE, e)
+
+
+async def _run(
+    instruction: str,
+    model: str,
+    agent_type: str,
+    api_base: str | None,
+    working_dir: str | None = None,
+    enable_atif: bool = False,
+) -> int:
+    """Async main: instantiate, wire, run.  Returns exit code (0 = success)."""
+    from aster.unifiedllm import get_llm_client
+
+    # Build LLM client — honour env-var overrides for local vLLM deployments.
+    llm_overrides: dict[str, str] = {}
+    if api_base:
+        llm_overrides["api_base"] = api_base
+    elif base_url := os.environ.get("OPENAI_BASE_URL"):
+        llm_overrides["api_base"] = base_url
+    if api_key := os.environ.get("OPENAI_API_KEY"):
+        llm_overrides["api_key"] = api_key
+
+    llm_client = get_llm_client(model, **llm_overrides)
+
+    agent: Any = None
+    try:
+        # Instantiate inside the lifecycle guard so a constructor failure still
+        # closes the already-created model client.
+        AgentClass = _import_agent_class(agent_type)
+        agent = AgentClass(llm=llm_client)
+
+        if enable_atif:
+            from aster.atif import atif_scope
+
+            trajectory_path = LOGS_DIR / "trajectory.json"
+            try:
+                trajectory_path.unlink(missing_ok=True)
+                (LOGS_DIR / "trajectory.aster.json").unlink(missing_ok=True)
+                (LOGS_DIR / "behavior.json").unlink(missing_ok=True)
+            except OSError as e:
+                logger.warning("Could not invalidate old trajectory artifacts: %s", e)
+
+        # All agents share the same interface: {"user_message": instruction}.
+        # Benchmark-specific parsing (system prompts, data paths, etc.) happens
+        # inside the agent's _run_evaluation method.
+        from aster.runtime.token_usage import get_task_tokens, start_task_tokens
+
+        logger.info("Running agent %s (model=%s)...", agent_type, model)
+        start_task_tokens()
+        task_input: dict[str, Any] = {"user_message": instruction}
+        if working_dir:
+            task_input["working_dir"] = working_dir
+        if enable_atif:
+            async with atif_scope(
+                agent,
+                path=LOGS_DIR / "trajectory.json",
+                agent_model_name=model,
+            ):
+                result = await agent._run_evaluation(task_input)
+        else:
+            result = await agent._run_evaluation(task_input)
+        result.update(get_task_tokens())
+        _write_result(result, model, agent_type)
+        aster_trajectory_filename = "trajectory.aster.json" if enable_atif else "trajectory.json"
+        if _write_trajectory(agent, filename=aster_trajectory_filename):
+            _write_behavior_report(model, agent_type, trajectory_filename=aster_trajectory_filename)
+        if enable_atif:
+            logger.info("ATIF trajectory written → %s", LOGS_DIR / "trajectory.json")
+        _write_answer(result)
+
+        if result.get("success"):
+            logger.info("Agent completed successfully.")
+            return 0
+        logger.error("Agent reported failure.")
+        return 1
+    finally:
+        try:
+            close = getattr(agent, "close", None) if agent is not None else None
+            if callable(close):
+                close_result = close()
+                if inspect.isawaitable(close_result):
+                    await close_result
+        except Exception:
+            # Cleanup must not replace the benchmark result or its original error.
+            # Cancellation still propagates, with client cleanup guaranteed below.
+            logger.warning("Agent cleanup failed", exc_info=True)
+        finally:
+            try:
+                aclose = getattr(llm_client, "aclose", None)
+                if callable(aclose):
+                    close_result = aclose()
+                    if inspect.isawaitable(close_result):
+                        await close_result
+            except Exception:
+                logger.warning("Model client cleanup failed", exc_info=True)
+
+
+@click.command()
+@click.option("--instruction", required=True, help="Task instruction / problem statement")
+@click.option("--model", required=True, help="Model name in litellm format")
+@click.option("--agent-type", default="bench", show_default=True, help="Agent variant to run")
+@click.option("--enable-atif", is_flag=True, help="Also write an ATIF trajectory")
+@click.option("--working-dir", default=None, help="Working directory for the agent shell session")
+@click.option("--api-base", default=None, help="Override API base URL")
+def main(
+    instruction: str,
+    model: str,
+    agent_type: str,
+    enable_atif: bool,
+    working_dir: str | None,
+    api_base: str | None,
+) -> None:
+    """Run a ASTER agent on a task inside a Harbor container."""
+    _setup_logging()
+    logger.info("aster-bench runner starting")
+    logger.info("  model:      %s", model)
+    logger.info("  agent_type: %s", agent_type)
+    logger.info("  enable_atif: %s", enable_atif)
+    if api_base:
+        logger.info("  api_base:   %s", api_base)
+
+    # Validate agent_type early so we get a clean error before any heavy imports.
+    from aster_bench import AGENT_CLASSES
+
+    if agent_type not in AGENT_CLASSES:
+        logger.error(
+            "Unknown agent_type: %r.  Must be one of: %s", agent_type, sorted(AGENT_CLASSES)
+        )
+        sys.exit(1)
+
+    _setup_tracing(model=model, agent_type=agent_type)
+
+    try:
+        exit_code = asyncio.run(
+            _run(
+                instruction,
+                model,
+                agent_type,
+                api_base,
+                working_dir,
+                enable_atif,
+            )
+        )
+    except Exception as e:
+        logger.exception("Runner failed with unhandled exception: %s", e)
+        exit_code = 1
+
+    sys.exit(exit_code)
+
+
+if __name__ == "__main__":
+    main()

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from pydantic import BaseModel
 
-from nooa.unifiedllm import CompletionClient, LLMResponse, ReasoningCompletionClient
+from aster.unifiedllm import CompletionClient, LLMResponse, ReasoningCompletionClient
 
 
 class Answer(BaseModel):

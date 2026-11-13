@@ -1,25 +1,23 @@
 # Security
 
-NVIDIA is dedicated to the security and trust of our software products and services, including all source code repositories managed through our organization.
+## Reporting a vulnerability
 
-If you need to report a security issue, please use the appropriate contact points outlined below. **Please do not report security vulnerabilities through GitHub.** If a potential security issue is inadvertently reported via a public issue or pull request, NVIDIA maintainers may limit public discussion and redirect the reporter to the appropriate private disclosure channels.
+Report vulnerabilities privately to the maintainer of the Aster distribution
+you installed. When its repository enables private vulnerability reporting,
+use **Security → Report a vulnerability**. If that channel is unavailable,
+request a private contact without including exploit details in a public issue.
 
-## Reporting Potential Security Vulnerability in an NVIDIA Product
+Include the Aster version or commit, operating system, affected component,
+steps to reproduce, and expected impact. Remove credentials, private source,
+and personal conversation data from logs and examples.
 
-To report a potential security vulnerability in any NVIDIA product:
+## Scope
 
-- Web: [Security Vulnerability Submission Form](https://www.nvidia.com/object/submit-security-vulnerability.html)
-- E-Mail: psirt@nvidia.com
-  - We encourage you to use the following PGP key for secure email communication: [NVIDIA public PGP Key for communication](https://www.nvidia.com/en-us/security/pgp-key)
-  - Please include the following information:
-    - Product/Driver name and version/branch that contains the vulnerability
-    - Type of vulnerability (code execution, denial of service, buffer overflow, etc.)
-    - Instructions to reproduce the vulnerability
-    - Proof-of-concept or exploit code
-    - Potential impact of the vulnerability, including how an attacker could exploit the vulnerability
+This checkout provides Aster's terminal, agent runtime, and editor integration.
+Reports about an external dependency should also follow that dependency's
+security policy. Dependency attribution and source links are recorded in
+[Third-Party Notices](THIRD_PARTY_NOTICES.md).
 
-While NVIDIA currently does not have a bug bounty program, we do offer acknowledgement when an externally reported security issue is addressed under our coordinated vulnerability disclosure policy. Please visit our [Product Security Incident Response Team (PSIRT)](https://www.nvidia.com/en-us/security/psirt-policies/) policies page for more information.
-
-## NVIDIA Product Security
-
-For all security-related concerns, please visit NVIDIA's Product Security portal at https://www.nvidia.com/en-us/security
+An Aster release channel and support policy have not yet been published.
+Maintainers should configure a private reporting contact before distributing
+releases publicly.

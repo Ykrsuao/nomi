@@ -6,10 +6,10 @@ This tests the critical path where PurePythonStrategy generates code with
 @strategy decorators that need to be detected as needing generation.
 """
 
-from nooa.decorators import strategy
-from nooa.ellipsis_detection import has_ellipsis_body, has_ellipsis_marker
-from nooa.strategies import PredictStrategy
-from nooa.strategies.generated_code import HelperFunctionManager
+from aster.decorators import strategy
+from aster.ellipsis_detection import has_ellipsis_body, has_ellipsis_marker
+from aster.strategies import PredictStrategy
+from aster.strategies.generated_code import HelperFunctionManager
 
 
 class TestHasEllipsisBodyExec:

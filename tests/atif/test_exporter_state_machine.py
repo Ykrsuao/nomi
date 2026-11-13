@@ -14,11 +14,11 @@ from pathlib import Path
 
 import pytest
 
-from nooa.atif import Trajectory
-from nooa.atif.exporter import AtifExporter
-from nooa.context_blocks import ResultStatus
-from nooa.context_blocks.events import ToolCallEvent, ToolResult
-from nooa.events import (
+from aster.atif import Trajectory
+from aster.atif.exporter import AtifExporter
+from aster.context_blocks import ResultStatus
+from aster.context_blocks.events import ToolCallEvent, ToolResult
+from aster.events import (
     AfterTurn,
     BeforeTurn,
     Error,
@@ -30,7 +30,7 @@ from nooa.events import (
     SystemPrompt,
     Task,
 )
-from nooa.unifiedllm import ToolCall
+from aster.unifiedllm import ToolCall
 from tests.atif.normative import assert_atif_normative
 
 # Minimal system-prompt content used by synthetic tests. In a real run the

@@ -4,14 +4,14 @@
 
 import pytest
 
-from nooa.tools.todo import TodoManager
+from aster.tools.todo import TodoManager
 
 
 @pytest.mark.parametrize("status", ["open", "blocked", "in_progress", "done", None])
 def test_legacy_todo_restores_through_snapshot_deserializer(status):
     from copy import deepcopy
 
-    from nooa.storage.serialization import deserialize, serialize
+    from aster.storage.serialization import deserialize, serialize
 
     manager = TodoManager()
     dependency = manager.add("dependency")
@@ -43,8 +43,8 @@ def test_legacy_todo_restores_through_snapshot_deserializer(status):
 
 
 def test_todo_snapshot_prefers_description_and_keeps_live_status_validation():
-    from nooa.storage.serialization import deserialize, serialize
-    from nooa.tools.todo import Todo
+    from aster.storage.serialization import deserialize, serialize
+    from aster.tools.todo import Todo
 
     todo = Todo(description="current")
     blob, allowlist = serialize(todo)
@@ -325,7 +325,7 @@ def test_status_rejects_invalid_limits(max_items: int, max_chars: int, message: 
 
 
 def test_todo_manager_docs_are_task_focused() -> None:
-    from nooa.agentdoc import doc
+    from aster.agentdoc import doc
 
     output = doc(TodoManager())
 

@@ -1,6 +1,6 @@
 # Agents and methods
 
-An agent in NOOA is a Python object. Its methods define what it can do, its
+An agent in Aster is a Python object. Its methods define what it can do, its
 fields hold its state, and ordinary Python code decides how those capabilities
 compose.
 
@@ -14,7 +14,7 @@ class SupportAgent(Agent, llm=llm):
         ...
 ```
 
-The ellipsis tells NOOA to implement that method with an LLM at call time. A
+The ellipsis tells Aster to implement that method with an LLM at call time. A
 method with a real body is regular Python.
 
 ## The method is the model boundary
@@ -30,8 +30,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from nooa import strategy
-from nooa.strategies import PredictStrategy
+from aster import strategy
+from aster.strategies import PredictStrategy
 
 
 class Triage(BaseModel):

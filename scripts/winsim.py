@@ -4,7 +4,7 @@
 
 Usage::
 
-    uv run --frozen python scripts/winsim.py -c "import nooa"
+    uv run --frozen python scripts/winsim.py -c "import aster"
     uv run --frozen python scripts/winsim.py path/to/script.py [args...]
 
 What it does before running the code:
@@ -17,7 +17,7 @@ What it does before running the code:
   setitimer, pthread_kill, ...);
 * deletes the ``os`` functions Windows lacks (fork, killpg, getpgid, setsid,
   register_at_fork, getuid, ...);
-* sets ``NOOA_SKIP_PLATFORM_CHECK=1`` unless already set (``0`` simulates the
+* sets ``ASTER_SKIP_PLATFORM_CHECK=1`` unless already set (``0`` simulates the
   default refusal of native Windows);
 * sets ``sys.platform = "win32"``.
 
@@ -159,7 +159,7 @@ PREIMPORT = (
 )
 # Third-party packages with their own ``sys.platform == "win32"`` branches that
 # import Windows-only modules (msvcrt, winreg, ...). They support Windows
-# themselves; importing them first keeps the simulation about nooa's code.
+# themselves; importing them first keeps the simulation about aster's code.
 PREIMPORT_THIRD_PARTY = ("click", "mcp", "mcp.client.stdio")
 
 
@@ -189,9 +189,9 @@ def install() -> None:
     import ssl
 
     ssl.SSLContext._load_windows_store_certs = lambda self, storename, purpose: None  # type: ignore[attr-defined]
-    # Simulate a user who opted in to native Windows (see nooa._platform);
-    # pass NOOA_SKIP_PLATFORM_CHECK=0 to simulate the default refusal.
-    os.environ.setdefault("NOOA_SKIP_PLATFORM_CHECK", "1")
+    # Simulate a user who opted in to native Windows (see aster._platform);
+    # pass ASTER_SKIP_PLATFORM_CHECK=0 to simulate the default refusal.
+    os.environ.setdefault("ASTER_SKIP_PLATFORM_CHECK", "1")
     sys.platform = "win32"
 
 

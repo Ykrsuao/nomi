@@ -9,10 +9,10 @@ remain fallback diagnostics and recovery inputs, not the primary token signal.
 
 import pytest
 
-from nooa import Agent, CodeActStrategy, return_text_as_result, strategy
-from nooa.context_blocks.events import ResultStatus, ToolCallEvent, ToolResult
-from nooa.events import Message
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent, CodeActStrategy, return_text_as_result, strategy
+from aster.context_blocks.events import ResultStatus, ToolCallEvent, ToolResult
+from aster.events import Message
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 class _CalibratingFakeLLM(FakeLLMClient):
@@ -160,7 +160,7 @@ class TestTokenCalibration:
         runtime = agent.runtime
 
         # Before any response: the cold-start default.
-        from nooa.runtime.actor import _DEFAULT_TOKENS_PER_CHAR
+        from aster.runtime.actor import _DEFAULT_TOKENS_PER_CHAR
 
         assert runtime._tokens_per_char == _DEFAULT_TOKENS_PER_CHAR
 

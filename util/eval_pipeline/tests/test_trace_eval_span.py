@@ -42,7 +42,7 @@ def test_post_eval_span_applies_viewer_auth(monkeypatch: pytest.MonkeyPatch):
         captured["timeout"] = timeout
         return Response()
 
-    monkeypatch.setenv("NOOA_VIEWER_AUTH_TOKEN", "viewer-secret")
+    monkeypatch.setenv("ASTER_VIEWER_AUTH_TOKEN", "viewer-secret")
     monkeypatch.setattr("eval_pipeline.trace_eval_span.urllib.request.urlopen", fake_urlopen)
 
     assert post_eval_span_to_otlp(

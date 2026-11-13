@@ -17,10 +17,10 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import CacheBoundary, FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import CacheBoundary, FakeLLMClient, LLMResponse, ToolCall
 
 
 def _resp(content: str = "", tool_calls: list | None = None) -> LLMResponse:

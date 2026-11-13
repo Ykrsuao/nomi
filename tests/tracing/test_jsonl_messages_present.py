@@ -26,7 +26,7 @@ import tempfile
 import pytest
 from otlp_test_helpers import read_all_otlp_jsonl_spans
 
-from nooa.tracing import enable_tracing, exporters, flush_traces, set_session
+from aster.tracing import enable_tracing, exporters, flush_traces, set_session
 
 
 @pytest.mark.asyncio

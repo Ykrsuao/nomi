@@ -17,18 +17,18 @@ Demonstrates the additive memory subsystem end to end WITHOUT needing an LLM
 
 import time
 
-from nooa_memory import (
+from aster_memory import (
     Memory,
     MemoryConfig,
     MemoryManager,
     MemoryToolsMixin,
     MemoryType,
 )
-from nooa_memory.config import ForgetPolicy, ReflectionPolicy
+from aster_memory.config import ForgetPolicy, ReflectionPolicy
 
-from nooa import Agent, hidden
-from nooa.events import Task
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, hidden
+from aster.events import Task
+from aster.unifiedllm import FakeLLMClient
 
 DAY = 24 * 3600.0
 

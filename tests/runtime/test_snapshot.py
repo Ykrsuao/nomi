@@ -8,17 +8,17 @@ from typing import Annotated
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent
-from nooa.errors.storage import SerializationError
-from nooa.storage.json_snapshot import (
+from aster import Agent
+from aster.errors.storage import SerializationError
+from aster.storage.json_snapshot import (
     snapshot_from_dict,
     snapshot_from_json,
     snapshot_to_dict,
     snapshot_to_json,
 )
-from nooa.storage.markers import nosnapshot
-from nooa.storage.snapshot import SNAPSHOT_VERSION, AgentSnapshot, StaticContextBlock
-from nooa.unifiedllm import FakeLLMClient
+from aster.storage.markers import nosnapshot
+from aster.storage.snapshot import SNAPSHOT_VERSION, AgentSnapshot, StaticContextBlock
+from aster.unifiedllm import FakeLLMClient
 
 fake_llm = FakeLLMClient()
 
@@ -63,7 +63,7 @@ class TestSnapshotRoundtrip:
         agent2 = SimpleAgent()
         snapshot_from_json(snap, agent2)
 
-        from nooa.context_blocks import DynamicContext
+        from aster.context_blocks import DynamicContext
 
         raw = dict(agent2.context_manager._raw_items())
         assert isinstance(raw["status"], DynamicContext)

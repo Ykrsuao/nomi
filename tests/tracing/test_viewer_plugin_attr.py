@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for the nooa.viewer.plugin span attribute."""
+"""Tests for the aster.viewer.plugin span attribute."""
 
 from __future__ import annotations
 
@@ -13,16 +13,16 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from otlp_test_helpers import read_all_otlp_jsonl_spans
 
-from nooa.tracing._hooks_impl import (
+from aster.tracing._hooks_impl import (
     VIEWER_PLUGIN_ATTR,
     OpenInferenceHooks,
     ViewerPlugin,
 )
-from nooa.tracing._otlp_file_exporter import OtlpJsonFileExporter
+from aster.tracing._otlp_file_exporter import OtlpJsonFileExporter
 
 
 class TestViewerPluginAttribute:
-    """Verify nooa.viewer.plugin is set on all span types."""
+    """Verify aster.viewer.plugin is set on all span types."""
 
     def _make_hooks(self, tmpdir: str):
         exporter = OtlpJsonFileExporter(tmpdir)

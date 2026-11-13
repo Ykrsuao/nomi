@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Installed CodeActV2 summary fork cache matrix, separate from the four-cell test.
 
-NOOA_RUN_AGENT_SUMMARY_CACHE_LIVE=1 NVIDIA_INFERENCE_API_KEY=... uv run pytest \
+ASTER_RUN_AGENT_SUMMARY_CACHE_LIVE=1 NVIDIA_INFERENCE_API_KEY=... uv run pytest \
     -m integration -s tests/integration/test_agent_summary_cache_live.py
 
 Exactly three capped POSTs/model: parent, background fork, safe-boundary parent.
@@ -12,9 +12,9 @@ keys, native state or hashes. Diagnostics contain only normalized usage/counts.
 
 from __future__ import annotations
 
-from nooa import Agent, Context, hidden, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact_v2 import CodeActV2
+from aster import Agent, Context, hidden, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact_v2 import CodeActV2
 
 with hidden:
     import ast
@@ -26,14 +26,14 @@ with hidden:
     import httpx
     import pytest
 
-    from nooa.agents import TokenBudgetSummarizer
-    from nooa.agents.summarization import _in_summary_fork
-    from nooa.config.summarizer_config import TokenBudgetConfig
-    from nooa.context_blocks.events import UserEvent
-    from nooa.events import Summary
-    from nooa.llm_types import LLMResponse
-    from nooa.unifiedllm import CacheBoundary
-    from nooa.unifiedllm.unifiedllm import _ClientHttp
+    from aster.agents import TokenBudgetSummarizer
+    from aster.agents.summarization import _in_summary_fork
+    from aster.config.summarizer_config import TokenBudgetConfig
+    from aster.context_blocks.events import UserEvent
+    from aster.events import Summary
+    from aster.llm_types import LLMResponse
+    from aster.unifiedllm import CacheBoundary
+    from aster.unifiedllm.unifiedllm import _ClientHttp
     from tests.integration.test_agent_cache_live import (
         CASES,
         FIXED_PREFIX,
@@ -292,8 +292,8 @@ async def _run_summary_agent(case, client, monkeypatch, *, mock_usage=None):
 @pytest.mark.integration
 @pytest.mark.timeout(700)
 @pytest.mark.skipif(
-    os.getenv("NOOA_RUN_AGENT_SUMMARY_CACHE_LIVE") != "1",
-    reason="set NOOA_RUN_AGENT_SUMMARY_CACHE_LIVE=1 to spend inference tokens",
+    os.getenv("ASTER_RUN_AGENT_SUMMARY_CACHE_LIVE") != "1",
+    reason="set ASTER_RUN_AGENT_SUMMARY_CACHE_LIVE=1 to spend inference tokens",
 )
 @pytest.mark.asyncio
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c.name)
@@ -396,7 +396,7 @@ async def test_summary_reference_unique_per_run(monkeypatch):
 
 @pytest.mark.parametrize("code", ["return_result(3); import os", "print(self._llm.config)"])
 def test_summary_parent_rejects_unsafe_code(code):
-    from nooa.llm_types import ToolCall
+    from aster.llm_types import ToolCall
 
     response = LLMResponse(
         finish_reason="tool_calls",

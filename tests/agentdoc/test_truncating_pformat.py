@@ -6,7 +6,7 @@ Change 2 of truncation-2.0: truncating_pformat delegates to TruncatingStringIO
 for head+tail truncation, producing valid prose output instead of mid-repr slices.
 """
 
-from nooa.agentdoc import truncating_pformat
+from aster.agentdoc import truncating_pformat
 
 
 class TestSafePformatUsesTruncatingStringIO:

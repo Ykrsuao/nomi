@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import pytest
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 
 
 def bounded_entry():

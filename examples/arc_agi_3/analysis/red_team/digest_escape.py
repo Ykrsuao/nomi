@@ -23,6 +23,8 @@ import json
 import re
 from collections import defaultdict
 
+from rt_common import _RESULTS_GROUP_PATTERN
+
 
 def rt_EVID():
     from rt_common import EVID
@@ -40,7 +42,7 @@ LEAK_IN_OUTPUT = {
     "python_source": re.compile(
         r"\b(def |class |import |return |self\.)\w",
     ),
-    "foreign_run_dir": re.compile(r"2026\d{4}_\d{6}_\w+|/results/|nemo_solver/"),
+    "foreign_run_dir": re.compile(rf"2026\d{{4}}_\d{{6}}_\w+|/results/|{_RESULTS_GROUP_PATTERN}/"),
     "other_game_alias": re.compile(
         r"\b(ar25|bp35|cd82|cn04|dc22|ft09|g50t|ka59|lf52|ls20|m0r0|r11l|re86"
         r"|s5i5|sb26|sc25|sk48|sp80|su15|tn36|tr87|tu93|vc33|wa30|lp85)_(?:memory|mdfiles)\b"

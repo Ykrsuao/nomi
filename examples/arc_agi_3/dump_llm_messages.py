@@ -23,6 +23,8 @@ import argparse
 import json
 from pathlib import Path
 
+from _run_layout import read_log
+
 
 def _attrs(span: dict) -> dict:
     return {a["key"]: list(a["value"].values())[0] for a in span.get("attributes", [])}
@@ -66,11 +68,11 @@ def write_viewer_messages(run_dir: Path) -> int:
 
     Maps each LLM call to the env-step in progress when it started (via env_step
     event timestamps), and writes real prompts/responses as
-    ``agent_logs/nemo/team_leader/messages/step_NNN_round_NN_{user,assistant}.md``
+    ``agent_logs/aster/team_leader/messages/step_NNN_round_NN_{user,assistant}.md``
     — the format the arc_league viewer's analyze tab reads. Returns files written.
     """
-    events_path = run_dir / "agent_logs" / "nemo" / "team_leader" / "events.jsonl"
-    msgs_dir = events_path.parent / "messages"
+    events_path = read_log(run_dir, "events.jsonl")
+    msgs_dir = run_dir / "agent_logs" / "aster" / "team_leader" / "messages"
     calls = _spans(run_dir)
     if not calls or not events_path.exists():
         return 0

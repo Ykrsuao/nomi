@@ -28,14 +28,14 @@ from pathlib import Path
 
 import pytest
 
-from nooa.tools._bounded_io import (
+from aster.tools._bounded_io import (
     DEFAULT_MAX_FILE_BYTES,
     FileTooLargeError,
     iter_lines_keepends,
     read_specific_lines,
     read_whole_file_checked,
 )
-from nooa.tools.shell_tools import Match, ShellTools
+from aster.tools.shell_tools import Match, ShellTools
 
 # Characters str.splitlines() breaks on that iterating a file object does not.
 # A naive streaming rewrite renumbers every Match in a file containing these.
@@ -110,7 +110,7 @@ async def test_ranged_read_stops_at_end_of_range(sh, tmp_path, monkeypatch):
     def counting_open(*args, **kwargs):
         return _CountingHandle(real_open(*args, **kwargs))
 
-    monkeypatch.setattr("nooa.tools._bounded_io.open", counting_open, raising=False)
+    monkeypatch.setattr("aster.tools._bounded_io.open", counting_open, raising=False)
     view = await sh.read("big.txt", (1, 2))
 
     assert view.text.splitlines() == [f"{i:064d}" for i in (1, 2)]

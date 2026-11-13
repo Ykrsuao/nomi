@@ -4,9 +4,9 @@
 
 from __future__ import annotations
 
-from nooa.agentdoc._info import REQUIRED
-from nooa.agentdoc._pformat import _field_type_docstring
-from nooa.agentdoc._structured import _ClassRef, _InstanceRef
+from aster.agentdoc._info import REQUIRED
+from aster.agentdoc._pformat import _field_type_docstring
+from aster.agentdoc._structured import _ClassRef, _InstanceRef
 
 # ---------------------------------------------------------------------------
 # Fixtures

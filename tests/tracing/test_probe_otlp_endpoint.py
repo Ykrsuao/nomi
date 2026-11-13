@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nooa.tracing import probe_otlp_endpoint
+from aster.tracing import probe_otlp_endpoint
 
 
 class TestAutomaticViewerProbe:
@@ -25,10 +25,10 @@ class TestAutomaticViewerProbe:
         self, monkeypatch, endpoint, configured_timeout, expected_timeout
     ):
         """An absent optional viewer must not add seconds to agent startup."""
-        import nooa.agent as agent_module
-        import nooa.tracing as tracing
-        from nooa import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        import aster.agent as agent_module
+        import aster.tracing as tracing
+        from aster import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         for name, value in (
             ("OTLP_ENDPOINT", endpoint),
@@ -171,7 +171,7 @@ class TestHttpsOnlyServers:
             assert probe_otlp_endpoint("http://viewer:5443/v1/traces") is True
 
     def test_resolve_upgrades_to_https_when_only_that_answers(self, caplog):
-        from nooa.tracing import resolve_otlp_endpoint
+        from aster.tracing import resolve_otlp_endpoint
 
         def fake_urlopen(req, timeout):
             if req.get_full_url().startswith("http://"):
@@ -182,18 +182,18 @@ class TestHttpsOnlyServers:
             return mock
 
         with patch("urllib.request.urlopen", side_effect=fake_urlopen):
-            with caplog.at_level("WARNING", logger="nooa.tracing"):
+            with caplog.at_level("WARNING", logger="aster.tracing"):
                 assert (
                     resolve_otlp_endpoint("http://viewer:5443/v1/traces")
                     == "https://viewer:5443/v1/traces"
                 )
         # The upgrade is not silent: one line names both endpoints.
-        [record] = [r for r in caplog.records if r.name == "nooa.tracing"]
+        [record] = [r for r in caplog.records if r.name == "aster.tracing"]
         assert "http://viewer:5443/v1/traces" in record.getMessage()
         assert "https://viewer:5443/v1/traces" in record.getMessage()
 
     def test_resolve_keeps_a_working_http_endpoint(self):
-        from nooa.tracing import resolve_otlp_endpoint
+        from aster.tracing import resolve_otlp_endpoint
 
         mock = MagicMock()
         mock.__enter__ = lambda s: s
@@ -204,7 +204,7 @@ class TestHttpsOnlyServers:
             )
 
     def test_resolve_is_none_when_nothing_answers(self):
-        from nooa.tracing import resolve_otlp_endpoint
+        from aster.tracing import resolve_otlp_endpoint
 
         with patch("urllib.request.urlopen", side_effect=ConnectionRefusedError()):
             assert resolve_otlp_endpoint("http://viewer:5001/v1/traces") is None
@@ -224,7 +224,7 @@ class TestHttpsOnlyDetectionIsNarrow:
             assert probe_otlp_endpoint("http://viewer:443/v1/traces") is False
 
     def test_resolve_probes_once_when_nothing_is_listening(self):
-        from nooa.tracing import resolve_otlp_endpoint
+        from aster.tracing import resolve_otlp_endpoint
 
         calls: list[str] = []
 

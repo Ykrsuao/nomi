@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from nooa.unifiedllm import (
+from aster.unifiedllm import (
     MODELS,
     CompletionClient,
     RetryConfig,
@@ -26,21 +26,21 @@ def _isolate_registry(tmp_path, monkeypatch):
     """Reset registry + redirect user/project dirs to a clean temp dir.
 
     Without this, tests inherit whatever the real user has in
-    ``~/.config/nooa/llm_config.yaml`` (or in the project's
-    ``.nooa/`` directory) and become flaky.
+    ``~/.config/aster/llm_config.yaml`` (or in the project's
+    ``.aster/`` directory) and become flaky.
 
     Bundled-default entry-points are stubbed empty so the test suite
-    is insensitive to whether ``nemo-oo-agents-nvidia`` (or other
-    bundled-config providers) is installed alongside.
+    is insensitive to whether any bundled-config providers are installed
+    alongside the framework.
     """
     user = tmp_path / "user"
     project = tmp_path / "project"
     user.mkdir()
     project.mkdir()
-    monkeypatch.setenv("NEMO_OO_USER_DIR", str(user))
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(project))
-    monkeypatch.setattr("nooa.llm_config.bundled_config_paths", lambda: [])
-    monkeypatch.delenv("NEMO_OO_LLM_CONFIG", raising=False)
+    monkeypatch.setenv("ASTER_USER_DIR", str(user))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(project))
+    monkeypatch.setattr("aster.llm_config.bundled_config_paths", lambda: [])
+    monkeypatch.delenv("ASTER_LLM_CONFIG", raising=False)
     monkeypatch.chdir(tmp_path)
 
     # Force a known starting state.
@@ -83,7 +83,7 @@ class TestEmptyDefaultRegistry:
 
     def test_registry_empty_when_no_files(self, tmp_path):
         """No user/project/env files → registry stays empty after ensure_loaded()."""
-        from nooa.unifiedllm import registry as _registry
+        from aster.unifiedllm import registry as _registry
 
         # Reset _loaded so ensure_loaded actually runs.
         _registry._loaded = False
@@ -118,7 +118,7 @@ class TestGetRegistryConfig:
         assert get_registry_config("does-not-exist") == {}
 
     def test_triggers_auto_load(self, tmp_path):
-        from nooa.unifiedllm import registry as _registry
+        from aster.unifiedllm import registry as _registry
 
         _write_project_config(
             _project_dir(tmp_path),
@@ -145,7 +145,7 @@ class TestGetLlmClient:
 
     def test_decision_alias_builds_decision_client(self, tmp_path, monkeypatch):
         """client_type selects a decision client without changing registry shape."""
-        from nooa.decisions import DecisionClient
+        from aster.decisions import DecisionClient
 
         monkeypatch.setenv("DECISION_TEST_KEY", "secret")
         path = _write_project_config(
@@ -331,7 +331,7 @@ class TestGetLlmClient:
 
         import logging
 
-        with caplog.at_level(logging.INFO, logger="nooa.unifiedllm.registry"):
+        with caplog.at_level(logging.INFO, logger="aster.unifiedllm.registry"):
             get_llm_client("my-alias")
         assert "registry hit" in caplog.text.lower()
 
@@ -339,7 +339,7 @@ class TestGetLlmClient:
         """When ``reload_registry`` has not been called, the first
         ``get_llm_client`` triggers auto-discovery via the standard chain.
         """
-        from nooa.unifiedllm import registry as _registry
+        from aster.unifiedllm import registry as _registry
 
         _write_project_config(
             _project_dir(tmp_path),
@@ -468,7 +468,7 @@ class TestApiKeyHandling:
 
         import logging
 
-        with caplog.at_level(logging.WARNING, logger="nooa.unifiedllm.registry"):
+        with caplog.at_level(logging.WARNING, logger="aster.unifiedllm.registry"):
             llm = get_llm_client("numeric-env")
 
         assert llm.config.get("api_key") is None
@@ -497,7 +497,7 @@ class TestApiKeyHandling:
 
         import logging
 
-        with caplog.at_level(logging.WARNING, logger="nooa.unifiedllm.registry"):
+        with caplog.at_level(logging.WARNING, logger="aster.unifiedllm.registry"):
             llm = get_llm_client("test-keyed-model", api_key="explicit-key")
 
         assert llm.config.get("api_key") == "explicit-key"
@@ -583,7 +583,7 @@ class TestConfigLayering:
         assert "removable" not in registry
 
     def test_chain_user_project_env_priority(self, tmp_path, monkeypatch):
-        """End-to-end: user < project < NEMO_OO_LLM_CONFIG, last wins.
+        """End-to-end: user < project < ASTER_LLM_CONFIG, last wins.
 
         The env var is the **global override** — anything set in a
         shell session beats files on disk.
@@ -612,9 +612,9 @@ class TestConfigLayering:
                     model_name: from-env
             """)
         )
-        monkeypatch.setenv("NEMO_OO_LLM_CONFIG", str(env_config))
+        monkeypatch.setenv("ASTER_LLM_CONFIG", str(env_config))
 
-        from nooa.llm_config import llm_config_chain
+        from aster.llm_config import llm_config_chain
 
         registry = reload_registry(*llm_config_chain())
         assert registry["who-wins"]["model_name"] == "from-env"
@@ -639,7 +639,7 @@ class TestReloadRegistry:
         """``reload_registry()`` with no args re-reads the discovered chain.
 
         Matches the pre-refactor behavior: edit ``llm_config.yaml`` or
-        change ``NEMO_OO_LLM_CONFIG`` and call ``reload_registry()`` to
+        change ``ASTER_LLM_CONFIG`` and call ``reload_registry()`` to
         pick the new contents up.
         """
         # Initial state: empty (no files, no env var, bundled disabled).
@@ -660,7 +660,7 @@ class TestReloadRegistry:
 
     def test_no_args_marks_loaded(self, tmp_path):
         """``reload_registry()`` sets ``_loaded`` so ensure_loaded() is a no-op afterward."""
-        from nooa.unifiedllm import registry as _registry
+        from aster.unifiedllm import registry as _registry
 
         reload_registry()
         assert _registry._loaded is True

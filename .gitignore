@@ -18,8 +18,8 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-!packages/nemo-oo-agents-viewer/frontend-react/dist/
-!src/nooa/viewer/frontend-react/dist/
+!packages/aster-viewer/frontend-react/dist/
+!src/aster/viewer/frontend-react/dist/
 downloads/
 eggs/
 .eggs/
@@ -190,7 +190,7 @@ trace*.json
 !trace_viewer_config.json
 /tmp/
 
-# NVIDIA OO Agents generated trace and evaluation files (anywhere)
+# Aster generated trace and evaluation files (anywhere)
 *.noo-eval.jsonl
 *.006summary.json
 # Exception: Allow trace fixtures for testing/eval
@@ -232,8 +232,8 @@ test-tui-debug.py
 test-tui.sh
 scratch/ALIGNMENT_SUMMARY.md
 scratch/DESIGN_ALIGNMENT_REPORT.md
-packages/nemo_oo_agents-core/src/nemo_oo_agents/cli.py
-packages/nemo_oo_agents-tui/src/nemo_oo_agents_tui/cli.py
+packages/aster-core/src/aster/cli.py
+packages/aster-tui/src/aster_tui/cli.py
 
 # Prompt optimization experiment results
 util/prompt-optimization/results/*.json
@@ -319,9 +319,11 @@ debug_http_logs/
 .srt-settings.json
 # Debug handler dumps (written to cwd on SIGUSR2)
 debug_dump_*.txt
-# NeMo OO project directory (libraries, traces, config)
-.nemo_oo/
+# Aster project directory (libraries, traces, config)
+.aster/
+# Retained migration sources contain private configuration and sessions.
 .nooa/
+.nemo_oo/
 .nemo_oo_agents/
 # Shell config stubs (empty read-only files injected by sandbox)
 .zshrc

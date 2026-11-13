@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for nooa logging helpers."""
+"""Tests for aster logging helpers."""
 
 from __future__ import annotations
 
@@ -10,13 +10,13 @@ import uuid
 
 import pytest
 
-from nooa._logging import enable_logging
+from aster._logging import enable_logging
 
 
 @pytest.fixture()
 def fresh_logger():
     """Yield a unique logger and clean up all handlers added during the test."""
-    name = f"nooa.test_logging.{uuid.uuid4().hex[:8]}"
+    name = f"aster.test_logging.{uuid.uuid4().hex[:8]}"
     logger = logging.getLogger(name)
     original_handlers = list(logger.handlers)
 
@@ -33,7 +33,7 @@ def fresh_logger():
 
 
 def test_nullhandler_attached():
-    root = logging.getLogger("nooa")
+    root = logging.getLogger("aster")
     assert any(isinstance(h, logging.NullHandler) for h in root.handlers)
 
 
@@ -41,7 +41,7 @@ def test_nullhandler_attached():
 
 
 def test_enable_logging_importable():
-    from nooa import enable_logging as el
+    from aster import enable_logging as el
 
     assert callable(el)
 

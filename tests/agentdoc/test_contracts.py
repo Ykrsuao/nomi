@@ -21,7 +21,7 @@ Contracts covered:
 
 import pytest
 
-from nooa.agentdoc import doc, hidden, pformat, spec
+from aster.agentdoc import doc, hidden, pformat, spec
 
 # ---------------------------------------------------------------------------
 # 1. @hidden on @classmethod / @staticmethod — decorator order must not matter
@@ -624,8 +624,8 @@ class TestCallableReferencedTypesFormatting:
 
     def test_no_triple_newline_in_callable_doc(self):
         """Callable doc with referenced types must never produce triple newlines."""
-        from nooa.agentdoc._pformat import _format_callable_info
-        from nooa.agentdoc.ext import CallableInfo
+        from aster.agentdoc._pformat import _format_callable_info
+        from aster.agentdoc.ext import CallableInfo
 
         info = CallableInfo(
             name="my_func",
@@ -638,8 +638,8 @@ class TestCallableReferencedTypesFormatting:
 
     def test_callable_doc_no_trailing_newline(self):
         """Callable doc must not end with a newline."""
-        from nooa.agentdoc._pformat import _format_callable_info
-        from nooa.agentdoc.ext import CallableInfo
+        from aster.agentdoc._pformat import _format_callable_info
+        from aster.agentdoc.ext import CallableInfo
 
         info = CallableInfo(
             name="my_func",
@@ -953,14 +953,14 @@ class TestSpecHiddenFalseFieldUnhide:
         return Parent
 
     def test_parent_field_is_hidden(self):
-        from nooa.agentdoc.visibility import is_hidden_field
+        from aster.agentdoc.visibility import is_hidden_field
 
         Parent = self._make_parent()
         assert is_hidden_field(Parent, "hidden_field") is True
         assert is_hidden_field(Parent, "visible_field") is False
 
     def test_child_inherits_hidden(self):
-        from nooa.agentdoc.visibility import is_hidden_field
+        from aster.agentdoc.visibility import is_hidden_field
 
         Parent = self._make_parent()
 
@@ -970,7 +970,7 @@ class TestSpecHiddenFalseFieldUnhide:
         assert is_hidden_field(Child, "hidden_field") is True
 
     def test_spec_hidden_false_unhides_in_subclass(self):
-        from nooa.agentdoc.visibility import is_hidden_field
+        from aster.agentdoc.visibility import is_hidden_field
 
         Parent = self._make_parent()
 
@@ -982,7 +982,7 @@ class TestSpecHiddenFalseFieldUnhide:
 
     def test_spec_hidden_false_does_not_affect_parent(self):
         """Unhiding in Child must not change Parent."""
-        from nooa.agentdoc.visibility import is_hidden_field
+        from aster.agentdoc.visibility import is_hidden_field
 
         Parent = self._make_parent()
 
@@ -1007,7 +1007,7 @@ class TestSpecHiddenFalseFieldUnhide:
         assert "hidden_field" in doc(obj)
 
     def test_spec_hidden_true_hides_visible_field(self):
-        from nooa.agentdoc.visibility import is_hidden_field
+        from aster.agentdoc.visibility import is_hidden_field
 
         class MyClass:
             visible: str = "shown"

@@ -36,10 +36,10 @@ import pytest
 from dotenv import find_dotenv, load_dotenv
 from pydantic import BaseModel
 
-from nooa import Agent
-from nooa.decorators import strategy
-from nooa.strategies import PredictStrategy
-from nooa.unifiedllm import get_llm_client
+from aster import Agent
+from aster.decorators import strategy
+from aster.strategies import PredictStrategy
+from aster.unifiedllm import get_llm_client
 
 load_dotenv(find_dotenv(usecwd=True), override=True)
 

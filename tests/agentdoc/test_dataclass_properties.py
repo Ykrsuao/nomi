@@ -4,8 +4,8 @@
 
 from dataclasses import dataclass
 
-from nooa.agentdoc import doc, hidden
-from nooa.agentdoc._structured import extract_type_info
+from aster.agentdoc import doc, hidden
+from aster.agentdoc._structured import extract_type_info
 
 
 class TestDataclassPropertyRendering:

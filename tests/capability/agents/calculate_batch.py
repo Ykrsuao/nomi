@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Batch calculation agent - interprets natural language math for multiple inputs."""
 
-from nooa import Agent
-from nooa.tools.method_writing_lib import MethodWriting
+from aster import Agent
+from aster.tools.method_writing_lib import MethodWriting
 
 
 class CalculateBatchAgent(Agent):

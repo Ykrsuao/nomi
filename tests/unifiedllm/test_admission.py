@@ -13,9 +13,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import litellm
 import pytest
 
-from nooa.runtime.harness_metrics import HarnessMetrics
-from nooa.runtime.middleware import LLMCallContext
-from nooa.unifiedllm import (
+from aster.runtime.harness_metrics import HarnessMetrics
+from aster.runtime.middleware import LLMCallContext
+from aster.unifiedllm import (
     AdmissionControl,
     AdmissionControlConfig,
     AdmissionController,
@@ -25,14 +25,14 @@ from nooa.unifiedllm import (
     RetryConfig,
     UnifiedLLM,
 )
-from nooa.unifiedllm.admission import (
+from aster.unifiedllm.admission import (
     AdmissionPolicy,
     _admission_controller_scope,
     _get_or_create_group,
     _reset_admission_groups_after_fork,
     _reset_admission_groups_for_tests,
 )
-from nooa.unifiedllm.unifiedllm import (
+from aster.unifiedllm.unifiedllm import (
     _record_admission_observation,
     _run_async_provider_call,
 )
@@ -426,7 +426,7 @@ async def test_queue_timeout_is_terminal_for_retry_wrapper():
         attempts += 1
         await policy.acquire(lambda _detail: None)
 
-    from nooa.unifiedllm.retry import with_retry
+    from aster.unifiedllm.retry import with_retry
 
     try:
         with pytest.raises(AdmissionTimeoutError):
@@ -722,7 +722,7 @@ def test_admission_observation_records_otel_event_and_harness_metrics():
         "max_in_flight": 2,
     }
 
-    from nooa.unifiedllm.unifiedllm import _llm_metrics_callback
+    from aster.unifiedllm.unifiedllm import _llm_metrics_callback
 
     token = _llm_metrics_callback.set(
         lambda event, value: harness.record_llm_queue(value) if event == "llm_queue" else None
@@ -739,6 +739,37 @@ def test_admission_observation_records_otel_event_and_harness_metrics():
     assert attrs["harness.llm_queue.queued"] == 1
     assert attrs["harness.llm_queue.max_depth"] == 3
     assert attrs["harness.llm_queue.wait.total_s"] == 0.25
+
+
+def test_queue_full_records_trace_and_rejection_metric():
+    """Queue overflow is neither an admitted nor a queued provider attempt."""
+    harness = HarnessMetrics()
+    span = MagicMock()
+    detail = {
+        "group": "bounded",
+        "outcome": "queue_full",
+        "queued": False,
+        "wait_s": 0.0,
+        "queue_depth": 2,
+        "max_in_flight": 1,
+        "max_pending": 2,
+    }
+    from aster.unifiedllm.unifiedllm import _llm_metrics_callback
+
+    token = _llm_metrics_callback.set(
+        lambda event, value: harness.record_llm_queue(value) if event == "llm_queue" else None
+    )
+    try:
+        with patch("opentelemetry.trace.get_current_span", return_value=span):
+            _record_admission_observation(detail)
+    finally:
+        _llm_metrics_callback.reset(token)
+    span.add_event.assert_called_once_with("llm.queue", attributes=detail)
+    attrs = harness.to_span_attributes()
+    assert attrs["harness.llm_queue.full_rejections"] == 1
+    assert attrs.get("harness.llm_queue.admissions", 0) == 0
+    assert attrs.get("harness.llm_queue.queued", 0) == 0
+    assert attrs["harness.llm_queue.max_depth"] == 2
 
 
 def test_call_cap_rejection_records_harness_metric():

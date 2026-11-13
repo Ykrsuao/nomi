@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from nooa import Agent
+from aster import Agent
 
 
 class Widget:

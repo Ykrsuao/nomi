@@ -4,13 +4,13 @@
 #   repl_exploration, needle_in_haystack, large_data_find, large_data_extract, large_data_count
 #
 # Run:
-#   nooa eval --config tests/capability/config_phase2.yaml --runs 3
+#   aster eval --config tests/capability/config_phase2.yaml --runs 3
 #
 # Single model:
-#   nooa eval --config tests/capability/config_phase2.yaml --models claude-haiku-azure
+#   aster eval --config tests/capability/config_phase2.yaml --models claude-haiku-azure
 #
 # Debug single test:
-#   nooa eval --config tests/capability/config_phase2.yaml --test sentiment_batch --limit 1
+#   aster eval --config tests/capability/config_phase2.yaml --test sentiment_batch --limit 1
 
 name: capability-phase2
 no_cache: true
@@ -18,7 +18,8 @@ description: "Phase 2 code-path tests — batch, JSON, REPL, needle, large-data 
 
 # =============================================================================
 # MODELS — resolved from the unifiedllm registry.
-# NVIDIA aliases ship in the nemo-oo-agents-nvidia package — install it (or the [nvidia] extra). No env var needed.
+# Configure these aliases with `uv run aster connect` or .aster/llm_config.yaml.
+# Set the credentials required by your chosen provider; aliases are not bundled.
 # =============================================================================
 
 agent_models:

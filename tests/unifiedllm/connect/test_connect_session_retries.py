@@ -8,8 +8,8 @@ from copy import deepcopy
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
-from nooa.unifiedllm.connect._session import _history_prefix_stable, session_steps
+from aster.unifiedllm import connect
+from aster.unifiedllm.connect._session import _history_prefix_stable, session_steps
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 

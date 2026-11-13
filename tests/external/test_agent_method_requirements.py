@@ -8,10 +8,10 @@ Tests for agent method requirements:
 
 import pytest
 
-from nooa import strategy
-from nooa.agent import Agent
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import strategy
+from aster.agent import Agent
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM (can be overridden at instantiation)
 _TEST_LLM = FakeLLMClient()

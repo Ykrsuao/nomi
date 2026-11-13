@@ -17,9 +17,9 @@ from dataclasses import replace
 import httpx
 import pytest
 
-from nooa.media_policy import unsupported_input_reason
-from nooa.unifiedllm import connect
-from nooa.unifiedllm.connect._media import pdf_fixture, png_fixture, video_fixture, wav_fixture
+from aster.media_policy import unsupported_input_reason
+from aster.unifiedllm import connect
+from aster.unifiedllm.connect._media import pdf_fixture, png_fixture, video_fixture, wav_fixture
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -327,7 +327,7 @@ async def test_abort_before_media_send_closes_iterator_without_more_requests(mon
     ],
 )
 def test_unrelated_provider_errors_with_media_nouns_are_inconclusive(kind, message, param):
-    from nooa.unifiedllm.connect._media import explicitly_rejected
+    from aster.unifiedllm.connect._media import explicitly_rejected
 
     class Error(Exception):
         status_code = 400
@@ -337,7 +337,7 @@ def test_unrelated_provider_errors_with_media_nouns_are_inconclusive(kind, messa
 
 
 def test_media_wire_evidence_rejects_dropped_attachment_and_text_echo():
-    from nooa.unifiedllm.connect._media import media_on_wire
+    from aster.unifiedllm.connect._media import media_on_wire
 
     proposal = plan(test_media_inputs=["image"])
     probe = proposal.probes[-1]
@@ -369,7 +369,7 @@ def test_media_wire_evidence_rejects_dropped_attachment_and_text_echo():
 
 @pytest.mark.parametrize("kind", ["image", "video"])
 async def test_adapter_dropping_media_even_with_expected_answer_is_inconclusive(monkeypatch, kind):
-    from nooa.unifiedllm.unifiedllm import CompletionClient
+    from aster.unifiedllm.unifiedllm import CompletionClient
 
     original = CompletionClient._prepare_media_messages
 
@@ -549,7 +549,7 @@ async def test_media_unobserved_request_retains_unknown_classification(monkeypat
 def test_media_reason_uses_runtime_finish_reason_before_answer(
     content, finish, correct, settings, cause
 ):
-    from nooa.unifiedllm.connect._media import reply_failure_reason
+    from aster.unifiedllm.connect._media import reply_failure_reason
 
     assert reply_failure_reason(
         "image",
@@ -649,7 +649,7 @@ def test_video_independently_decodes_ordered_frames(tmp_path):
 
 
 def test_video_wire_evidence_requires_video_slot_not_text_or_images():
-    from nooa.unifiedllm.connect._media import media_on_wire
+    from aster.unifiedllm.connect._media import media_on_wire
 
     probe = plan(test_media_inputs=["video"]).probes[-1]
     url = probe.body["messages"][0]["content"][-1]["video_url"]["url"]
@@ -706,7 +706,7 @@ async def test_unfinished_tool_turn_cannot_authorize_or_pass_video(monkeypatch, 
 async def test_native_access_adapter_contract_and_parse_failure_usage(
     monkeypatch, style, kind, value
 ):
-    from nooa.unifiedllm.connect._media import media_on_wire
+    from aster.unifiedllm.connect._media import media_on_wire
 
     sent = []
 
@@ -771,7 +771,7 @@ async def test_native_access_adapter_contract_and_parse_failure_usage(
 def test_wire_evidence_rejects_duplicate_original_attachments(kind):
     from copy import deepcopy
 
-    from nooa.unifiedllm.connect._media import media_on_wire
+    from aster.unifiedllm.connect._media import media_on_wire
 
     body = plan(test_media_inputs=[kind]).probes[-1].body
     duplicate = deepcopy(body)
@@ -791,7 +791,7 @@ def test_wire_evidence_rejects_duplicate_original_attachments(kind):
 )
 def test_text_only_server_refusals_count_as_rejected(message, kind):
     """Hub/vLLM refusals for media on text-only models are explicit, not inconclusive."""
-    from nooa.unifiedllm.connect._media import explicitly_rejected
+    from aster.unifiedllm.connect._media import explicitly_rejected
 
     class Error(Exception):
         status_code = 400
@@ -801,7 +801,7 @@ def test_text_only_server_refusals_count_as_rejected(message, kind):
 
 
 def test_unrelated_content_part_rejection_does_not_reject_other_formats():
-    from nooa.unifiedllm.connect._media import explicitly_rejected
+    from aster.unifiedllm.connect._media import explicitly_rejected
 
     class Error(Exception):
         status_code = 400
@@ -824,7 +824,7 @@ def test_unrelated_content_part_rejection_does_not_reject_other_formats():
     ],
 )
 def test_more_hub_media_refusal_phrasings(message, kind):
-    from nooa.unifiedllm.connect._media import explicitly_rejected
+    from aster.unifiedllm.connect._media import explicitly_rejected
 
     class Error(Exception):
         status_code = 400
@@ -834,7 +834,7 @@ def test_more_hub_media_refusal_phrasings(message, kind):
 
 
 def test_internal_errors_stay_inconclusive():
-    from nooa.unifiedllm.connect._media import explicitly_rejected
+    from aster.unifiedllm.connect._media import explicitly_rejected
 
     class Error(Exception):
         status_code = 400

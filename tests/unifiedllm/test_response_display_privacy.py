@@ -5,13 +5,13 @@
 import pytest
 from pydantic import BaseModel, Field
 
-from nooa.agentdoc import pformat
-from nooa.context_blocks import MarkdownBlockFormatter, XMLBlockFormatter
-from nooa.events import PythonOutput, ResultStatus
-from nooa.llm_types import AssistantReasoning, AssistantText, LLMResponse, ToolCall
-from nooa.runtime.event_manager import EventManager
-from nooa.tracing._hooks_impl import OpenInferenceHooks
-from nooa.tracing._secret_scrubber import scrub_value
+from aster.agentdoc import pformat
+from aster.context_blocks import MarkdownBlockFormatter, XMLBlockFormatter
+from aster.events import PythonOutput, ResultStatus
+from aster.llm_types import AssistantReasoning, AssistantText, LLMResponse, ToolCall
+from aster.runtime.event_manager import EventManager
+from aster.tracing._hooks_impl import OpenInferenceHooks
+from aster.tracing._secret_scrubber import scrub_value
 
 SECRET = "private-provider-state-12345"
 

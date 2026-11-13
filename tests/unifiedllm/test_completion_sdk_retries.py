@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """RetryConfig is the only endpoint retry budget for OpenAI-compatible chat routes.
 
-LiteLLM defaults the OpenAI SDK to two retries of its own, so each NOOA attempt
+LiteLLM defaults the OpenAI SDK to two retries of its own, so each ASTER attempt
 became three HTTP requests. These tests count requests at the HTTP transport.
 """
 
@@ -15,8 +15,8 @@ import pytest
 from litellm.caching.llm_caching_handler import LLMClientCache
 from litellm.llms.openai.openai import OpenAIChatCompletion
 
-from nooa.unifiedllm import CompletionClient, RetryConfig
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster.unifiedllm import CompletionClient, RetryConfig
+from aster.unifiedllm.unifiedllm import _ClientHttp
 
 OK_BODY = {
     "id": "chatcmpl-test",
@@ -42,7 +42,7 @@ def _retry(max_retries: int) -> RetryConfig:
 
 
 def _install(monkeypatch, transport: Any) -> None:
-    """Route NOOA's owned clients and LiteLLM's default pool to ``transport``."""
+    """Route ASTER's owned clients and LiteLLM's default pool to ``transport``."""
     # LiteLLM caches SDK clients per event-loop id, which a later test's loop
     # can reuse; a cached client would still hold an earlier test's transport.
     monkeypatch.setattr(litellm, "in_memory_llm_clients_cache", LLMClientCache())
@@ -61,12 +61,12 @@ def _install(monkeypatch, transport: Any) -> None:
     )
 
 
-def _client(nooa_retries: int, **config) -> CompletionClient:
+def _client(aster_retries: int, **config) -> CompletionClient:
     return CompletionClient(
         "openai/m",
         api_base="https://endpoint.example/v1",
         api_key="key",
-        retry_config=_retry(nooa_retries),
+        retry_config=_retry(aster_retries),
         **config,
     )
 
@@ -123,7 +123,7 @@ async def test_owned_sdk_client_has_no_hidden_retries(monkeypatch, is_async):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("is_async", [False, True])
-async def test_transient_error_recovers_on_nooa_retry(monkeypatch, is_async):
+async def test_transient_error_recovers_on_aster_retry(monkeypatch, is_async):
     statuses: list[int] = []
 
     def respond(request: httpx.Request) -> httpx.Response:
@@ -185,7 +185,7 @@ async def test_cancellation_stops_without_further_attempts(monkeypatch):
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await asyncio.wait_for(task, timeout=10)
-        # Neither NOOA nor the SDK may treat cancellation as a retryable failure.
+        # Neither ASTER nor the SDK may treat cancellation as a retryable failure.
         await asyncio.sleep(0.2)
     finally:
         await client.aclose()
@@ -196,7 +196,7 @@ async def test_cancellation_stops_without_further_attempts(monkeypatch):
 @pytest.mark.asyncio
 async def test_concurrent_calls_keep_their_own_sdk_retry_setting(monkeypatch):
     # LiteLLM writes max_retries onto the SDK client it is given. Concurrent
-    # calls on one NOOA client must not read each other's value.
+    # calls on one ASTER client must not read each other's value.
     attempts = {"explicit": 0, "default": 0}
 
     async def respond(request: httpx.Request) -> httpx.Response:

@@ -10,13 +10,13 @@ from typing import Annotated, Any
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.agentdoc import spec
-from nooa.config import CodeActConfig
-from nooa.strategies import CodeActStrategy
-from nooa.strategies.current_call import CurrentCall, signature_parameter_names
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.agentdoc import spec
+from aster.config import CodeActConfig
+from aster.strategies import CodeActStrategy
+from aster.strategies.current_call import CurrentCall, signature_parameter_names
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 def _execute_result(expression: str) -> LLMResponse:

@@ -13,7 +13,7 @@ Pipeline stages:
 4. Write: Append result to experiment file
 
 Output Format:
-Results are written in .noo-eval.jsonl format using typed EvalTestResult models.
+Results are written in .aster-eval.jsonl format using typed EvalTestResult models.
 Each result includes:
 - test_id: Unique ID including model and run suffix
 - base_test_id: For grouping runs of the same test
@@ -188,7 +188,7 @@ async def process_sample(
 
     # Set session for this async context (supports concurrent samples)
     try:
-        from nooa.tracing import set_session
+        from aster.tracing import set_session
 
         config.trace_dir.mkdir(parents=True, exist_ok=True)
         set_session(session_id)
@@ -214,7 +214,7 @@ async def process_sample(
 
         _trace = None
         try:
-            from nooa.tracing import flush_traces
+            from aster.tracing import flush_traces
 
             flush_traces()
         except ImportError:
@@ -233,7 +233,7 @@ async def process_sample(
             except Exception:
                 pass
             try:
-                from nooa.trace_explorer import TraceExplorer
+                from aster.trace_explorer import TraceExplorer
 
                 _trace = await TraceExplorer.from_viewer(config.otlp_base_url, session_id)
             except Exception as e:
@@ -245,7 +245,7 @@ async def process_sample(
                 )
         elif result.trace_file is not None:
             try:
-                from nooa.trace_explorer import TraceExplorer
+                from aster.trace_explorer import TraceExplorer
 
                 _trace = await TraceExplorer.from_file(str(result.trace_file))
             except Exception:
@@ -253,7 +253,7 @@ async def process_sample(
     finally:
         if config.use_otlp:
             try:
-                from nooa.tracing import set_session
+                from aster.tracing import set_session
 
                 set_session(None)
             except ImportError:
@@ -270,7 +270,7 @@ async def process_sample(
         # JSONL-only mode: flush then confirm the file landed on disk.
         trace_file_str = str(trace_file)
         try:
-            from nooa.tracing import flush_traces
+            from aster.tracing import flush_traces
 
             flush_traces()
             await asyncio.sleep(0.1)

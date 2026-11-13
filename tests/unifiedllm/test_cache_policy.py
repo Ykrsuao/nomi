@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock, patch
 import litellm
 import pytest
 
-from nooa.unifiedllm import CacheBoundary, CompletionClient, ResponsesClient
-from nooa.unifiedllm.cache_policy import apply_cache_policy
+from aster.unifiedllm import CacheBoundary, CompletionClient, ResponsesClient
+from aster.unifiedllm.cache_policy import apply_cache_policy
 
 
 @pytest.mark.parametrize("client_type", [CompletionClient, ResponsesClient])
@@ -172,16 +172,16 @@ def test_anthropic_policy_rejects_responses_wire_format():
 def test_dictionary_boundaries_are_rejected(mapping, invalid):
     with pytest.raises(ValueError, match="Pass CacheBoundary"):
         apply_cache_policy(
-            [{"role": "metadata", "nooa_cache_boundary": invalid}], mapping, responses=True
+            [{"role": "metadata", "aster_cache_boundary": invalid}], mapping, responses=True
         )
 
 
 @pytest.mark.parametrize(
     "message",
     [
-        {"nooa_cache_boundary": True},
-        {"role": "user", "content": "must not disappear", "nooa_cache_boundary": True},
-        {"role": "metadata", "content": "must not disappear", "nooa_cache_boundary": True},
+        {"aster_cache_boundary": True},
+        {"role": "user", "content": "must not disappear", "aster_cache_boundary": True},
+        {"role": "metadata", "content": "must not disappear", "aster_cache_boundary": True},
     ],
 )
 def test_dictionary_marker_cannot_be_attached_to_a_model_message(message):
@@ -206,7 +206,7 @@ def test_dictionary_marker_cannot_be_attached_to_a_model_message(message):
 def test_projection_does_not_silently_drop_misplaced_boundaries(client_type, message):
     with client_type("openai/gpt-5.6", api_key="test") as client:
         with pytest.raises(ValueError, match="Pass CacheBoundary"):
-            client.call([{**message, "nooa_cache_boundary": True}])
+            client.call([{**message, "aster_cache_boundary": True}])
 
 
 @pytest.mark.asyncio
@@ -275,10 +275,10 @@ def test_openai_million_token_scale_history_bounds_marking_and_shares_content():
             ]
         )
     live = {"role": "user", "content": "live"}
-    from nooa.unifiedllm.cache_policy import _mark_responses_content
+    from aster.unifiedllm.cache_policy import _mark_responses_content
 
     with patch(
-        "nooa.unifiedllm.cache_policy._mark_responses_content",
+        "aster.unifiedllm.cache_policy._mark_responses_content",
         wraps=_mark_responses_content,
     ) as mark:
         first, _, _ = apply_cache_policy(

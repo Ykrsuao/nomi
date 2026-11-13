@@ -31,12 +31,12 @@ from typing import Literal
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.atif import Trajectory, enable_atif
-from nooa.config import CodeActConfig
-from nooa.standalone import _atif_exporter_var
-from nooa.strategies import CodeActStrategy, PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.atif import Trajectory, enable_atif
+from aster.config import CodeActConfig
+from aster.standalone import _atif_exporter_var
+from aster.strategies import CodeActStrategy, PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 from tests.atif.normative import assert_atif_normative
 
 Category = Literal["bug", "feature", "question"]
@@ -71,8 +71,8 @@ def _ret(result: object, call_id: str) -> ToolCall:
 def _isolated_agent_init():
     """Restore ``Agent.__init__`` after each test so ``enable_atif()``
     monkey-patching doesn't bleed into other tests."""
-    from nooa import atif as atif_module
-    from nooa.agent import Agent
+    from aster import atif as atif_module
+    from aster.agent import Agent
 
     orig_init = Agent.__init__
     orig_patched = atif_module.install._AGENT_INIT_PATCHED

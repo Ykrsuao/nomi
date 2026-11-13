@@ -18,8 +18,8 @@ framework contract so we catch regressions.
 
 import pytest
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 _TEST_LLM = FakeLLMClient()
 

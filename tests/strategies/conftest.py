@@ -52,7 +52,7 @@ def mock_runtime(mock_agent, mock_event_manager):
         @property
         def truncation_config(self):
             """Truncation configuration."""
-            from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+            from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
 
             return DEFAULT_TRUNCATION_CONFIG
 

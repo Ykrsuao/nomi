@@ -9,9 +9,9 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
-from nooa.llm_types import LLMResponse, LLMUsage
-from nooa.strategies.predict import PredictStrategy
-from nooa.unifiedllm import connect, registry
+from aster.llm_types import LLMResponse, LLMUsage
+from aster.strategies.predict import PredictStrategy
+from aster.unifiedllm import connect, registry
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -139,7 +139,7 @@ async def test_saved_entry_sends_the_same_request_as_connect(tmp_path, monkeypat
     registry.reload_registry(path)
     client = registry.get_llm_client("local")
     try:
-        from nooa.unifiedllm.connect._baseline import typed_baseline
+        from aster.unifiedllm.connect._baseline import typed_baseline
 
         _, scalar = await typed_baseline(client)
         assert scalar == 323

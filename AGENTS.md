@@ -1,4 +1,4 @@
-# NVIDIA OO Agents Framework
+# Aster Framework
 
 Python framework for building AI agents. An agent is a Python object — its methods are its capabilities.
 
@@ -64,7 +64,7 @@ import re
 from pathlib import Path
 from typing import Annotated
 
-from nooa import Agent, hidden, spec
+from aster import Agent, hidden, spec
 
 CATEGORIES = ["billing", "technical", "general"]   # visible to LLM by default
 MAX_RESULTS = 10
@@ -103,7 +103,7 @@ class MyAgent(Agent, llm=llm):
 `ContextApi` and `EventsApi` are **always present** on every Agent as `self.context` and `self.events`, but **hidden from the LLM by default**. Subclasses opt in by calling `spec(self, "context", hidden=False)` (and/or `spec(self, "events", hidden=False)`) in their `__init__` to expose them via `doc(self)`.
 
 ```python
-from nooa.agentdoc import spec
+from aster.agentdoc import spec
 
 class MyAgent(Agent, llm=llm):
     def __init__(self, **kwargs):
@@ -140,7 +140,7 @@ Common typing constructs and framework symbols (`asyncio`, `typing`, strategies,
   each LLM turn.
 
 ```python
-from nooa import Context
+from aster import Context
 
 # Fixed: set once, rendered in the cacheable prefix
 self.context["plan"] = Context(plan.format(), prefix=True)
@@ -151,36 +151,36 @@ self.context["project_state"] = Context(expr="self.format_project_state()")
 
 ### Model onboarding and media
 
-- Recommend `uv add "nooa[cli]"` for model setup; humans can use
-  `uv run nooa connect`. Agents follow the canonical headless workflow in
-  [nooa-connect](skills/nooa-connect/SKILL.md): obtain permission for configuration,
+- From this checkout, use `uv sync --extra cli` for model setup; humans can use
+  `uv run aster connect`. Agents follow the canonical headless workflow in
+  [aster-connect](skills/aster-connect/SKILL.md): obtain permission for configuration,
   network checks and writes, then use stages. Use saved aliases in agent code.
   Registry semantics and offline setup also belong in
-  `skills/nooa-model-configuration/SKILL.md` and `docs/model-connect.md`.
+  `skills/aster-model-configuration/SKILL.md` and `docs/model-connect.md`.
   Native Windows runs directly. Shell commands use PowerShell there; use bash
   on Linux/macOS. Microsandbox is required only for sandbox execution.
-- Import `Image`, `Audio`, `Video`, and `File` from `nooa.media`. Pass them as
+- Import `Image`, `Audio`, `Video`, and `File` from `aster.media`. Pass them as
   method arguments or use `show()` while CodeAct runs. Configure `media_inputs`
   for each model; formats left out are replaced with text notices. `File`
-  supports PDFs. See `docs/media.md` and `skills/nooa-media/SKILL.md`.
+  supports PDFs. See `docs/media.md` and `skills/aster-media/SKILL.md`.
 
 ### Tracing
 
-Tracing is automatic when the dev viewer is running (`nooa start-dev`, port 5001). To write JSONL files instead:
+Tracing is automatic when the dev viewer is running (`aster start-dev`, port 5001). To write JSONL files instead:
 
 ```python
-from nooa.tracing import enable_tracing, exporters
+from aster.tracing import enable_tracing, exporters
 
 enable_tracing(exporters=[exporters.jsonl("traces/my_agent")])
 ```
 
-Trace viewer runs on port 5001 by default (`nooa start-dev --port` to change). See `examples/quickstart/06_tracing.py` for a full example.
+Trace viewer runs on port 5001 by default (`aster start-dev --port` to change). See `examples/quickstart/06_tracing.py` for a full example.
 
 - **All public methods are traced by default.** Private (`_private`) and dunder (`__method__`) methods are also traced unless you opt out.
 - **Use `@no_trace` to exclude from traces.** Decorate any method (public, private, or dunder) with `@no_trace` to prevent it from appearing in traces while still allowing generation.
 
 ```python
-from nooa import no_trace
+from aster import no_trace
 
 class MyAgent(Agent, llm=llm):
     @no_trace
@@ -246,7 +246,7 @@ async def task(self, data: str):
     ...
 ```
 
-For deeper authoring guidance, see `skills/nooa-agent-authoring/SKILL.md`.
+For deeper authoring guidance, see `skills/aster-agent-authoring/SKILL.md`.
 
 ## Python & Dependencies
 

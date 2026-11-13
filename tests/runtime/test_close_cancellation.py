@@ -4,7 +4,7 @@
 
 import asyncio
 
-from nooa.runtime.event_manager import EventManager
+from aster.runtime.event_manager import EventManager
 
 
 async def test_repeated_cancellation_and_concurrent_close_wait_for_all_callbacks():

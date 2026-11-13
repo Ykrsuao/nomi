@@ -81,7 +81,7 @@ def test_run_solver_exit_requires_result(tmp_path, monkeypatch, harness_exit, ha
     launcher.terminate.assert_called_once()
     assert all(handle.closed for handle in log_handles)
     assert all(not directory.exists() for directory in neutral_dirs)
-    [run_dir] = results_root.glob("nemo_solver/*_synthetic_mdfiles")
+    [run_dir] = results_root.glob("aster_solver/*_synthetic_mdfiles")
     if has_result:
         assert json.loads((run_dir / "result.json").read_text()) == result
         assert exit_code == 0

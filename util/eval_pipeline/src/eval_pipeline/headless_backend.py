@@ -47,8 +47,8 @@ def _make_headless_app():
     import fastapi
     from fastapi.middleware.cors import CORSMiddleware
 
-    from nooa.viewer import otlp_store
-    from nooa.viewer.trace_routes import router as trace_router
+    from aster.viewer import otlp_store
+    from aster.viewer.trace_routes import router as trace_router
 
     _ingest_queue: asyncio.Queue[bytes | asyncio.Event] = asyncio.Queue()
     _write_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="headless-writer")
@@ -234,7 +234,7 @@ class HeadlessOtlpBackend:
 
     def start(self) -> str:
         """Start the backend. Returns base URL, e.g. 'http://127.0.0.1:54321'."""
-        from nooa.viewer import otlp_store
+        from aster.viewer import otlp_store
 
         self._tmpdir = tempfile.TemporaryDirectory()
         db_path = Path(self._tmpdir.name) / "eval_traces.db"

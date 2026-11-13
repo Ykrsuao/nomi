@@ -4,14 +4,14 @@
 
 import pytest
 
-from nooa import Agent
-from nooa.config.truncation_config import (
+from aster import Agent
+from aster.config.truncation_config import (
     CaptureConfig,
     FormatConfig,
     MediaCaptureConfig,
     TruncationConfig,
 )
-from nooa.unifiedllm import FakeLLMClient
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM
 _TEST_LLM = FakeLLMClient()
@@ -254,7 +254,7 @@ class TestTokenBudgetIntegration:
         Regression test: render_context() raises ValueError if context_limit is non-None
         but count_tokens is not provided. The actor must pass count_tokens to render_context().
         """
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.unifiedllm import FakeLLMClient
 
         # Return a return_result tool call so CodeActStrategy completes successfully
         llm = FakeLLMClient.with_tool_call("return_result", {"result": "done"})
@@ -274,7 +274,7 @@ class TestTokenBudgetIntegration:
     @pytest.mark.asyncio
     async def test_max_event_tokens_is_accepted_but_inert(self):
         """Agent with max_event_tokens set should not raise ValueError during generation."""
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient.with_tool_call("return_result", {"result": "summary"})
 
@@ -298,7 +298,7 @@ class TestTokenBudgetIntegration:
         """
         import json
 
-        from nooa.unifiedllm import LLMResponse, ToolCall
+        from aster.unifiedllm import LLMResponse, ToolCall
 
         class NoCountLLM:
             """Minimal fake LLM without count_tokens — returns a return_result."""
@@ -338,7 +338,7 @@ class TestMethodLevelTruncationConfig:
 
     def test_strategy_decorator_stores_truncation_attribute(self):
         """@strategy(truncation=...) should store the config as _strategy_truncation."""
-        from nooa import strategy
+        from aster import strategy
 
         tc = TruncationConfig(capture=CaptureConfig(max_stdout=1234))
 
@@ -358,7 +358,7 @@ class TestMethodLevelTruncationConfig:
 
     def test_strategy_decorator_without_truncation_stores_none(self):
         """@strategy() without truncation= should set _strategy_truncation to None."""
-        from nooa import strategy
+        from aster import strategy
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy()
@@ -376,9 +376,9 @@ class TestMethodLevelTruncationConfig:
         We use a custom strategy that captures the truncation config visible through
         runtime during strategy execution, then verify it is the merged (method-level) config.
         """
-        from nooa import strategy
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         captured_tc = {}
 
@@ -430,9 +430,9 @@ class TestMethodLevelTruncationConfig:
         a small limit (200 chars). Code executed during that method should be truncated
         at 200 chars.
         """
-        from nooa import strategy
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         execution_results = {}
 
@@ -505,9 +505,9 @@ for i in range(4):
     @pytest.mark.asyncio
     async def test_method_level_media_capture_limit_applied_to_execute_code(self):
         """Method-level truncation config should override agent-level media limit."""
-        from nooa import strategy
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         execution_results = {}
 
@@ -557,8 +557,8 @@ for i in range(4):
     @pytest.mark.asyncio
     async def test_method_level_truncation_does_not_affect_other_methods(self):
         """A truncation override on one method should not affect another method."""
-        from nooa import strategy
-        from nooa.strategies.codeact import CodeActStrategy
+        from aster import strategy
+        from aster.strategies.codeact import CodeActStrategy
 
         llm = FakeLLMClient.with_tool_call("return_result", {"result": "done"})
 
@@ -595,7 +595,7 @@ for i in range(4):
 
     def test_truncation_config_merge_at_method_level(self):
         """Method-level config merges with agent config (method fields win)."""
-        from nooa import strategy
+        from aster import strategy
 
         class TestAgent(
             Agent,
@@ -630,9 +630,9 @@ for i in range(4):
 
         This verifies the context var is properly reset in the finally block.
         """
-        from nooa import strategy
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         captured = {}
 
@@ -686,10 +686,10 @@ for i in range(4):
         capture). This test pins BOTH facts so the agent-level render behavior
         can't silently regress to method-level.
         """
-        from nooa import strategy
-        from nooa.runtime.actor import _current_llm_var
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.runtime.actor import _current_llm_var
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         captured = {}
 
@@ -748,9 +748,9 @@ for i in range(4):
         """
         import asyncio
 
-        from nooa import strategy
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         captured = {}
 
@@ -811,9 +811,9 @@ for i in range(4):
         own method-level config during execution, and the outer config is
         restored once the inner call returns.
         """
-        from nooa import strategy
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         captured: dict = {}
 
@@ -883,10 +883,10 @@ class TestPerCallTruncationRendering:
     @pytest.mark.asyncio
     async def test_method_level_event_format_applies_only_to_matching_call_events(self):
         """Verify method-level event_format applies only to events from that method."""
-        from nooa import strategy
-        from nooa.events import Error
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.events import Error
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         class EventAddingStrategy(GenerationStrategy):
             name = "EVENT_ADDING"
@@ -921,7 +921,7 @@ class TestPerCallTruncationRendering:
 
         # _prepare_context deliberately does not serialize events; render through
         # _build_messages so the per-call event_format resolver is exercised.
-        from nooa.runtime.actor import _current_llm_var
+        from aster.runtime.actor import _current_llm_var
 
         token = _current_llm_var.set(_TEST_LLM)
         try:
@@ -937,9 +937,9 @@ class TestPerCallTruncationRendering:
     @pytest.mark.asyncio
     async def test_method_level_context_block_format_does_not_rerender_whole_context(self):
         """Verify method-level truncation does not re-render existing context blocks."""
-        from nooa import strategy
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         class BuildingStrategy(GenerationStrategy):
             name = "BUILDING"
@@ -992,12 +992,12 @@ class TestPerCallTruncationRendering:
         import tempfile
         from pathlib import Path
 
-        from nooa import strategy
-        from nooa.events import Error
-        from nooa.runtime.actor import _current_llm_var
-        from nooa.storage import SQLiteStorageManager
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster import strategy
+        from aster.events import Error
+        from aster.runtime.actor import _current_llm_var
+        from aster.storage import SQLiteStorageManager
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         class EventAddingStrategy(GenerationStrategy):
             name = "EVENT_ADDING_RESUME"

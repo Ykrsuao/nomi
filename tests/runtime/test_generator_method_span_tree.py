@@ -21,9 +21,9 @@ import pytest
 from opentelemetry import trace
 from opentelemetry.trace import StatusCode
 
-from nooa import Agent
-from nooa.runtime.hooks import get_hooks
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.runtime.hooks import get_hooks
+from aster.unifiedllm import FakeLLMClient
 
 
 @pytest.fixture
@@ -34,16 +34,16 @@ def in_memory_spans(monkeypatch):
         InMemorySpanExporter,
     )
 
-    from nooa.tracing import NOOAInstrumentor
+    from aster.tracing import ASTERInstrumentor
 
     # Keep Agent.__init__ from replacing this fixture-local backend with the
     # automatically discovered dev-viewer backend on the first instantiation.
-    monkeypatch.setattr("nooa.agent._auto_tracing_attempted", True)
+    monkeypatch.setattr("aster.agent._auto_tracing_attempted", True)
 
     exporter = InMemorySpanExporter()
     provider = TracerProvider()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
-    instrumentor = NOOAInstrumentor()
+    instrumentor = ASTERInstrumentor()
     instrumentor.instrument(tracer_provider=provider)
     try:
         yield exporter
@@ -127,7 +127,7 @@ async def test_abandoned_generator_span_is_still_exported(in_memory_spans):
     """
     import asyncio
 
-    from nooa.tracing._hooks_impl import _get_active_spans
+    from aster.tracing._hooks_impl import _get_active_spans
 
     agent = _GeneratorAgent(llm=FakeLLMClient())
 
@@ -152,7 +152,7 @@ async def test_abandoned_generator_span_is_still_exported(in_memory_spans):
 @pytest.mark.asyncio
 async def test_generator_span_reactivates_across_tasks(in_memory_spans):
     """Each resume restores native OTel context without leaking it to consumers."""
-    from nooa.tracing._hooks_impl import _get_active_spans
+    from aster.tracing._hooks_impl import _get_active_spans
 
     agent = _GeneratorAgent(llm=FakeLLMClient())
     stream = agent.produce(2)
@@ -200,7 +200,7 @@ async def test_generator_span_reactivates_across_tasks(in_memory_spans):
 @pytest.mark.asyncio
 async def test_generator_span_reactivates_in_independently_rooted_task_context(in_memory_spans):
     """The originating hooks survive a resume in a task that inherited no hooks."""
-    from nooa.tracing._hooks_impl import _get_active_spans
+    from aster.tracing._hooks_impl import _get_active_spans
 
     agent = _GeneratorAgent(llm=FakeLLMClient())
     stream = agent.produce(2)

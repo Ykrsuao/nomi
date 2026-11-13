@@ -43,16 +43,16 @@ to follow semantic versioning.
   `context_window` only when an entry's route matches its own, including the
   resolved key when the client passes `api_key`; otherwise it falls back to
   LiteLLM model metadata.
-- Windows: WSL 2 is the supported way to run nooa on Windows. Native Windows is
-  unsupported: `import nooa` raises `UnsupportedPlatformError` (an
-  `ImportError`) and the `nooa` command exits with one line pointing to WSL 2,
-  unless `NOOA_SKIP_PLATFORM_CHECK=1` is set. With the override, the pure-Python
+- Windows: WSL 2 is the supported way to run aster on Windows. Native Windows is
+  unsupported: `import aster` raises `UnsupportedPlatformError` (an
+  `ImportError`) and the `aster` command exits with one line pointing to WSL 2,
+  unless `ASTER_SKIP_PLATFORM_CHECK=1` is set. With the override, the pure-Python
   core (agents, PredictStrategy, in-process CodeAct, in-memory storage) and
-  `nooa connect` work and are tested in CI (the registry lock uses `filelock`
+  `aster connect` work and are tested in CI (the registry lock uses `filelock`
   there; POSIX keeps `fcntl`), redirected CLI output is written as UTF-8, and
   POSIX-only features (bash sessions and shell tools, the CodeAct sandbox,
   file-backed SQLite storage, `monitor()`) raise `PosixOnlyFeatureError` naming
-  WSL 2. Previously `import nooa` failed on Windows with `fcntl`/`SIGUSR2`
+  WSL 2. Previously `import aster` failed on Windows with `fcntl`/`SIGUSR2`
   errors. CI adds a native-Windows smoke, a WSL quick check on every PR, and a
   nightly full suite under WSL.
 - CodeAct and PurePython `max_retries` now count only consecutive LLM API
@@ -61,7 +61,7 @@ to follow semantic versioning.
   call. Previously a few scattered transient endpoint errors could end a long
   turn even though every retry succeeded.
 - Published minimum versions now exclude the vulnerable releases of
-  dependencies installed through nooa, so `pip install -U nooa` gets the fixes
+  dependencies installed through aster, so `pip install -U aster` gets the fixes
   too: `anyio>=4.15.1` and `urllib3>=2.8.0` in core, and `mcp>=1.30,<2`,
   `PyJWT[crypto]>=2.15.1` and `cryptography>=50.0.2` in the `mcp` extra.
 - Dependency security update: the locked versions of Pillow, PyJWT,
@@ -70,7 +70,7 @@ to follow semantic versioning.
   vulnerability fixes. The `exclude-newer` cutoff, documented as a 7-day window,
   had been frozen at 2026-08-18 and blocked these releases; it now stands at
   2026-10-21. LiteLLM and its OpenInference instrumentation stay at their
-  current versions and mcp stays on 1.x (1.30+) until NOOA is adapted to their
+  current versions and mcp stays on 1.x (1.30+) until Aster is adapted to their
   newer releases: with them, opaque provider reasoning state reaches exported
   OTLP spans and MCP tool-level errors are no longer raised.
 - Prompt inspection (`print_prompt()` and `build_prompt_data()`) now applies
@@ -82,7 +82,7 @@ to follow semantic versioning.
   OpenAI-compatible routes. LiteLLM let the OpenAI SDK retry each attempt twice
   more, so `RetryConfig(max_retries=2)` sent 9 requests for a persistent server
   error instead of 3 (`max_retries + 1`; rate limits may also use
-  `rate_limit_extra_retries`). NOOA now passes `max_retries=0` to the SDK, on a
+  `rate_limit_extra_retries`). Aster now passes `max_retries=0` to the SDK, on a
   per-call copy of its client so concurrent calls cannot change each other's
   setting. Passing `max_retries` to the client explicitly still enables SDK
   retries.
@@ -100,16 +100,16 @@ to follow semantic versioning.
   30,000 characters on stdout or stderr keep the first and last 15,000, with the
   standard truncation notice (`TruncatingStringIO`). Before, only the first
   30,000 were kept, so the error at the end of a failing command was lost.
-- `nooa connect` says which variable its key comes from ("Using the key in
+- `aster connect` says which variable its key comes from ("Using the key in
   NVIDIA_INFERENCE_API_KEY."). When the server rejects the key while listing models,
   it asks for another and tries again instead of exiting; `--yes` runs still stop.
   `--provider` help and errors list every preset, including `hub`.
-- `nooa connect` offers the NVIDIA Inference Hub (`inference-api.nvidia.com`,
+- `aster connect` offers the NVIDIA Inference Hub (`inference-api.nvidia.com`,
   key in `NVIDIA_INFERENCE_API_KEY`) as a preset provider, after build.nvidia.com.
-- `import nooa` no longer loads the strategies, the LLM client or LiteLLM
+- `import aster` no longer loads the strategies, the LLM client or LiteLLM
   (about 3.3 s down to 0.3 s here). The strategy names, `LLMResponse` and
-  `llm_config_chain` load on first use; `from nooa import CodeActStrategy`
-  and `from nooa import *` work as before.
+  `llm_config_chain` load on first use; `from aster import CodeActStrategy`
+  and `from aster import *` work as before.
 - Groundwork for the session tree design, in shared code:
   - A cancelled CodeAct cell is now recorded for the model: an appended
     `PythonOutput` with the new `ResultStatus.CANCELLED` carries the stdout
@@ -123,7 +123,7 @@ to follow semantic versioning.
     and `Notification.value` carries an optional object. Session hosts use
     it for steering text, with a `source` that says in plain words who sent
     the message.
-  - `nooa.interactive` adds the `Done`, `NeedInput` and `Waiting` turn
+  - `aster.interactive` adds the `Done`, `NeedInput` and `Waiting` turn
     results and a `handle_batch()` turn method (`Done | Waiting`) for
     unattended turns. `handle()` returns one of the three types.
   - `RespondResult` and `RespondReason` are removed; `CodingAgent`, the ACP
@@ -138,7 +138,7 @@ to follow semantic versioning.
     `pop_last()` withdraw an item and publish nothing.
     Subscribe with `event_manager.on(...)`; they are never recorded or shown
     to the model.
-  - `nooa.strategies.codeact` names its two generation-limit messages,
+  - `aster.strategies.codeact` names its two generation-limit messages,
     `OUTPUT_TOKENS_EXHAUSTED_MESSAGE` and `MAX_ITERATIONS_MESSAGE`, so hosts
     can map them without copying the wording.
   - `TodoManager.status()` shows at most the two newest done todos when no
@@ -158,12 +158,12 @@ to follow semantic versioning.
     `sqlite3.OperationalError` and nothing is created, not even the lock
     file) and `journal_mode="wal" | "delete"`
     (default `None` keeps the virtiofs detection).
-  - `nooa.storage` exports `read_lock_owner`, which reads a session lock
+  - `aster.storage` exports `read_lock_owner`, which reads a session lock
     file's owner record.
-  - `nooa.tools` exports `BashSession`, `StreamEvent` and `StreamDone`;
-    `nooa.runtime.channels.ChannelReader` is the public name of the channel
+  - `aster.tools` exports `BashSession`, `StreamEvent` and `StreamDone`;
+    `aster.runtime.channels.ChannelReader` is the public name of the channel
     read facade; the private `_ChannelReader` name is removed.
-  - `nooa.tracing.register_hooks_in_current_context()` installs the tracing
+  - `aster.tracing.register_hooks_in_current_context()` installs the tracing
     hooks in a context that did not inherit them, for hosts that run agents
     in fresh asyncio or thread contexts.
 - Tracing: a plain-HTTP `OTLP_ENDPOINT` for a viewer that serves HTTPS on
@@ -181,7 +181,7 @@ to follow semantic versioning.
   save of an alias compacts it. A typical entry shrinks from ~550 lines to
   ~40.
 - Remove `AnthropicProviderFormatter` and `ResponsesProviderFormatter` from
-  `nooa.context_blocks`, and the runtime's client-type dispatch that swapped in
+  `aster.context_blocks`, and the runtime's client-type dispatch that swapped in
   the Responses one. Neither was on the live path: every client (including
   Anthropic via LiteLLM) already renders through `OpenAIProviderFormatter`, and
   `ResponsesClient` projects that public message list itself. The runtime now
@@ -209,7 +209,7 @@ to follow semantic versioning.
     every `--working-dir` save with a same-named alias defined elsewhere --
     even though that is `--working-dir`'s whole intended, correct use
     (`entries()`'s `extra_path` is always the highest-priority layer,
-    matching what a later `nooa tui -w` read of the same directory would
+    matching what a later `aster tui -w` read of the same directory would
     do). A plain `--output` path has no such guarantee and keeps the
     original, stricter behavior.
   - `--edit-model` combined with `--working-dir` could silently copy a
@@ -224,16 +224,16 @@ to follow semantic versioning.
 
 - Fix a first round of code-review findings on the Connect work above:
   - Ran `ruff format` on `_connect_wizard.py`; the diff was previously unformatted.
-  - `nooa connect`'s encrypted-reasoning detection now also recognizes the
+  - `aster connect`'s encrypted-reasoning detection now also recognizes the
     openai/azure Chat Completions shape (`part.native["reasoning_items"]`), a
     third wire dialect distinct from both the Anthropic `thinking_blocks`
     wrapper and the unwrapped Responses-style native — previously always read
     as "not encrypted" on that route.
-  - `nooa connect --working-dir` combined with any `--stage` other than
+  - `aster connect --working-dir` combined with any `--stage` other than
     `save` used to crash with a confusing, generic usage error; it now
     raises a clear one explaining that only the full interactive run and
     `--stage save` write a registry file.
-  - `nooa connect --working-dir ~` (a literal, unexpanded tilde) is no longer
+  - `aster connect --working-dir ~` (a literal, unexpanded tilde) is no longer
     rejected as nonexistent; existence is now checked after expansion,
     not before.
   - `format_budget()` no longer mislabels a genuine, very large, explicit
@@ -260,7 +260,7 @@ to follow semantic versioning.
   - Removed a redundant `except (binascii.Error, ValueError)` — `binascii.Error`
     is already a `ValueError` subclass — and its now-unused import.
 
-- `nooa connect`'s session check's replay/repeat turns now change one rule of
+- `aster connect`'s session check's replay/repeat turns now change one rule of
   the puzzle instead of asking the model to "verify the recorded result."
   Verifying a known answer from memory is itself trivial enough that a model
   with adaptive/content-dependent reasoning effort could skip reasoning on
@@ -270,7 +270,7 @@ to follow semantic versioning.
   `reasoning_observed_by_turn: [True, True, True]` for both `gpt-6-astra`
   and Claude Opus 5, cache reuse unaffected.
 
-- `nooa connect`'s session check now reuses the reasoning-level puzzle for its
+- `aster connect`'s session check now reuses the reasoning-level puzzle for its
   conversation task instead of trivial arithmetic. The old task was easy
   enough that a model with adaptive/content-dependent reasoning effort could
   legitimately skip reasoning on it even at a real reasoning level — a false
@@ -279,7 +279,7 @@ to follow semantic versioning.
   5 and Qwen, both now showing reasoning on every turn). As with level
   checks, a wrong answer is not graded, only whether reasoning was observed.
 
-- Fix `nooa connect` always reporting `reasoning_encrypted: false` on
+- Fix `aster connect` always reporting `reasoning_encrypted: false` on
   Responses-API routes (e.g. `gpt-6-astra`) even when the provider genuinely
   returned encrypted reasoning. Detection only recognized the Chat-style
   native shape (`part.native["thinking_blocks"]`); Responses routes store the
@@ -287,7 +287,7 @@ to follow semantic versioning.
   "encrypted_content": "..."}`), which was never checked. Both shapes are now
   detected.
 
-- `nooa connect`'s session check now references trains by short hex id
+- `aster connect`'s session check now references trains by short hex id
   instead of zero-padded decimal record/item numbers. Live testing against
   Claude Opus 5 via Bedrock found the original wording's `finish_reason:
   "error"` on the replay turn was a real, provider-side content-filter
@@ -297,13 +297,13 @@ to follow semantic versioning.
   rate (about 1 in 6-7 live runs) but did not eliminate it; a retry on
   `content_filter` would be needed to fully close this out.
 
-- `nooa connect`'s reasoning-level rows now show a character count for real,
+- `aster connect`'s reasoning-level rows now show a character count for real,
   visible reasoning text when litellm never attempted a token-count estimate
   for it (observed live for Qwen and DeepSeek routes; litellm's text-length
   estimate only exists for Anthropic/Bedrock). Never the text itself, only
   its length, matching the existing encrypted-blob byte-size treatment.
 
-- A wrong answer on `nooa connect`'s reasoning-level puzzle no longer flags
+- A wrong answer on `aster connect`'s reasoning-level puzzle no longer flags
   that check for attention. The puzzle exists to elicit reasoning, not to
   prove the model can solve it; only a missing reasoning signal (the thing
   the check actually verifies) still does.
@@ -317,12 +317,12 @@ to follow semantic versioning.
   opaque data blob) reports a byte size, since a signature's length doesn't
   scale with how much was thought.
 
-- `nooa connect`'s encrypted-reasoning-bundle message now includes the
+- `aster connect`'s encrypted-reasoning-bundle message now includes the
   decoded byte size of Anthropic's `redacted_thinking` blob when available
   ("~N bytes of encrypted state"), a rough size signal since there is no way
   to convert an opaque encrypted payload into an actual token count.
 
-- `nooa connect` no longer shows a misleading "0 reasoning tokens" for
+- `aster connect` no longer shows a misleading "0 reasoning tokens" for
   providers whose reasoning-token estimate is a text-length count of a
   deliberately-empty reasoning field (Claude Sonnet 5/Opus 5 via Azure or
   Bedrock). Detects Anthropic's `redacted_thinking` block specifically —
@@ -332,48 +332,48 @@ to follow semantic versioning.
   falls back to showing `output_tokens` (which does include the reasoning
   cost, just not broken out) instead of a bare, misleading 0. A real,
   positive reasoning-token count from the endpoint still displays as before.
-- `nooa connect`'s "Ran out of reply tokens before finishing" message now
+- `aster connect`'s "Ran out of reply tokens before finishing" message now
   adds "if you plan to use this reasoning level, increase the reply budget"
   for level checks specifically.
 
-- `nooa connect` now says "Ran out of reply tokens before finishing" for a
+- `aster connect` now says "Ran out of reply tokens before finishing" for a
   check whose reply was truncated by the reply cap (`finish_reason: length`),
   distinct from the generic "Reply incomplete" message still used for a
   provider error or content filter.
-- Fix `nooa connect` reporting no reasoning observed for providers that
+- Fix `aster connect` reporting no reasoning observed for providers that
   return a reasoning part with a signature but deliberately empty text
   (Claude Sonnet 5/Opus 5 via Azure or Bedrock). The level-check probe was
   reading `response.reasoning`, which joins only non-empty parts, instead of
   checking for the part's presence the way session checks already do.
-- `nooa connect`'s reasoning-level puzzle checks now end with a one-line
+- `aster connect`'s reasoning-level puzzle checks now end with a one-line
   "Reasoning tokens · max: N · high: N · low: N (wrong)" summary, so a
   cross-level comparison doesn't require scrolling back through the run.
-- `nooa connect`'s catalogue lookup now offers a fuzzy "did you mean" picklist
+- `aster connect`'s catalogue lookup now offers a fuzzy "did you mean" picklist
   when no exact/suffix match is found — common for gateway-routed model IDs
   (`aws/anthropic/bedrock-claude-opus-5`) whose routing prefix the catalogue
   never records. Never auto-selects a guess; only offered interactively.
-- `nooa connect`'s reasoning-level puzzle check now shows the actual
+- `aster connect`'s reasoning-level puzzle check now shows the actual
   reasoning token count alongside the correct/incorrect result, so a wrong
   answer can be told apart from reasoning effort having no real effect.
-- `nooa connect`'s reply-budget dropdown now truncates `high`/`extended`
+- `aster connect`'s reply-budget dropdown now truncates `high`/`extended`
   presets against the model's actual declared max output, and adds an
   explicit "Model maximum" choice showing that number, so picking exactly
   the ceiling never requires `--custom`.
-- `nooa connect`'s `--budget-tokens` for API checks now defaults to
+- `aster connect`'s `--budget-tokens` for API checks now defaults to
   unlimited instead of a fixed 131,072-token cap; it's only capped when the
   flag is passed explicitly. Previously the default could cause "some
   checks will be skipped" even with no explicit budget set.
-- Add `nooa connect --working-dir`/`-w`: save to a project's own registry
-  (`<working-dir>/.nooa/llm_config.yaml`) instead of the user-global one —
-  the same file `nooa tui -w <working-dir>` reads. Mutually exclusive with
+- Add `aster connect --working-dir`/`-w`: save to a project's own registry
+  (`<working-dir>/.aster/llm_config.yaml`) instead of the user-global one —
+  the same file `aster tui -w <working-dir>` reads. Mutually exclusive with
   `--output`.
-- Fix `nooa connect` claiming "Using saved key variable X for this endpoint"
+- Fix `aster connect` claiming "Using saved key variable X for this endpoint"
   and then immediately prompting for that same key. The registry only
   remembers which variable *name* an endpoint used last time, not whether a
   value is currently set; the message now says so honestly when the value is
   missing, instead of contradicting the prompt that follows it.
-- Add `nooa connect`: a model-setup wizard, staged JSON interface and reusable
-  `nooa.unifiedllm.connect` library. Prompts remain in `nooa-cli`, without new
+- Add `aster connect`: a model-setup wizard, staged JSON interface and reusable
+  `aster.unifiedllm.connect` library. Prompts remain in `aster-cli`, without new
   core dependencies. Configured checks send the saved reply limit, including
   reasoning-level overrides; insufficient budget skips checks instead of lowering
   caps. Save-time validation rejects caps that leave no input room. New entries
@@ -381,7 +381,7 @@ to follow semantic versioning.
   older runtimes ignore it and explicit existing transport choices are preserved.
   Registry writes follow symlinks and retain mode/newlines. Diagnostic handoffs
   scrub active keys throughout reports, including model names and mapping keys.
-- Add the dedicated `nooa-model-configuration` coding-agent skill and route
+- Add the dedicated `aster-model-configuration` coding-agent skill and route
   Connect help and diagnostic handoffs to it. Agent authoring links to model
   setup instead of embedding registry and reasoning-configuration instructions.
 - Connect prefers endpoint-reported limits to catalogue values, labels input-only
@@ -461,7 +461,7 @@ to follow semantic versioning.
 
 - Responses clients now honor the cached renderer's stable-prefix boundary by default,
   without a cache setting in the model registry. Requests without a usable boundary
-  retain provider-default caching; `cache_breakpoint=None` opts out of NOOA markers.
+  retain provider-default caching; `cache_breakpoint=None` opts out of Aster markers.
 
 - Security: the sandbox parent no longer unpickles worker bytes. Brokered `self.*`
   arguments, `self.x = value` assignments, cell return values and `return_result`
@@ -474,8 +474,8 @@ to follow semantic versioning.
   Reduced legacy signatures are no longer supported.
 - Breaking: sandboxed user-code failures are exposed as `SandboxExecutionError`;
   inspect `original_type`, `original_error`, and `diagnostic` for worker-side details.
-- Add composable, context-scoped instrumentation hooks and trace-session scopes so hosts can observe NOOA execution without replacing native tracing.
-- Initial public release of NVIDIA Object-Oriented Agents (NOOA).
+- Add composable, context-scoped instrumentation hooks and trace-session scopes so hosts can observe Aster execution without replacing native tracing.
+- Initial public release of Aster (Aster).
 - Security: MCP server configurations no longer expand host environment variables
   from `${VAR}` placeholders. Trusted caller code must resolve secrets and pass
   their values explicitly.

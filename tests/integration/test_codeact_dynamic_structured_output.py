@@ -19,10 +19,10 @@ from typing import Literal
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.strategies import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 _TEST_LLM = FakeLLMClient()
 

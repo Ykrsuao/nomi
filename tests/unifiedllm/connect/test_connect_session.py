@@ -7,8 +7,8 @@ import json
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
-from nooa.unifiedllm.connect._session import TOKEN_RESERVATION, _wire_reasoning, session_steps
+from aster.unifiedllm import connect
+from aster.unifiedllm.connect._session import TOKEN_RESERVATION, _wire_reasoning, session_steps
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -239,8 +239,9 @@ async def test_selected_reasoning_level_and_cache_defaults_reach_wire(monkeypatc
 
 @pytest.mark.asyncio
 async def test_missing_settings_are_not_reported_as_missing_replay(monkeypatch):
-    # Regression for legacy parameter filtering, which direct does not perform.
-    monkeypatch.setenv("NOOA_LLM_TRANSPORT", "litellm")
+    # Exercise SDK parameter filtering explicitly; unknown model names no longer
+    # make current LiteLLM drop reasoning_effort by default.
+    monkeypatch.setenv("ASTER_LLM_TRANSPORT", "litellm")
     bodies = []
 
     def handle(request):
@@ -260,7 +261,7 @@ async def test_missing_settings_are_not_reported_as_missing_replay(monkeypatch):
         reasoning_level="max",
         reply_tokens=2048,
     )
-    proposal.entry.pop("allowed_openai_params", None)  # A pre-fix saved entry.
+    proposal.entry["additional_drop_params"] = ["reasoning_effort"]
     updates = [
         u
         async for u in session_steps(
@@ -396,8 +397,8 @@ async def test_real_tool_reply_is_replayed_without_execution(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_closing_progress_iterator_closes_owned_client(monkeypatch):
-    import nooa.unifiedllm.registry as registry
-    from nooa.unifiedllm.registry import client_from_config
+    import aster.unifiedllm.registry as registry
+    from aster.unifiedllm.registry import client_from_config
 
     clients = []
 
@@ -467,7 +468,7 @@ async def test_retention_accepts_multi_block_responses_summary(monkeypatch, encr
 
 def test_retention_accepts_litellm_proxy_envelope_unwrapped_on_replay():
     """The Hub wraps encrypted state; the LiteLLM client sends the inner state."""
-    from nooa.unifiedllm.connect._session import _replayed
+    from aster.unifiedllm.connect._session import _replayed
 
     inner = "gAAAA" + "x" * 64
     envelope = "litellm_enc:bW9kZWxfaWQ6YXp1cmU=;" + inner

@@ -11,15 +11,15 @@ import types
 
 import pytest
 
-from nooa.runtime.sandbox.bootstrap import dumps_namespace
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.executor import SandboxedExecutor
+from aster.runtime.sandbox.bootstrap import dumps_namespace
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.executor import SandboxedExecutor
 
 pytestmark = pytest.mark.sandbox
 
 
 def test_user_model_is_reconstructed_with_its_validation(monkeypatch):
-    module = types.ModuleType("nooa_bootstrap_validation_fixture")
+    module = types.ModuleType("aster_bootstrap_validation_fixture")
     monkeypatch.setitem(sys.modules, module.__name__, module)
     exec(
         "from pydantic import BaseModel\n"
@@ -59,7 +59,7 @@ def test_user_model_is_reconstructed_with_its_validation(monkeypatch):
 
 @pytest.mark.parametrize("transport", ["interpreter", "microvm"])
 async def test_local_helper_dependency_loads_in_fresh_interpreter(tmp_path, monkeypatch, transport):
-    from nooa.runtime.sandbox.paths import PathMap
+    from aster.runtime.sandbox.paths import PathMap
 
     sources = {
         "review_leaf": "def value():\n    return 42\n",
@@ -106,8 +106,8 @@ async def test_codeact_v2_bootstrap_does_not_capture_host_task(monkeypatch):
     import asyncio
     from types import SimpleNamespace
 
-    from nooa.runtime.sandbox.paths import PathMap
-    from nooa.strategies.codeact_v2 import CodeActV2
+    from aster.runtime.sandbox.paths import PathMap
+    from aster.strategies.codeact_v2 import CodeActV2
 
     module = types.ModuleType("review_v2_agent")
     monkeypatch.setitem(sys.modules, module.__name__, module)
@@ -137,8 +137,8 @@ async def test_codeact_v2_bootstrap_does_not_capture_host_task(monkeypatch):
 
 
 async def test_guest_cell_state_reports_rebound_inputs_and_new_locals():
-    from nooa.runtime.sandbox.cell_core import run_cell_source
-    from nooa.runtime.sandbox.guest import cell_state_function
+    from aster.runtime.sandbox.cell_core import run_cell_source
+    from aster.runtime.sandbox.guest import cell_state_function
 
     namespace = {"question": "input", "module_constant": 99}
     namespace["python_cell_state"] = cell_state_function(namespace, ["question"])

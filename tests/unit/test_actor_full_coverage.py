@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests targeting uncovered lines in nooa/runtime/actor.py.
+"""Tests targeting uncovered lines in aster/runtime/actor.py.
 
 Each test class has a docstring explaining the exact line(s) it covers.
 """
@@ -13,12 +13,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.context_blocks.models import ContextWindowStats
-from nooa.context_blocks.renderer import RenderResult
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.context_blocks.models import ContextWindowStats
+from aster.context_blocks.renderer import RenderResult
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # Minimal stats object for mocking render_context return values
 _EMPTY_STATS = ContextWindowStats(
@@ -349,14 +349,14 @@ class TestExecuteNestedStrategyConfig:
     @pytest.mark.asyncio
     async def test_strategy_config_extraction(self):
         """execute_nested extracts strategy attributes for hook kwargs."""
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
             _push_generation_id,
         )
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         class ConfigStrategy(GenerationStrategy):
             """A strategy with all config attributes for testing."""
@@ -394,8 +394,8 @@ class TestExecuteNestedStrategyConfig:
 
         try:
             with (
-                patch("nooa.runtime.actor.call_before_hook") as mock_before,
-                patch("nooa.runtime.actor.call_after_hook"),
+                patch("aster.runtime.actor.call_before_hook") as mock_before,
+                patch("aster.runtime.actor.call_after_hook"),
             ):
                 mock_before.return_value = MagicMock()
                 result = await runtime.execute_nested(strat, call)
@@ -428,14 +428,14 @@ class TestExecuteNestedStrategyException:
     @pytest.mark.asyncio
     async def test_exception_propagated_and_captured(self):
         """Strategy exception is captured and re-raised."""
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
             _push_generation_id,
         )
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         class FailingStrategy(GenerationStrategy):
             async def execute(self, runtime, call):
@@ -464,8 +464,8 @@ class TestExecuteNestedStrategyException:
 
         try:
             with (
-                patch("nooa.runtime.actor.call_before_hook") as mock_before,
-                patch("nooa.runtime.actor.call_after_hook") as mock_after,
+                patch("aster.runtime.actor.call_before_hook") as mock_before,
+                patch("aster.runtime.actor.call_after_hook") as mock_after,
             ):
                 mock_before.return_value = MagicMock()
 
@@ -703,13 +703,13 @@ class TestDynamicContextNonStringResult:
 
 class TestBuildMessagesOpeninferenceErrors:
     """Lines 2133-2136: _build_messages catches ImportError and general Exception
-    when trying to import openinference_instrumentation_nooa.
+    when trying to import openinference_instrumentation_aster.
     """
 
     @pytest.mark.asyncio
     async def test_import_error_silenced(self):
         """ImportError from openinference import is silently caught."""
-        from nooa.runtime.actor import _current_llm_var
+        from aster.runtime.actor import _current_llm_var
 
         class _Agent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig()))
@@ -727,14 +727,14 @@ class TestBuildMessagesOpeninferenceErrors:
         try:
             # Patch the import to raise ImportError
             with patch(
-                "nooa.runtime.actor.render_context",
+                "aster.runtime.actor.render_context",
                 return_value=RenderResult(output=[], stats=_EMPTY_STATS, messages=[]),
             ):
                 with patch.dict(
                     "sys.modules",
                     {
-                        "nooa.tracing": None,
-                        "nooa.tracing._context_sideband": None,
+                        "aster.tracing": None,
+                        "aster.tracing._context_sideband": None,
                     },
                 ):
                     # This should not raise — the ImportError is caught
@@ -745,7 +745,7 @@ class TestBuildMessagesOpeninferenceErrors:
     @pytest.mark.asyncio
     async def test_general_exception_silenced(self):
         """General Exception from set_context_blocks is caught and logged."""
-        from nooa.runtime.actor import _current_llm_var
+        from aster.runtime.actor import _current_llm_var
 
         class _Agent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig()))
@@ -767,12 +767,12 @@ class TestBuildMessagesOpeninferenceErrors:
             with patch.dict(
                 "sys.modules",
                 {
-                    "nooa.tracing._context_sideband": mock_sideband,
-                    "nooa.tracing": MagicMock(),
+                    "aster.tracing._context_sideband": mock_sideband,
+                    "aster.tracing": MagicMock(),
                 },
             ):
                 with patch(
-                    "nooa.runtime.actor.render_context",
+                    "aster.runtime.actor.render_context",
                     return_value=RenderResult(output=[], stats=_EMPTY_STATS, messages=[]),
                 ):
                     # Should not raise — the Exception is caught

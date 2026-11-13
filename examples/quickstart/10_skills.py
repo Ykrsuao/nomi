@@ -8,9 +8,9 @@ uv run python examples/quickstart/10_skills.py
 
 from pathlib import Path
 
-from nooa import TextSkill
-from nooa.skill_registry import SkillRegistry
-from nooa.util.quickstart import *
+from aster import TextSkill
+from aster.skill_registry import SkillRegistry
+from aster.util.quickstart import *
 
 ASSETS = Path(__file__).parent.parent / "assets"
 

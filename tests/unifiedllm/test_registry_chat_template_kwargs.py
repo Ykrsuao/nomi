@@ -6,8 +6,8 @@ from copy import deepcopy
 
 import pytest
 
-from nooa.config import ModelConfig
-from nooa.unifiedllm import CompletionClient, ResponsesClient, registry
+from aster.config import ModelConfig
+from aster.unifiedllm import CompletionClient, ResponsesClient, registry
 
 MODEL = "openai/offline-route-context"
 BASE = "https://gateway.test/v1"
@@ -59,7 +59,7 @@ async def test_chat_template_kwargs_reach_the_wire(monkeypatch, is_async):
 
     import httpx
 
-    from nooa.unifiedllm.unifiedllm import _ClientHttp
+    from aster.unifiedllm.unifiedllm import _ClientHttp
     from tests.unifiedllm.connect.connect_http import response_body
 
     bodies, paths, timeouts = [], [], []

@@ -15,7 +15,7 @@ from typing import Any
 
 import litellm
 
-from nooa.unifiedllm import (
+from aster.unifiedllm import (
     AdmissionControl,
     AdmissionControlConfig,
     CompletionClient,

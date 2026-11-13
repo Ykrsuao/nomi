@@ -11,16 +11,16 @@ import litellm
 import pytest
 from pydantic import BaseModel, ConfigDict, Field, RootModel, ValidationError, field_validator
 
-from nooa import Agent, no_trace
-from nooa.config import ModelConfig
-from nooa.config.strategy_config import PredictConfig
-from nooa.decorators import strategy
-from nooa.strategies.predict import PredictStrategy
-from nooa.unifiedllm import CompletionClient, ResponsesClient, RetryConfig, connect, registry
-from nooa.unifiedllm.connect._baseline import typed_baseline
-from nooa.unifiedllm.connect._records import public_record, text_baseline_passed
-from nooa.unifiedllm.structured_output import anthropic_output_format
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster import Agent, no_trace
+from aster.config import ModelConfig
+from aster.config.strategy_config import PredictConfig
+from aster.decorators import strategy
+from aster.strategies.predict import PredictStrategy
+from aster.unifiedllm import CompletionClient, ResponsesClient, RetryConfig, connect, registry
+from aster.unifiedllm.connect._baseline import typed_baseline
+from aster.unifiedllm.connect._records import public_record, text_baseline_passed
+from aster.unifiedllm.structured_output import anthropic_output_format
+from aster.unifiedllm.unifiedllm import _ClientHttp
 from tests.unifiedllm.connect.connect_http import response_body
 
 
@@ -44,7 +44,9 @@ class TypedAgent(Agent):
         ...
 
 
-def http_fixture(monkeypatch, style="chat", text='{"value":323}', finish="stop", tool=False):
+def http_fixture(
+    monkeypatch, style="chat", text='{"value":323}', finish="stop", tool=False, request_headers=None
+):
     bodies = []
     paths = []
     monkeypatch.setenv("LITELLM_LOCAL_ANTHROPIC_BETA_HEADERS", "True")
@@ -52,6 +54,8 @@ def http_fixture(monkeypatch, style="chat", text='{"value":323}', finish="stop",
     def respond(request):
         bodies.append(json.loads(request.content))
         paths.append(request.url.path)
+        if request_headers is not None:
+            request_headers.append(request.headers)
         body = response_body(style, text)
         if style == "chat":
             body["choices"][0]["finish_reason"] = finish
@@ -142,6 +146,42 @@ async def test_actual_predict_original_model_and_native_http(monkeypatch, style)
         )
         assert c.get_context_limits().reserved_output_tokens == 8192
         assert "structured_output_mode" not in c.config
+    finally:
+        await c.aclose()
+
+
+@pytest.mark.parametrize("style", ["chat", "anthropic"])
+@pytest.mark.parametrize("is_async", [False, True])
+@pytest.mark.parametrize("explicit_affinity", [False, True])
+async def test_session_affinity_uses_native_headers_without_an_openai_only_body_field(
+    monkeypatch, style, is_async, explicit_affinity
+):
+    headers = []
+    bodies, _ = http_fixture(monkeypatch, style, request_headers=headers)
+    c = client(style)
+    extra_headers = {"X-Session-Affinity": "caller-key"} if explicit_affinity else {}
+    try:
+        if is_async:
+            await c.acall(
+                [{"role": "user", "content": "hello"}],
+                prompt_cache_key="conversation-key",
+                extra_headers=extra_headers,
+            )
+        else:
+            c.call(
+                [{"role": "user", "content": "hello"}],
+                prompt_cache_key="conversation-key",
+                extra_headers=extra_headers,
+            )
+        assert len(bodies) == 1
+        assert headers[0]["x-session-affinity"] == (
+            "caller-key" if explicit_affinity else "conversation-key"
+        )
+        if style == "anthropic":
+            assert "prompt_cache_key" not in bodies[0]
+        else:
+            assert bodies[0]["prompt_cache_key"] == "conversation-key"
+        assert extra_headers == ({"X-Session-Affinity": "caller-key"} if explicit_affinity else {})
     finally:
         await c.aclose()
 
@@ -331,7 +371,7 @@ async def test_call_override_requires_explicit_replacement_profile(monkeypatch):
                 model="openai/other",
             )
         assert not bodies
-        # Explicit auto opts out, consumed by NOOA rather than sent to SDK.
+        # Explicit auto opts out, consumed by ASTER rather than sent to SDK.
         await c.acall(
             [{"role": "user", "content": "hello"}],
             output_model=OriginalResult,
@@ -343,15 +383,40 @@ async def test_call_override_requires_explicit_replacement_profile(monkeypatch):
 
 
 async def test_runtime_final_wire_guard_rejects_dropped_schema_before_send(monkeypatch):
+    from litellm.llms.anthropic.chat.transformation import AnthropicConfig
+
     bodies, _ = http_fixture(monkeypatch, "anthropic")
-    # Existing LiteLLM's global drop mode can drop output_config for an unknown
-    # model. Native profile must error before HTTP, not validate a fake reply.
-    monkeypatch.setattr(litellm, "drop_params", True)
+    original = AnthropicConfig.transform_request
+
+    def drop_format(self, *args, **kwargs):
+        data = original(self, *args, **kwargs)
+        data["output_config"].pop("format")
+        return data
+
+    # Exercise the actual outgoing-body guard independently of which fields
+    # a particular LiteLLM release chooses to drop for an unknown model.
+    monkeypatch.setattr(AnthropicConfig, "transform_request", drop_format)
     c = client("anthropic", structured_output_mode="anthropic")
     try:
         with pytest.raises(Exception, match="changed or dropped"):
             await c.acall([{"role": "user", "content": "hello"}], output_model=OriginalResult)
         assert not bodies
+    finally:
+        await c.aclose()
+
+
+async def test_native_schema_survives_litellm_dropping_unsupported_effort(monkeypatch):
+    bodies, _ = http_fixture(monkeypatch, "anthropic")
+    monkeypatch.setattr(litellm, "drop_params", True)
+    c = client("anthropic", structured_output_mode="anthropic", output_config={"effort": "high"})
+    try:
+        response = await c.acall(
+            [{"role": "user", "content": "hello"}], output_model=OriginalResult
+        )
+        assert type(response.parsed) is OriginalResult
+        assert len(bodies) == 1
+        assert_native(bodies[0])
+        assert "effort" not in bodies[0]["output_config"]
     finally:
         await c.aclose()
 
@@ -404,7 +469,7 @@ async def test_connect_native_wire_settings_evidence_and_media(monkeypatch, styl
 async def test_reply_cap_recovery_preserves_explicit_carrier_and_opt_out(
     monkeypatch, default, mode
 ):
-    from nooa.unifiedllm.limits import reduced_reply_params
+    from aster.unifiedllm.limits import reduced_reply_params
 
     bodies, _ = http_fixture(monkeypatch)
     c = client(structured_output_mode=default)

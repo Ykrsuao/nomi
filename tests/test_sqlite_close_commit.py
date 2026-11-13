@@ -7,11 +7,11 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from nooa import Agent
-from nooa.context_blocks import Metadata
-from nooa.runtime.event_manager import EventManager
-from nooa.storage import SQLiteStorageManager
-from nooa.unifiedllm import CompletionClient
+from aster import Agent
+from aster.context_blocks import Metadata
+from aster.runtime.event_manager import EventManager
+from aster.storage import SQLiteStorageManager
+from aster.unifiedllm import CompletionClient
 
 
 class _TestAgent(Agent, llm=CompletionClient(model="openai/gpt-4o-mini", api_key="test")):

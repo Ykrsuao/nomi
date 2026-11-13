@@ -4,10 +4,10 @@
 
 import pytest
 
-from nooa import Agent
-from nooa.context_blocks import ResultStatus
-from nooa.events import PythonOutput, Task
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.context_blocks import ResultStatus
+from aster.events import PythonOutput, Task
+from aster.unifiedllm import FakeLLMClient
 
 _LLM = FakeLLMClient()
 
@@ -111,7 +111,7 @@ def test_collapse_returns_summary_tag():
 )
 @pytest.mark.parametrize("backend", ["memory", "sqlite"])
 def test_collapse_accepts_existing_integer_tags(start, end, previous, backend, tmp_path, capsys):
-    from nooa.storage.sqlite import SQLiteStorageManager
+    from aster.storage.sqlite import SQLiteStorageManager
 
     agent = _TestAgent()
     storage = SQLiteStorageManager(tmp_path / "events.db") if backend == "sqlite" else None
@@ -182,7 +182,7 @@ def test_summary_documents_working_archive_recovery(nested):
 
 @pytest.mark.parametrize("formatter_name", ["MarkdownBlockFormatter", "XMLBlockFormatter"])
 def test_summary_recovery_instructions_reach_model_context(formatter_name):
-    from nooa.context_blocks import formatter
+    from aster.context_blocks import formatter
 
     agent = _TestAgent()
     tag = agent.event_manager.add(Task(prompt="original"))

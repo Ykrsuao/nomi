@@ -6,10 +6,10 @@
 uv run python examples/quickstart/09_summarization.py
 """
 
-from nooa.agentdoc import spec
-from nooa.agents import TokenBudgetSummarizer
-from nooa.config import TokenBudgetConfig
-from nooa.util.quickstart import *
+from aster.agentdoc import spec
+from aster.agents import TokenBudgetSummarizer
+from aster.config import TokenBudgetConfig
+from aster.util.quickstart import *
 
 
 class InterviewAgent(Agent, llm=llm):

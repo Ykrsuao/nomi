@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from nooa.config.strategy_config import ReflexionConfig
+from aster.config.strategy_config import ReflexionConfig
 
 
 def make_smart_execute_nested(mock_runtime, base_results):
@@ -19,7 +19,7 @@ def make_smart_execute_nested(mock_runtime, base_results):
         mock_runtime: The mock runtime fixture
         base_results: List of results or exceptions to return for non-Template strategies
     """
-    from nooa.strategies.template import TemplateStrategy
+    from aster.strategies.template import TemplateStrategy
 
     base_iter = iter(base_results)
     original_execute_nested = mock_runtime.execute_nested
@@ -43,7 +43,7 @@ class TestReflexionStrategyProperties:
 
     def test_name_includes_base_strategy(self):
         """ReflexionStrategy.name should include base strategy name."""
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         assert "REFLEXION" in strategy.name
@@ -51,8 +51,8 @@ class TestReflexionStrategyProperties:
 
     def test_name_with_custom_base(self):
         """ReflexionStrategy.name should reflect custom base strategy."""
-        from nooa.strategies.pure_python import PurePythonStrategy
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.pure_python import PurePythonStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         base = PurePythonStrategy()
         strategy = ReflexionStrategy(base=base)
@@ -60,8 +60,8 @@ class TestReflexionStrategyProperties:
 
     def test_block_overrides_delegates_to_base(self):
         """ReflexionStrategy.get_block_overrides should delegate to base strategy."""
-        from nooa.strategies.pure_python import PurePythonStrategy
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.pure_python import PurePythonStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         base = PurePythonStrategy()
         strategy = ReflexionStrategy(base=base)
@@ -69,7 +69,7 @@ class TestReflexionStrategyProperties:
 
     def test_requires_lock_delegates_to_base(self):
         """ReflexionStrategy.requires_lock should inherit from base."""
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         # Default PurePythonStrategy requires lock
@@ -81,38 +81,38 @@ class TestReflexionStrategyConfig:
 
     def test_default_max_reflections(self):
         """Default max_iterations should be 3."""
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         assert strategy.config.max_iterations == 3
 
     def test_custom_max_reflections(self):
         """Should accept custom max_iterations via config."""
-        from nooa.config.strategy_config import ReflexionConfig
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.config.strategy_config import ReflexionConfig
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy(config=ReflexionConfig(max_iterations=5))
         assert strategy.config.max_iterations == 5
 
     def test_rejects_old_max_reflections_kwarg(self):
         """Should reject old max_reflections kwarg."""
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         with pytest.raises(TypeError):
             ReflexionStrategy(max_reflections=5)  # old API — must fail
 
     def test_default_base_is_pure_python(self):
         """Default base strategy should be PurePythonStrategy."""
-        from nooa.strategies.pure_python import PurePythonStrategy
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.pure_python import PurePythonStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         assert isinstance(strategy.base, PurePythonStrategy)
 
     def test_custom_base_strategy(self):
         """Should accept custom base strategy."""
-        from nooa.strategies.pure_python import PurePythonStrategy
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.pure_python import PurePythonStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         base = PurePythonStrategy(max_iterations=5)
         strategy = ReflexionStrategy(base=base)
@@ -125,15 +125,15 @@ class TestReflexionStrategyInheritance:
 
     def test_is_generation_strategy(self):
         """ReflexionStrategy should inherit from GenerationStrategy."""
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         assert isinstance(strategy, GenerationStrategy)
 
     def test_has_execute_method(self):
         """ReflexionStrategy should implement execute()."""
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         assert hasattr(strategy, "execute")
@@ -145,7 +145,7 @@ class TestReflectionOutput:
 
     def test_reflection_output_fields(self):
         """ReflectionOutput should have expected fields."""
-        from nooa.strategies.reflexion import ReflectionOutput
+        from aster.strategies.reflexion import ReflectionOutput
 
         output = ReflectionOutput(
             is_satisfactory=True,
@@ -160,7 +160,7 @@ class TestReflectionOutput:
 
     def test_reflection_output_defaults(self):
         """ReflectionOutput should have sensible defaults."""
-        from nooa.strategies.reflexion import ReflectionOutput
+        from aster.strategies.reflexion import ReflectionOutput
 
         output = ReflectionOutput(is_satisfactory=True)
         assert output.issues == []
@@ -174,8 +174,8 @@ class TestReflexionStrategyExecute:
     @pytest.mark.asyncio
     async def test_execute_returns_on_satisfactory(self, mock_runtime):
         """execute() should return immediately when reflection is satisfactory."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         # Setup: mock execute_nested using helper
         mock_runtime.execute_nested = AsyncMock(
@@ -208,8 +208,8 @@ class TestReflexionStrategyExecute:
     @pytest.mark.asyncio
     async def test_execute_retries_on_unsatisfactory(self, mock_runtime):
         """execute() should retry when reflection says not satisfactory."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         # Setup: first call unsatisfactory, second call satisfactory
         mock_runtime.execute_nested = AsyncMock(
@@ -255,8 +255,8 @@ class TestReflexionStrategyExecute:
     @pytest.mark.asyncio
     async def test_execute_respects_max_reflections(self, mock_runtime):
         """execute() should stop after max_reflections even if unsatisfactory."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         # Setup: always unsatisfactory, provide enough results for max_reflections
         mock_runtime.execute_nested = AsyncMock(
@@ -293,9 +293,9 @@ class TestReflexionStrategyErrorHandling:
     @pytest.mark.asyncio
     async def test_execute_handles_base_strategy_error(self, mock_runtime):
         """execute() should handle errors from base strategy and retry."""
-        from nooa.errors import GenerationError
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.errors import GenerationError
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         # Setup: first call fails, second succeeds
         mock_runtime.execute_nested = AsyncMock(
@@ -326,9 +326,9 @@ class TestReflexionStrategyErrorHandling:
     @pytest.mark.asyncio
     async def test_execute_raises_after_all_attempts_fail(self, mock_runtime):
         """execute() should raise GenerationError if all attempts fail."""
-        from nooa.errors import GenerationError
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.errors import GenerationError
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflexionStrategy
 
         # Setup: all calls fail (provide enough for max_reflections=2)
         error = GenerationError("Always fails")
@@ -351,9 +351,9 @@ class TestReflexionStrategyErrorHandling:
     @pytest.mark.asyncio
     async def test_execute_adds_feedback_on_error(self, mock_runtime):
         """execute() should add feedback event when base strategy fails."""
-        from nooa.errors import GenerationError
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.errors import GenerationError
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         # Setup: first call fails, second succeeds
         mock_runtime.execute_nested = AsyncMock(
@@ -393,8 +393,8 @@ class TestReflexionStrategyReflectionParsing:
     @pytest.mark.asyncio
     async def test_execute_handles_dict_response(self, mock_runtime):
         """execute() should handle dict response from generate()."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflexionStrategy
 
         # Setup: reflection returns dict instead of ReflectionOutput
         mock_runtime.execute_nested = AsyncMock(
@@ -427,8 +427,8 @@ class TestReflexionStrategyReflectionParsing:
     @pytest.mark.asyncio
     async def test_execute_handles_unparseable_response(self, mock_runtime):
         """execute() should retry when response can't be parsed (assumes not satisfactory)."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflexionStrategy
 
         # Setup: reflection returns something unparseable every time.
         # With is_satisfactory=False fallback, the strategy retries up to max_iterations.
@@ -461,8 +461,8 @@ class TestReflexionStrategyFeedbackFormatting:
 
     def test_format_reflection_feedback_with_issues(self):
         """_format_reflection_feedback should include issues."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         strategy = ReflexionStrategy()
         reflection = ReflectionOutput(
@@ -486,8 +486,8 @@ class TestReflexionStrategyFeedbackFormatting:
 
     def test_format_reflection_feedback_with_suggestions(self):
         """_format_reflection_feedback should include suggestions."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         strategy = ReflexionStrategy()
         reflection = ReflectionOutput(
@@ -513,8 +513,8 @@ class TestReflexionStrategyResultFormatting:
 
     def test_format_result_simple_value(self):
         """_format_result_for_reflection should handle simple values."""
-        from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         tc = DEFAULT_TRUNCATION_CONFIG
@@ -526,8 +526,8 @@ class TestReflexionStrategyResultFormatting:
 
     def test_format_result_none(self):
         """_format_result_for_reflection should handle None."""
-        from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         result = strategy._format_result_for_reflection(None, DEFAULT_TRUNCATION_CONFIG)
@@ -538,8 +538,8 @@ class TestReflexionStrategyResultFormatting:
         """Block-level string truncation has been removed; long string results
         now pass through verbatim from `_format_result_for_reflection`. Per-
         value bounds come from cfg.events.* for non-string values."""
-        from nooa.config.truncation_config import TruncationConfig
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.config.truncation_config import TruncationConfig
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy()
         tc = TruncationConfig()
@@ -555,8 +555,8 @@ class TestReflexionStrategyHistoryInteraction:
     @pytest.mark.asyncio
     async def test_execute_adds_feedback_between_iterations(self, mock_runtime):
         """execute() should add feedback events between iterations."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         # Track events.add calls
         add_calls = []
@@ -604,8 +604,8 @@ class TestReflexionStrategyHistoryInteraction:
     @pytest.mark.asyncio
     async def test_execute_with_complex_result(self, mock_runtime):
         """execute() should handle complex dict results."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         complex_result = {
             "analysis": {"score": 0.95, "confidence": "high"},
@@ -666,7 +666,7 @@ def mock_runtime():
         @property
         def truncation_config(self):
             """Truncation configuration."""
-            from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+            from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
 
             return DEFAULT_TRUNCATION_CONFIG
 
@@ -675,13 +675,13 @@ def mock_runtime():
             return response, "event_123"
 
         async def execute_code(self, code, *, builtins=None, validate=True):
-            from nooa.events import ExecutionResult
+            from aster.events import ExecutionResult
 
             return ExecutionResult(stdout="", error=None, defined_methods={})
 
         async def execute_nested(self, strategy, call):
             # Let TemplateStrategy actually execute (needed for @strategy methods)
-            from nooa.strategies.template import TemplateStrategy
+            from aster.strategies.template import TemplateStrategy
 
             if isinstance(strategy, TemplateStrategy):
                 return await strategy.execute(self, call)

@@ -14,9 +14,9 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from starlette.testclient import TestClient
 
-from nooa.viewer import main as main_module
-from nooa.viewer import otlp_store
-from nooa.viewer.main import app
+from aster.viewer import main as main_module
+from aster.viewer import otlp_store
+from aster.viewer.main import app
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -136,7 +136,7 @@ def _remote_client() -> TestClient:
 
 
 def test_loopback_is_allowed_without_a_token(client, monkeypatch):
-    monkeypatch.delenv("NOOA_VIEWER_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("ASTER_VIEWER_AUTH_TOKEN", raising=False)
     assert client.get("/api/version").status_code == 200
 
 
@@ -146,18 +146,18 @@ def test_loopback_still_allowed_when_a_token_is_configured(client, monkeypatch):
     When it replaced it, local agents and the local UI both broke the moment a
     token was set for remote access — leaving no working configuration.
     """
-    monkeypatch.setenv("NOOA_VIEWER_AUTH_TOKEN", "test-viewer-token")
+    monkeypatch.setenv("ASTER_VIEWER_AUTH_TOKEN", "test-viewer-token")
     assert client.get("/api/version").status_code == 200
 
 
 def test_remote_without_token_configured_is_refused(client, monkeypatch):
-    monkeypatch.delenv("NOOA_VIEWER_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("ASTER_VIEWER_AUTH_TOKEN", raising=False)
     with _remote_client() as remote:
         assert remote.get("/api/version").status_code == 403
 
 
 def test_remote_requires_credentials_when_token_configured(client, monkeypatch):
-    monkeypatch.setenv("NOOA_VIEWER_AUTH_TOKEN", "test-viewer-token")
+    monkeypatch.setenv("ASTER_VIEWER_AUTH_TOKEN", "test-viewer-token")
     with _remote_client() as remote:
         unauthorized = remote.get("/api/version")
         assert unauthorized.status_code == 401
@@ -173,7 +173,7 @@ def test_remote_requires_credentials_when_token_configured(client, monkeypatch):
 
 def test_remote_authenticates_with_session_cookie(client, monkeypatch):
     """The browser path: the SPA cannot set an Authorization header."""
-    monkeypatch.setenv("NOOA_VIEWER_AUTH_TOKEN", "test-viewer-token")
+    monkeypatch.setenv("ASTER_VIEWER_AUTH_TOKEN", "test-viewer-token")
     with _remote_client() as remote:
         remote.cookies.set(main_module.SESSION_COOKIE, "test-viewer-token")
         assert remote.get("/api/version").status_code == 200
@@ -184,7 +184,7 @@ def test_remote_authenticates_with_session_cookie(client, monkeypatch):
 
 
 def test_token_query_param_is_exchanged_for_a_cookie_and_stripped(client, monkeypatch):
-    monkeypatch.setenv("NOOA_VIEWER_AUTH_TOKEN", "test-viewer-token")
+    monkeypatch.setenv("ASTER_VIEWER_AUTH_TOKEN", "test-viewer-token")
     with _remote_client() as remote:
         resp = remote.get(
             "/trace/abc123",
@@ -197,13 +197,13 @@ def test_token_query_param_is_exchanged_for_a_cookie_and_stripped(client, monkey
         assert resp.headers["location"] == "/trace/abc123?tab=spans"
 
         cookie = resp.headers["set-cookie"]
-        assert "nooa_viewer_session=test-viewer-token" in cookie
+        assert "aster_viewer_session=test-viewer-token" in cookie
         assert "HttpOnly" in cookie
         assert "samesite=lax" in cookie.lower()
 
 
 def test_wrong_token_query_param_issues_no_cookie(client, monkeypatch):
-    monkeypatch.setenv("NOOA_VIEWER_AUTH_TOKEN", "test-viewer-token")
+    monkeypatch.setenv("ASTER_VIEWER_AUTH_TOKEN", "test-viewer-token")
     with _remote_client() as remote:
         resp = remote.get("/", params={"token": "guessed"}, follow_redirects=False)
         assert resp.status_code == 200
@@ -223,10 +223,10 @@ _BROWSER = {"Sec-Fetch-Site": "same-origin", "Sec-Fetch-Mode": "cors"}
 
 
 def test_rebinding_shaped_request_is_rejected(client, monkeypatch):
-    monkeypatch.delenv("NOOA_VIEWER_ALLOWED_HOSTS", raising=False)
+    monkeypatch.delenv("ASTER_VIEWER_ALLOWED_HOSTS", raising=False)
     resp = client.get("/api/version", headers={"Host": "evil.example", **_BROWSER})
     assert resp.status_code == 400
-    assert "NOOA_VIEWER_ALLOWED_HOSTS" in resp.json()["detail"]
+    assert "ASTER_VIEWER_ALLOWED_HOSTS" in resp.json()["detail"]
 
 
 def test_exporter_shaped_request_is_never_rejected(client, monkeypatch):
@@ -236,7 +236,7 @@ def test_exporter_shaped_request_is_never_rejected(client, monkeypatch):
     ingest. Rebinding is inherently a browser attack, so exempting clients that
     send no browser headers costs nothing and removes that failure mode.
     """
-    monkeypatch.delenv("NOOA_VIEWER_ALLOWED_HOSTS", raising=False)
+    monkeypatch.delenv("ASTER_VIEWER_ALLOWED_HOSTS", raising=False)
     assert client.get("/api/version", headers={"Host": "anything.example"}).status_code == 200
 
 
@@ -246,7 +246,7 @@ def test_dns_search_domain_qualified_name_is_accepted(client, monkeypatch):
     gethostname() returns only the leading label when the qualified name comes
     from a DNS search domain, so `<host>.<domain>` must match on the prefix.
     """
-    monkeypatch.delenv("NOOA_VIEWER_ALLOWED_HOSTS", raising=False)
+    monkeypatch.delenv("ASTER_VIEWER_ALLOWED_HOSTS", raising=False)
     qualified = f"{main_module._OWN_HOSTNAME}.corp.example.com"
     assert client.get("/api/version", headers={"Host": qualified, **_BROWSER}).status_code == 200
     assert (
@@ -261,12 +261,12 @@ def test_dns_search_domain_qualified_name_is_accepted(client, monkeypatch):
 def test_local_names_and_ip_literals_are_accepted(client, monkeypatch, host):
     """IP literals are safe: rebinding needs a name whose DNS the attacker
     controls, and nobody can make a bare address their page's origin."""
-    monkeypatch.delenv("NOOA_VIEWER_ALLOWED_HOSTS", raising=False)
+    monkeypatch.delenv("ASTER_VIEWER_ALLOWED_HOSTS", raising=False)
     assert client.get("/api/version", headers={"Host": host, **_BROWSER}).status_code == 200
 
 
 def test_extra_hosts_can_be_allowed_and_check_disabled(client, monkeypatch):
-    monkeypatch.setenv("NOOA_VIEWER_ALLOWED_HOSTS", "traces.internal")
+    monkeypatch.setenv("ASTER_VIEWER_ALLOWED_HOSTS", "traces.internal")
     assert (
         client.get("/api/version", headers={"Host": "traces.internal", **_BROWSER}).status_code
         == 200
@@ -275,7 +275,7 @@ def test_extra_hosts_can_be_allowed_and_check_disabled(client, monkeypatch):
         client.get("/api/version", headers={"Host": "evil.example", **_BROWSER}).status_code == 400
     )
 
-    monkeypatch.setenv("NOOA_VIEWER_ALLOWED_HOSTS", "*")
+    monkeypatch.setenv("ASTER_VIEWER_ALLOWED_HOSTS", "*")
     assert (
         client.get("/api/version", headers={"Host": "evil.example", **_BROWSER}).status_code == 200
     )

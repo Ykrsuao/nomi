@@ -7,14 +7,14 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from nooa._platform import is_native_windows
-from nooa.config import CodeActConfig
-from nooa.runtime.sandbox.config import (
+from aster._platform import is_native_windows
+from aster.config import CodeActConfig
+from aster.runtime.sandbox.config import (
     FileRule,
     SandboxConfig,
     resolve_spec,
 )
-from nooa.runtime.sandbox.context_block import render_sandbox_block
+from aster.runtime.sandbox.context_block import render_sandbox_block
 
 
 def test_codeact_defaults_keep_inprocess_backend():

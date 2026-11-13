@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Parser for .noo-eval.jsonl files.
+"""Parser for .aster-eval.jsonl files.
 
 Provides stateful parsing of eval files with version checking and error handling.
 
@@ -8,7 +8,7 @@ Usage:
     from eval_pipeline.eval_parser import EvalFileParser
 
     parser = EvalFileParser()
-    metadata, results, completion, annotations = parser.parse_file(Path("experiment.noo-eval.jsonl"))
+    metadata, results, completion, annotations = parser.parse_file(Path("experiment.aster-eval.jsonl"))
 
     # Or parse lines incrementally
     for line in file:
@@ -58,7 +58,7 @@ class EvalParseError(Exception):
 
 
 class EvalFileParser:
-    """Stateful parser for .noo-eval.jsonl files.
+    """Stateful parser for .aster-eval.jsonl files.
 
     Tracks schema version from metadata line and validates subsequent lines.
     """
@@ -123,7 +123,7 @@ class EvalFileParser:
         """Parse entire file into structured components.
 
         Args:
-            path: Path to .noo-eval.jsonl file
+            path: Path to .aster-eval.jsonl file
 
         Returns:
             Tuple of (metadata, results, completion, annotations)

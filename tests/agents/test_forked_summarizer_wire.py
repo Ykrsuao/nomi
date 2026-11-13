@@ -7,13 +7,13 @@ import json
 import httpx
 import pytest
 
-from nooa import Agent
-from nooa.agents import TokenBudgetSummarizer
-from nooa.config.summarizer_config import TokenBudgetConfig
-from nooa.context_blocks.events import UserEvent
-from nooa.runtime.middleware import LLMCallContext
-from nooa.unifiedllm import CompletionClient, ResponsesClient, Tool
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster import Agent
+from aster.agents import TokenBudgetSummarizer
+from aster.config.summarizer_config import TokenBudgetConfig
+from aster.context_blocks.events import UserEvent
+from aster.runtime.middleware import LLMCallContext
+from aster.unifiedllm import CompletionClient, ResponsesClient, Tool
+from aster.unifiedllm.unifiedllm import _ClientHttp
 from tests.integration.test_cache_resume_live import _render
 
 

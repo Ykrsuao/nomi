@@ -9,7 +9,7 @@ import pytest
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-from nooa.strategies.generated_code import ArgumentValidator
+from aster.strategies.generated_code import ArgumentValidator
 
 
 class SampleModel(BaseModel):

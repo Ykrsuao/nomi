@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from nooa.agentdoc._metadata import (
+from aster.agentdoc._metadata import (
     get_docs_metadata,
     get_field_metadata,
     is_expand_false,

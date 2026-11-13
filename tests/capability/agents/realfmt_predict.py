@@ -17,9 +17,9 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from nooa import Agent
-from nooa.decorators import strategy
-from nooa.strategies import PredictStrategy
+from aster import Agent
+from aster.decorators import strategy
+from aster.strategies import PredictStrategy
 from tests.capability.agents.truncation_formats import _patch_eval_pipeline_loader
 
 _patch_eval_pipeline_loader()

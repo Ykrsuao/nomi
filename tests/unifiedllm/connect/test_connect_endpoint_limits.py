@@ -7,7 +7,7 @@ from copy import deepcopy
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 from tests.unifiedllm.connect.connect_http import mock_http
 
 CATALOGUE = {
@@ -91,7 +91,7 @@ def test_unknown_context_warning_has_a_concrete_action_and_preserves_entry(conte
     warnings = connect.entry_warnings(entry)
     if context is None:
         assert warnings[0] == (
-            "Context window not listed. NOOA will use its default; supply --context-window "
+            "Context window not listed. ASTER will use its default; supply --context-window "
             "or your server model details if you know the limit."
         )
     else:

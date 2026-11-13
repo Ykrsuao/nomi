@@ -10,12 +10,17 @@ from types import SimpleNamespace
 import pytest
 from litellm.types.utils import Choices, Message, ModelResponse
 
-from nooa.llm_types import LLMResponse
-from nooa.unifiedllm import CompletionClient, ReasoningCompletionClient, ResponsesClient, UnifiedLLM
-from nooa.unifiedllm.chat_parts import capture_chat_parts
-from nooa.unifiedllm.fake import FakeLLMClient
-from nooa.unifiedllm.replay_state import replay_scope
-from nooa.unifiedllm.response_parts import capture_parts
+from aster.llm_types import LLMResponse
+from aster.unifiedllm import (
+    CompletionClient,
+    ReasoningCompletionClient,
+    ResponsesClient,
+    UnifiedLLM,
+)
+from aster.unifiedllm.chat_parts import capture_chat_parts
+from aster.unifiedllm.fake import FakeLLMClient
+from aster.unifiedllm.replay_state import replay_scope
+from aster.unifiedllm.response_parts import capture_parts
 
 
 @pytest.mark.parametrize(
@@ -62,9 +67,9 @@ async def test_fake_projects_response_objects_as_portable_messages(async_call):
 
 
 def test_hand_built_null_content_call_uses_the_same_public_builder():
-    from nooa.context_blocks.formatter import OpenAIProviderFormatter
-    from nooa.context_blocks.models import RenderedMessage, Role, ToolCallInfo
-    from nooa.llm_types import ToolCall
+    from aster.context_blocks.formatter import OpenAIProviderFormatter
+    from aster.context_blocks.models import RenderedMessage, Role, ToolCallInfo
+    from aster.llm_types import ToolCall
 
     arguments = ' { "x": 1 } '
     turn = LLMResponse(parts=(ToolCall(id="c", name="run", arguments=arguments),))
@@ -92,11 +97,11 @@ def test_hand_built_null_content_call_uses_the_same_public_builder():
 )
 @pytest.mark.parametrize("cached", [False, True])
 def test_real_renderer_preserves_every_unedited_assistant_shape(shape, cached):
-    from nooa.context_blocks.events import ToolCallEvent, ToolResult
-    from nooa.context_blocks.formatter import OpenAIProviderFormatter, XMLBlockFormatter
-    from nooa.context_blocks.models import ResolvedBlock, Role
-    from nooa.context_blocks.renderer import render_context
-    from nooa.context_blocks.renderers.cached import CachedBlockFormatter
+    from aster.context_blocks.events import ToolCallEvent, ToolResult
+    from aster.context_blocks.formatter import OpenAIProviderFormatter, XMLBlockFormatter
+    from aster.context_blocks.models import ResolvedBlock, Role
+    from aster.context_blocks.renderer import render_context
+    from aster.context_blocks.renderers.cached import CachedBlockFormatter
 
     content = (
         None if shape == "calls_null" else "" if shape in {"calls", "reasoning_calls"} else "answer"
@@ -154,9 +159,9 @@ def test_real_renderer_preserves_every_unedited_assistant_shape(shape, cached):
 async def test_runtime_preserves_response_objects_and_rebuilds_on_recovery(
     monkeypatch, middleware, recover
 ):
-    from nooa import Agent
-    from nooa.runtime.actor import _current_llm_var, _current_method_var
-    from nooa.unifiedllm import FakeLLMClient
+    from aster import Agent
+    from aster.runtime.actor import _current_llm_var, _current_method_var
+    from aster.unifiedllm import FakeLLMClient
 
     client = FakeLLMClient()
 
@@ -191,7 +196,7 @@ async def test_runtime_preserves_response_objects_and_rebuilds_on_recovery(
     if middleware:
         agent.event_manager.intercept("llm_call", intercept)
     monkeypatch.setattr(client, "acall", dispatch)
-    monkeypatch.setattr("nooa.runtime.actor._compute_reduced_max_tokens", lambda *args: 1024)
+    monkeypatch.setattr("aster.runtime.actor._compute_reduced_max_tokens", lambda *args: 1024)
     monkeypatch.setattr(
         agent.runtime,
         "_archive_on_context_error",
@@ -249,9 +254,9 @@ def source_turn(api):
 async def test_render_borrows_existing_response_without_reading_storage_again(monkeypatch):
     from unittest.mock import AsyncMock, Mock
 
-    from nooa import Agent
-    from nooa.context_blocks.models import ResolvedBlock, Role
-    from nooa.unifiedllm import FakeLLMClient
+    from aster import Agent
+    from aster.context_blocks.models import ResolvedBlock, Role
+    from aster.unifiedllm import FakeLLMClient
 
     class TestAgent(Agent, llm=FakeLLMClient()):
         async def respond(self) -> str: ...

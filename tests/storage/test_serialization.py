@@ -15,10 +15,10 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, ConfigDict
 
-from nooa.config.model_config import ModelConfig
-from nooa.errors.storage import DeserializationError, SerializationError
-from nooa.storage.markers import snapshotable
-from nooa.storage.serialization import SKIP, deserialize, serialize
+from aster.config.model_config import ModelConfig
+from aster.errors.storage import DeserializationError, SerializationError
+from aster.storage.markers import snapshotable
+from aster.storage.serialization import SKIP, deserialize, serialize
 
 # ---------------------------------------------------------------------------
 # Fixture types
@@ -611,14 +611,15 @@ class TestNestedClassImport:
                 {fqn},
             )
 
-    def test_legacy_nemo_oo_agents_class_path_imports_renamed_nooa_class(self):
-        """Snapshots saved before the nooa rename restore through the new module path."""
-        fqn = "nemo_oo_agents.storage.snapshot_vars.SnapshotVars"
+    @pytest.mark.parametrize("package", ["nemo_oo_agents", "nooa"])
+    def test_previous_product_class_path_imports_current_class(self, package):
+        """Saved state restores without importing a previous framework installation."""
+        fqn = f"{package}.storage.snapshot_vars.SnapshotVars"
         restored = deserialize(
             {"__type__": "dict_class", "__class__": fqn, "data": {"_data": {"answer": 42}}},
             {fqn},
         )
-        from nooa.storage.snapshot_vars import SnapshotVars
+        from aster.storage.snapshot_vars import SnapshotVars
 
         assert isinstance(restored, SnapshotVars)
         assert restored["answer"] == 42

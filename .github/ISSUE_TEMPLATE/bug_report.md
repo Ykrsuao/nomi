@@ -17,7 +17,7 @@ What you expected to happen.
 **Environment**
 - OS:
 - Python version:
-- NOOA version (`nooa --version` or `python -c "import nooa; print(nooa.__version__)"`):
+- ASTER version (`aster --version` or `python -c "import aster; print(aster.__version__)"`):
 - Model / provider:
 
 **Additional context**

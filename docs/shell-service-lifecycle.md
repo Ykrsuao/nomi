@@ -5,7 +5,7 @@ A harness that grades services after agent completion can opt into an
 invocation-scoped policy:
 
 ```python
-from nooa.tools.shell_lifecycle import preserve_background_services
+from aster.tools.shell_lifecycle import preserve_background_services
 
 async with preserve_background_services() as shells:
     shells.adopt(agent.shell.session)  # If constructed before entering the scope.
@@ -39,6 +39,6 @@ jobs and their descendants remain excluded from command-timeout cleanup.
 Other platforms retain the `ps` fallback.
 
 Integrations that track terminal model errors can use
-`nooa.agents.summarization.summary_fork_active()` to identify best-effort
+`aster.agents.summarization.summary_fork_active()` to identify best-effort
 summary calls. A caught summary failure must not mark the parent rollout fatal,
 and a successful summary must not clear an unresolved parent model failure.

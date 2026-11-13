@@ -12,16 +12,16 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.errors import SandboxExecutionError
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.runtime.sandbox.readonly import (
+from aster import Agent
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.errors import SandboxExecutionError
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.runtime.sandbox.readonly import (
     ReadOnlyView,
     SandboxStateError,
     freeze_module_state,
 )
-from nooa.unifiedllm import FakeLLMClient
+from aster.unifiedllm import FakeLLMClient
 
 # --------------------------------------------------------------------------- #
 # unit: ReadOnlyView / freeze_module_state (no worker process)
@@ -108,7 +108,7 @@ class _Agent(Agent, llm=FakeLLMClient()):
 
 
 def _rr_builtins() -> dict[str, Any]:
-    from nooa.strategies.codeact import _ReturnResultSignal
+    from aster.strategies.codeact import _ReturnResultSignal
 
     def return_result(*a: Any, **k: Any):
         raise _ReturnResultSignal(result={"result": a[0] if a else k})

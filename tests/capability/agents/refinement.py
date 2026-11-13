@@ -13,8 +13,8 @@ Not all ingredients are available in the stock. The agent must find alternative 
 
 import json  # noqa: F401
 
-from nooa import Agent, CodeActStrategy, strategy
-from nooa.config import CodeActConfig
+from aster import Agent, CodeActStrategy, strategy
+from aster.config import CodeActConfig
 
 
 class RefinementTestAgent(Agent):

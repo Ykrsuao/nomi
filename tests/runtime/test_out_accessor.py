@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from nooa.context_blocks import ResultStatus
-from nooa.events import PythonOutput
+from aster.context_blocks import ResultStatus
+from aster.events import PythonOutput
 
 
 class MockEventManager:
@@ -50,14 +50,14 @@ class TestOutAccessorBasics:
 
     def test_empty_accessor(self, mockevent_manager):
         """OutAccessor should start empty."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         out = OutAccessor(event_manager=mockevent_manager)
         assert len(out) == 0
 
     def test_single_output(self, mockevent_manager):
         """OutAccessor should return stored output."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, {"data": "value"})
         out = OutAccessor(event_manager=mockevent_manager)
@@ -67,7 +67,7 @@ class TestOutAccessorBasics:
 
     def test_multiple_outputs(self, mockevent_manager):
         """OutAccessor should handle multiple outputs."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, "first")
         mockevent_manager.add_output(2, "second")
@@ -85,7 +85,7 @@ class TestOutAccessorIndexing:
 
     def test_positive_indexing(self, mockevent_manager):
         """Out[n] should return output for execution n."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, {"result": 100})
         mockevent_manager.add_output(2, {"result": 200})
@@ -96,7 +96,7 @@ class TestOutAccessorIndexing:
 
     def test_negative_indexing(self, mockevent_manager):
         """Out[-n] should return from end like list."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, "first")
         mockevent_manager.add_output(2, "second")
@@ -109,7 +109,7 @@ class TestOutAccessorIndexing:
 
     def test_index_error_empty(self, mockevent_manager):
         """Indexing empty OutAccessor should raise IndexError."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         out = OutAccessor(event_manager=mockevent_manager)
 
@@ -122,7 +122,7 @@ class TestOutAccessorIndexing:
 
     def test_key_error_missing_positive(self, mockevent_manager):
         """Indexing non-existent positive index should raise KeyError."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, "exists")
         out = OutAccessor(event_manager=mockevent_manager)
@@ -132,7 +132,7 @@ class TestOutAccessorIndexing:
 
     def test_index_error_out_of_range_negative(self, mockevent_manager):
         """Negative index out of range should raise IndexError."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, "only one")
         out = OutAccessor(event_manager=mockevent_manager)
@@ -146,7 +146,7 @@ class TestOutAccessorContains:
 
     def test_contains_existing(self, mockevent_manager):
         """'in' should return True for existing execution count."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, "value")
         mockevent_manager.add_output(3, "value")
@@ -157,7 +157,7 @@ class TestOutAccessorContains:
 
     def test_contains_missing(self, mockevent_manager):
         """'in' should return False for missing execution count."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, "value")
         out = OutAccessor(event_manager=mockevent_manager)
@@ -171,7 +171,7 @@ class TestOutAccessorLast:
 
     def test_last_property(self, mockevent_manager):
         """last should return the most recent output."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, "first")
         out = OutAccessor(event_manager=mockevent_manager)
@@ -182,7 +182,7 @@ class TestOutAccessorLast:
 
     def test_last_empty_raises(self, mockevent_manager):
         """last should raise IndexError when empty."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         out = OutAccessor(event_manager=mockevent_manager)
 
@@ -195,14 +195,14 @@ class TestOutAccessorRepr:
 
     def test_repr_empty(self, mockevent_manager):
         """repr() should indicate no outputs."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         out = OutAccessor(event_manager=mockevent_manager)
         assert "no outputs" in repr(out).lower()
 
     def test_repr_with_outputs(self, mockevent_manager):
         """repr() should show output summaries."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         mockevent_manager.add_output(1, 42)
         mockevent_manager.add_output(2, "hello")
@@ -218,7 +218,7 @@ class TestOutAccessorRealUseCases:
 
     def test_jupyter_style_workflow(self, mockevent_manager):
         """Test Jupyter-style workflow: access previous outputs."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         out = OutAccessor(event_manager=mockevent_manager)
 
@@ -240,7 +240,7 @@ class TestOutAccessorRealUseCases:
 
     def test_non_contiguous_execution_counts(self, mockevent_manager):
         """OutAccessor should handle non-contiguous execution counts."""
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         out = OutAccessor(event_manager=mockevent_manager)
 

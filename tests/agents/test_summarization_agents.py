@@ -12,12 +12,12 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from nooa import Agent
-from nooa.agents import MethodSummarizer, SummarizationAgent, TokenBudgetSummarizer
-from nooa.config.summarizer_config import MethodSummarizerConfig, TokenBudgetConfig
-from nooa.config.truncation_config import FormatConfig, TruncationConfig
-from nooa.events import AfterTurn, Message
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent
+from aster.agents import MethodSummarizer, SummarizationAgent, TokenBudgetSummarizer
+from aster.config.summarizer_config import MethodSummarizerConfig, TokenBudgetConfig
+from aster.config.truncation_config import FormatConfig, TruncationConfig
+from aster.events import AfterTurn, Message
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def _resp(content: str) -> LLMResponse:
@@ -691,7 +691,7 @@ class TestSummarizationAsyncIntegration:
         await summarizer._pending_task
 
         # Create before_turn event
-        from nooa.events import BeforeTurn
+        from aster.events import BeforeTurn
 
         event = BeforeTurn(
             method_name="test",
@@ -803,7 +803,7 @@ class TestSummarizerNoTrace:
         """Every @hidden method on a summarizer class must also be @no_trace."""
         import inspect
 
-        from nooa.agentdoc._visibility import is_hidden_method
+        from aster.agentdoc._visibility import is_hidden_method
 
         hidden_methods = [
             (name, attr)

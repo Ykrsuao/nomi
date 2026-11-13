@@ -15,8 +15,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nooa.context_blocks import DynamicContext, ResolvedBlock, Role
-from nooa.context_blocks.events import ToolCallEvent, ToolResult, UserEvent
+from aster.context_blocks import DynamicContext, ResolvedBlock, Role
+from aster.context_blocks.events import ToolCallEvent, ToolResult, UserEvent
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -40,7 +40,7 @@ def _make_context_manager(
     protected_blocks: dict[str, Any] | None = None,
 ) -> Any:
     """Create a minimal ContextManager object for testing."""
-    from nooa.runtime.context_manager import ContextManager
+    from aster.runtime.context_manager import ContextManager
 
     cm = ContextManager()
     if protected_blocks:
@@ -76,7 +76,7 @@ class TestApplyOverrides:
 
     @pytest.mark.asyncio
     async def test_static_override_appends(self):
-        from nooa.runtime.context_builder import _apply_overrides
+        from aster.runtime.context_builder import _apply_overrides
 
         blocks = [_block("a")]
         result = await _apply_overrides(
@@ -88,7 +88,7 @@ class TestApplyOverrides:
 
     @pytest.mark.asyncio
     async def test_dynamic_override_uses_expr(self):
-        from nooa.runtime.context_builder import _apply_overrides
+        from aster.runtime.context_builder import _apply_overrides
 
         blocks = [_block("a")]
         result = await _apply_overrides(
@@ -101,7 +101,7 @@ class TestApplyOverrides:
 
     @pytest.mark.asyncio
     async def test_none_removes(self):
-        from nooa.runtime.context_builder import _apply_overrides
+        from aster.runtime.context_builder import _apply_overrides
 
         blocks = [_block("a"), _block("b")]
         result = await _apply_overrides(
@@ -111,7 +111,7 @@ class TestApplyOverrides:
 
     @pytest.mark.asyncio
     async def test_replaces_existing_key(self):
-        from nooa.runtime.context_builder import _apply_overrides
+        from aster.runtime.context_builder import _apply_overrides
 
         blocks = [_block("a", "old")]
         result = await _apply_overrides(
@@ -122,7 +122,7 @@ class TestApplyOverrides:
 
     @pytest.mark.asyncio
     async def test_does_not_mutate_input(self):
-        from nooa.runtime.context_builder import _apply_overrides
+        from aster.runtime.context_builder import _apply_overrides
 
         original = [_block("a")]
         original_copy = list(original)
@@ -137,7 +137,7 @@ class TestApplyOverrides:
 
 class TestBuildResult:
     def test_stores_blocks_and_cache(self):
-        from nooa.runtime.context_builder import BuildResult
+        from aster.runtime.context_builder import BuildResult
 
         blocks = [_block("a")]
         cache = {"x": "resolved_x"}
@@ -168,7 +168,7 @@ class TestProtectedFrameworkBlocks:
 
     @pytest.mark.asyncio
     async def test_adds_framework_blocks(self):
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         cm = _get_framework_context_manager()
         result, _ = await _phase_persistent_blocks([], cm, resolve_fn=_identity_resolve)
@@ -180,7 +180,7 @@ class TestProtectedFrameworkBlocks:
     @pytest.mark.asyncio
     async def test_framework_blocks_not_user_blocks(self):
         """Protected blocks should have user_block=False so they survive truncation."""
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         cm = _get_framework_context_manager()
         result, _ = await _phase_persistent_blocks([], cm, resolve_fn=_identity_resolve)
@@ -192,7 +192,7 @@ class TestProtectedFrameworkBlocks:
     @pytest.mark.asyncio
     async def test_empty_resolved_content_still_renders(self):
         """Empty string is valid content — blocks are included."""
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         async def empty_resolve(key: str, value: str | DynamicContext) -> str:
             return ""
@@ -204,7 +204,7 @@ class TestProtectedFrameworkBlocks:
 
     @pytest.mark.asyncio
     async def test_does_not_mutate_input(self):
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         cm = _get_framework_context_manager()
         original: list[ResolvedBlock] = []
@@ -220,7 +220,7 @@ class TestProtectedFrameworkBlocks:
 class TestPhasePersistentBlocks:
     @pytest.mark.asyncio
     async def test_adds_static_blocks(self):
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         cm = _make_context_manager({"notes": "My notes"})
         blocks, cache = await _phase_persistent_blocks([], cm, _identity_resolve)
@@ -233,7 +233,7 @@ class TestPhasePersistentBlocks:
 
     @pytest.mark.asyncio
     async def test_adds_dynamic_blocks(self):
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         cm = _make_context_manager({"status": DynamicContext("self.get_status()")})
         blocks, cache = await _phase_persistent_blocks([], cm, _identity_resolve)
@@ -245,7 +245,7 @@ class TestPhasePersistentBlocks:
 
     @pytest.mark.asyncio
     async def test_pprints_non_string_values(self):
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         cm = _make_context_manager({"data": {"key": "value"}})
         blocks, cache = await _phase_persistent_blocks([], cm, _identity_resolve)
@@ -257,7 +257,7 @@ class TestPhasePersistentBlocks:
     @pytest.mark.asyncio
     async def test_empty_string_renders_as_block(self):
         """Empty strings are valid content — only None is skipped."""
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         cm = _make_context_manager({"empty": ""})
         blocks, cache = await _phase_persistent_blocks([], cm, _identity_resolve)
@@ -269,7 +269,7 @@ class TestPhasePersistentBlocks:
     @pytest.mark.asyncio
     async def test_none_dynamic_values_render_as_none(self):
         """DynamicContext expressions that resolve to None render as 'None' (not skipped)."""
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         async def resolve_to_none(key, value):
             return None
@@ -283,7 +283,7 @@ class TestPhasePersistentBlocks:
 
     @pytest.mark.asyncio
     async def test_resolved_cache_returned_separately(self):
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         cm = _make_context_manager({"a": "val_a", "b": "val_b"})
         blocks, cache = await _phase_persistent_blocks([], cm, _identity_resolve)
@@ -302,7 +302,7 @@ class TestPhasePersistentBlocks:
 class TestPhaseStrategyOverrides:
     @pytest.mark.asyncio
     async def test_no_strategy_returns_unchanged(self):
-        from nooa.runtime.context_builder import _phase_strategy_overrides
+        from aster.runtime.context_builder import _phase_strategy_overrides
 
         blocks = [_block("a")]
         result = await _phase_strategy_overrides(blocks, None, _identity_resolve)
@@ -310,7 +310,7 @@ class TestPhaseStrategyOverrides:
 
     @pytest.mark.asyncio
     async def test_replaces_existing_block(self):
-        from nooa.runtime.context_builder import _phase_strategy_overrides
+        from aster.runtime.context_builder import _phase_strategy_overrides
 
         blocks = [_block("prompt", "original")]
         strategy = MagicMock()
@@ -322,7 +322,7 @@ class TestPhaseStrategyOverrides:
 
     @pytest.mark.asyncio
     async def test_appends_new_block(self):
-        from nooa.runtime.context_builder import _phase_strategy_overrides
+        from aster.runtime.context_builder import _phase_strategy_overrides
 
         blocks = [_block("a")]
         strategy = MagicMock()
@@ -334,7 +334,7 @@ class TestPhaseStrategyOverrides:
 
     @pytest.mark.asyncio
     async def test_none_removes_block(self):
-        from nooa.runtime.context_builder import _phase_strategy_overrides
+        from aster.runtime.context_builder import _phase_strategy_overrides
 
         blocks = [_block("a"), _block("remove_me")]
         strategy = MagicMock()
@@ -347,7 +347,7 @@ class TestPhaseStrategyOverrides:
     @pytest.mark.asyncio
     async def test_dynamic_override_resolved(self):
         """Strategy overrides with DynamicContext values are resolved and get correct metadata."""
-        from nooa.runtime.context_builder import _phase_strategy_overrides
+        from aster.runtime.context_builder import _phase_strategy_overrides
 
         blocks = [_block("prompt", "original")]
         strategy = MagicMock()
@@ -369,7 +369,7 @@ class TestPhaseStrategyOverrides:
 class TestPhaseDecoratorContext:
     @pytest.mark.asyncio
     async def test_no_decorator_context_returns_unchanged(self):
-        from nooa.runtime.context_builder import _phase_decorator_context
+        from aster.runtime.context_builder import _phase_decorator_context
 
         blocks = [_block("a")]
         result = await _phase_decorator_context(blocks, None, _identity_resolve)
@@ -377,7 +377,7 @@ class TestPhaseDecoratorContext:
 
     @pytest.mark.asyncio
     async def test_applies_decorator_overrides(self):
-        from nooa.runtime.context_builder import _phase_decorator_context
+        from aster.runtime.context_builder import _phase_decorator_context
 
         blocks = [_block("a")]
         result = await _phase_decorator_context(
@@ -389,7 +389,7 @@ class TestPhaseDecoratorContext:
 
     @pytest.mark.asyncio
     async def test_none_removes_block(self):
-        from nooa.runtime.context_builder import _phase_decorator_context
+        from aster.runtime.context_builder import _phase_decorator_context
 
         blocks = [_block("a")]
         result = await _phase_decorator_context(blocks, {"a": None}, _identity_resolve)
@@ -398,7 +398,7 @@ class TestPhaseDecoratorContext:
     @pytest.mark.asyncio
     async def test_dynamic_values_resolved(self):
         """DynamicContext values in decorator context are resolved and get correct metadata."""
-        from nooa.runtime.context_builder import _phase_decorator_context
+        from aster.runtime.context_builder import _phase_decorator_context
 
         blocks = [_block("a")]
         result = await _phase_decorator_context(
@@ -418,7 +418,7 @@ class TestPhaseDecoratorContext:
 class TestPhaseScopedBlocks:
     @pytest.mark.asyncio
     async def test_no_scoped_blocks_returns_unchanged(self):
-        from nooa.runtime.context_builder import _phase_scoped_blocks
+        from aster.runtime.context_builder import _phase_scoped_blocks
 
         blocks = [_block("a")]
         result = await _phase_scoped_blocks(blocks, None, _identity_resolve)
@@ -426,7 +426,7 @@ class TestPhaseScopedBlocks:
 
     @pytest.mark.asyncio
     async def test_applies_scoped_overrides(self):
-        from nooa.runtime.context_builder import _phase_scoped_blocks
+        from aster.runtime.context_builder import _phase_scoped_blocks
 
         blocks = [_block("a")]
         result = await _phase_scoped_blocks(blocks, {"focus": "perf testing"}, _identity_resolve)
@@ -436,7 +436,7 @@ class TestPhaseScopedBlocks:
 
     @pytest.mark.asyncio
     async def test_none_removes_block(self):
-        from nooa.runtime.context_builder import _phase_scoped_blocks
+        from aster.runtime.context_builder import _phase_scoped_blocks
 
         blocks = [_block("a")]
         result = await _phase_scoped_blocks(blocks, {"a": None}, _identity_resolve)
@@ -450,14 +450,14 @@ class TestPhaseScopedBlocks:
 
 class TestPhaseEvents:
     def test_empty_events(self):
-        from nooa.runtime.context_builder import _phase_events
+        from aster.runtime.context_builder import _phase_events
 
         em = _make_event_manager([])
         result = _phase_events([], em)
         assert result == []
 
     def test_user_event(self):
-        from nooa.runtime.context_builder import _phase_events
+        from aster.runtime.context_builder import _phase_events
 
         event = UserEvent(content="Hello", tag="1")
         em = _make_event_manager([event])
@@ -470,7 +470,7 @@ class TestPhaseEvents:
         assert result[0].event is event  # raw event carried through
 
     def test_tool_call_event(self):
-        from nooa.runtime.context_builder import _phase_events
+        from aster.runtime.context_builder import _phase_events
 
         event = ToolCallEvent(
             tool_call_id="tc_1",
@@ -492,7 +492,7 @@ class TestPhaseEvents:
         assert result[0].event.result.content == "found it"
 
     def test_tool_call_without_result(self):
-        from nooa.runtime.context_builder import _phase_events
+        from aster.runtime.context_builder import _phase_events
 
         event = ToolCallEvent(
             tool_call_id="tc_1",
@@ -508,7 +508,7 @@ class TestPhaseEvents:
         assert result[0].event.result is None
 
     def test_does_not_mutate_input_blocks(self):
-        from nooa.runtime.context_builder import _phase_events
+        from aster.runtime.context_builder import _phase_events
 
         original = [_block("existing")]
         original_copy = list(original)
@@ -521,7 +521,7 @@ class TestPhaseEvents:
         assert len(result) == 2
 
     def test_preserves_existing_blocks(self):
-        from nooa.runtime.context_builder import _phase_events
+        from aster.runtime.context_builder import _phase_events
 
         existing = [_block("system_prompt", "You are helpful.")]
         event = UserEvent(content="Hi", tag="1")
@@ -533,7 +533,7 @@ class TestPhaseEvents:
 
     def test_tag_none_falls_back_to_id(self):
         """When event.tag is None, event.id is used as the key suffix."""
-        from nooa.runtime.context_builder import _phase_events
+        from aster.runtime.context_builder import _phase_events
 
         event = UserEvent(content="Hello")
         event.tag = None
@@ -547,7 +547,7 @@ class TestPhaseEvents:
 
     def test_non_tool_event_carries_original_event(self):
         """Non-tool events also carry the original event on block.event."""
-        from nooa.runtime.context_builder import _phase_events
+        from aster.runtime.context_builder import _phase_events
 
         event = UserEvent(content="Hello world", tag="1")
         em = _make_event_manager([event])
@@ -558,8 +558,8 @@ class TestPhaseEvents:
         assert result[0].content == ""  # Deferred — serialized at render time
 
     def test_empty_llm_response_is_persisted_but_not_provider_visible(self):
-        from nooa.events import LLMResponse
-        from nooa.runtime.context_builder import _phase_events
+        from aster.events import LLMResponse
+        from aster.runtime.context_builder import _phase_events
 
         empty = LLMResponse(content="", tag="1")
         visible = LLMResponse(content="answer", tag="2")
@@ -572,9 +572,9 @@ class TestPhaseEvents:
         assert em.values() == events
 
     def test_tool_turn_and_linked_executions_are_public_context_ir(self):
-        from nooa.events import LLMResponse
-        from nooa.runtime.context_builder import _phase_events
-        from nooa.unifiedllm import ToolCall
+        from aster.events import LLMResponse
+        from aster.runtime.context_builder import _phase_events
+        from aster.unifiedllm import ToolCall
 
         turn = LLMResponse(
             content="",
@@ -610,9 +610,9 @@ class TestPhaseEvents:
         _phase_events filters by current_call_id. The task (user message) for
         this call must be included so the prompt has at least system + task.
         """
-        from nooa.events import Task
-        from nooa.runtime.context_builder import _phase_events
-        from nooa.runtime.event_query import EventQuery
+        from aster.events import Task
+        from aster.runtime.context_builder import _phase_events
+        from aster.runtime.event_query import EventQuery
 
         current_id = "call-xyz-456"
         task = Task(prompt="Classify sentiment of: Great product!")
@@ -647,7 +647,7 @@ class TestPhasePersistentBlocksErrors:
         expression). The builder renders these as normal block content so the
         LLM can see and diagnose the problem.
         """
-        from nooa.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_builder import _phase_persistent_blocks
 
         async def error_showing_resolve(key: str, value: str | DynamicContext) -> str:
             if isinstance(value, DynamicContext):
@@ -671,7 +671,7 @@ class TestPhasePersistentBlocksErrors:
 class TestBuildContext:
     @pytest.mark.asyncio
     async def test_returns_build_result(self):
-        from nooa.runtime.context_builder import BuildResult, build_context
+        from aster.runtime.context_builder import BuildResult, build_context
 
         cm = _make_context_manager({"notes": "My notes"})
         em = _make_event_manager([])
@@ -688,7 +688,7 @@ class TestBuildContext:
 
     @pytest.mark.asyncio
     async def test_includes_framework_and_persistent_blocks(self):
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager(
             blocks={"notes": "My notes"},
@@ -713,7 +713,7 @@ class TestBuildContext:
     @pytest.mark.asyncio
     async def test_does_not_mutate_context_manager(self):
         """build_context must not call _update_resolved — that's the caller's job."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager({"notes": "My notes"})
         original_cache = dict(cm._dynamic_cache)
@@ -732,7 +732,7 @@ class TestBuildContext:
 
     @pytest.mark.asyncio
     async def test_strategy_overrides_applied(self):
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager({"notes": "original notes"})
         em = _make_event_manager([])
@@ -753,7 +753,7 @@ class TestBuildContext:
 
     @pytest.mark.asyncio
     async def test_events_included(self):
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager()
         event = UserEvent(content="Hello", tag="1")
@@ -773,7 +773,7 @@ class TestBuildContext:
     @pytest.mark.asyncio
     async def test_decorator_context_applied(self):
         """build_context applies decorator_context overrides."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager({"notes": "original"})
         em = _make_event_manager([])
@@ -797,7 +797,7 @@ class TestBuildContext:
 
         Verifies no duplicate keys: strategy phase replaces the persistent block in-place.
         """
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager(
             protected_blocks={
@@ -826,7 +826,7 @@ class TestBuildContext:
 
         Verifies no duplicate keys across phases.
         """
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager({"notes": "original"})
         em = _make_event_manager([])
@@ -845,7 +845,7 @@ class TestBuildContext:
     @pytest.mark.asyncio
     async def test_keyword_only_args(self):
         """build_context uses keyword-only args — positional call should fail."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         with pytest.raises(TypeError):
             await build_context(
@@ -884,7 +884,7 @@ class TestOverridePhaseInteractions:
         Protected blocks can't be overwritten by the LLM-facing API.
         User blocks add new keys alongside them.
         """
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager(
             blocks={"custom_key": "custom value"},
@@ -907,7 +907,7 @@ class TestOverridePhaseInteractions:
     @pytest.mark.asyncio
     async def test_strategy_overrides_persistent(self):
         """Strategy overrides (Phase 3) override persistent blocks (Phase 2)."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager({"notes": "persistent notes"})
         em = _make_event_manager([])
@@ -929,7 +929,7 @@ class TestOverridePhaseInteractions:
     @pytest.mark.asyncio
     async def test_decorator_overrides_strategy(self):
         """Decorator context (Phase 4) overrides strategy (Phase 3)."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager()
         em = _make_event_manager([])
@@ -952,7 +952,7 @@ class TestOverridePhaseInteractions:
     @pytest.mark.asyncio
     async def test_scoped_overrides_decorator(self):
         """Scoped blocks (Phase 5) override decorator context (Phase 4)."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager()
         em = _make_event_manager([])
@@ -980,7 +980,7 @@ class TestOverridePhaseInteractions:
         Phase 5: scoped overrides it
         Result: scoped wins
         """
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         # Mock framework blocks with a "focus" block
         async def resolve_with_focus(key: str, value: str | DynamicContext) -> str:
@@ -1010,7 +1010,7 @@ class TestOverridePhaseInteractions:
     @pytest.mark.asyncio
     async def test_remove_semantics_across_phases(self):
         """Setting a block to None removes it, even if defined in earlier phases."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager({"notes": "persistent notes", "task": "persistent task"})
         em = _make_event_manager([])
@@ -1033,7 +1033,7 @@ class TestOverridePhaseInteractions:
     @pytest.mark.asyncio
     async def test_disabled_keys_suppress_all_block_sources(self):
         """Disabled keys are omitted from persistent, strategy, decorator, and scoped phases."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager(
             {"notes": "persistent notes", "task": "persistent task"},
@@ -1067,7 +1067,7 @@ class TestOverridePhaseInteractions:
     @pytest.mark.asyncio
     async def test_multiple_independent_overrides(self):
         """Each phase can add new blocks that don't conflict."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager({"persistent_key": "persistent"})
         em = _make_event_manager([])
@@ -1093,7 +1093,7 @@ class TestOverridePhaseInteractions:
     @pytest.mark.asyncio
     async def test_dynamic_overrides_in_phases(self):
         """DynamicContext values work correctly across all phases."""
-        from nooa.runtime.context_builder import build_context
+        from aster.runtime.context_builder import build_context
 
         cm = _make_context_manager({"a": DynamicContext("self.dynamic_a()")})
         em = _make_event_manager([])

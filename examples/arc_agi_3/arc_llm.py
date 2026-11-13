@@ -21,10 +21,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from nooa_memory.config import EmbeddingConfig
+from aster_memory.config import EmbeddingConfig
 
-from nooa.unifiedllm import CompletionClient, FakeLLMClient, RetryConfig
-from nooa.unifiedllm.unifiedllm import ResponsesClient
+from aster.unifiedllm import CompletionClient, FakeLLMClient, RetryConfig
+from aster.unifiedllm.unifiedllm import ResponsesClient
 
 
 def _load_dotenv() -> None:

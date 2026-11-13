@@ -12,9 +12,9 @@ from types import ModuleType, SimpleNamespace
 
 import pytest
 
-from nooa.runtime.sandbox import microsandbox_executor as backend
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.errors import SandboxUnavailable
+from aster.runtime.sandbox import microsandbox_executor as backend
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.errors import SandboxUnavailable
 
 _TIMEOUT = 10
 _IMAGE = "python:synthetic-acquisition-test"
@@ -81,7 +81,7 @@ class _Runtime:
 
     async def create(self, name, **kwargs):
         assert self.path in {"create", "environment"}
-        assert name.startswith("nooa-prepare-" if self.path == "environment" else "nooa-")
+        assert name.startswith("aster-prepare-" if self.path == "environment" else "aster-")
         return await self._acquire(name)
 
     async def restore(self, snapshot, *, name, **kwargs):

@@ -16,11 +16,11 @@ import json
 
 import pytest
 
-from nooa import Agent, InvariantError, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategy_validation import normalize_conditions, run_postconditions, run_preconditions
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, InvariantError, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategy_validation import normalize_conditions, run_postconditions, run_preconditions
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 def _return_result_call(result, call_id: str = "call_ret") -> ToolCall:
@@ -179,7 +179,7 @@ def _post_cancel(agent, result, call):
 
 @pytest.mark.asyncio
 async def test_return_result_cancellation_is_reported_to_tool_hook() -> None:
-    from nooa.runtime.hooks import set_hooks
+    from aster.runtime.hooks import set_hooks
 
     exceptions: list[BaseException | None] = []
 

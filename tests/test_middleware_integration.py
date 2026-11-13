@@ -6,8 +6,8 @@ import warnings
 
 import pytest
 
-from nooa.agent import Agent
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster.agent import Agent
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 _TEST_LLM = FakeLLMClient()
 
@@ -53,7 +53,7 @@ class TestLLMCallMiddlewareViaGenerate:
         em.intercept("llm_call", mw)
 
         # Drive generate() by setting up the required context vars
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -90,7 +90,7 @@ class TestLLMCallMiddlewareViaGenerate:
 
         agent.event_manager.intercept("llm_call", spy)
 
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -131,7 +131,7 @@ class TestLLMCallMiddlewareViaGenerate:
 
         agent.event_manager.intercept("llm_call", fake_response)
 
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -159,7 +159,7 @@ class TestLLMCallMiddlewareViaGenerate:
         """Without middleware, generate() still works (fast path)."""
         agent = _make_agent()
 
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -200,7 +200,7 @@ class TestLLMCallMiddlewareViaGenerate:
         agent.event_manager.intercept("llm_call", mw_a)
         agent.event_manager.intercept("llm_call", mw_b)
 
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -240,7 +240,7 @@ class TestLLMCallMiddlewareViaGenerate:
         class Dummy(BM):
             x: int = 1
 
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -316,7 +316,7 @@ class TestExecutePythonMiddleware:
     @pytest.mark.asyncio
     async def test_execute_python_middleware_short_circuit(self):
         """Middleware can return a fake result without executing code."""
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         agent = _make_agent()
 
@@ -428,7 +428,7 @@ class TestCrossKindIsolation:
 
         agent.event_manager.intercept("execute_python", mw)
 
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -470,7 +470,7 @@ class TestContextFields:
 
         agent.event_manager.intercept("llm_call", spy)
 
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -530,7 +530,7 @@ class TestShortCircuitGuard:
 
         agent.event_manager.intercept("llm_call", bad_guardrail)
 
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _current_call_var,
             _current_llm_var,
             _current_method_var,
@@ -580,7 +580,7 @@ class TestNestedGenerationReentry:
         by the re-entry guard)."""
         import json
 
-        from nooa.unifiedllm import ToolCall
+        from aster.unifiedllm import ToolCall
 
         exec_methods = []
 
@@ -687,8 +687,8 @@ class TestAgentCallMiddleware:
         """agent_call middleware fires when an agent method is called."""
         import json
 
-        from nooa.runtime.middleware import AgentCallContext
-        from nooa.unifiedllm import ToolCall
+        from aster.runtime.middleware import AgentCallContext
+        from aster.unifiedllm import ToolCall
 
         trail = []
 
@@ -729,8 +729,8 @@ class TestAgentCallMiddleware:
         """agent_call middleware can see method arguments."""
         import json
 
-        from nooa.runtime.middleware import AgentCallContext
-        from nooa.unifiedllm import ToolCall
+        from aster.runtime.middleware import AgentCallContext
+        from aster.unifiedllm import ToolCall
 
         captured = {}
 
@@ -773,8 +773,8 @@ class TestAgentCallMiddleware:
         """agent_call middleware can inspect the result on the way out."""
         import json
 
-        from nooa.runtime.middleware import AgentCallContext
-        from nooa.unifiedllm import ToolCall
+        from aster.runtime.middleware import AgentCallContext
+        from aster.unifiedllm import ToolCall
 
         seen_result = {}
 
@@ -815,7 +815,7 @@ class TestAgentCallMiddleware:
     @pytest.mark.asyncio
     async def test_agent_call_short_circuit(self):
         """agent_call middleware can short-circuit the entire method."""
-        from nooa.runtime.middleware import AgentCallContext
+        from aster.runtime.middleware import AgentCallContext
 
         llm = FakeLLMClient()
 
@@ -838,7 +838,7 @@ class TestAgentCallMiddleware:
     @pytest.mark.asyncio
     async def test_agent_call_short_circuit_without_result_raises(self):
         """Middleware that short-circuits without setting ctx.result raises."""
-        from nooa.runtime.middleware import AgentCallContext
+        from aster.runtime.middleware import AgentCallContext
 
         llm = FakeLLMClient()
 
@@ -861,7 +861,7 @@ class TestAgentCallMiddleware:
         """agent_call is outermost — llm_call and execute_python fire inside it."""
         import json
 
-        from nooa.unifiedllm import ToolCall
+        from aster.unifiedllm import ToolCall
 
         order = []
 
@@ -1022,7 +1022,7 @@ class TestAgentCallMiddlewareCoverage:
         wrapped at all, so there is no per-call hook in which to warn. Only a
         class-level scan finds them.
         """
-        from nooa.metaclass import no_trace
+        from aster.metaclass import no_trace
 
         class Probe(Agent, _PlainBase, llm=_TEST_LLM):
             def plain_sync(self) -> str:
@@ -1243,8 +1243,8 @@ class TestAgentCallMiddlewareCoverage:
         order, so the method still runs through ``agent_call`` middleware and
         the coverage scan must not report it.
         """
-        from nooa import strategy
-        from nooa.metaclass import no_trace
+        from aster import strategy
+        from aster.metaclass import no_trace
 
         seen = []
 
@@ -1277,7 +1277,7 @@ class TestAgentCallMiddlewareCoverage:
 
 
 class TestAgentCallBypassWarningDelivery:
-    """The warning has to survive nooa's NullHandler and CodeAct's stderr capture."""
+    """The warning has to survive aster's NullHandler and CodeAct's stderr capture."""
 
     @pytest.mark.asyncio
     async def test_codeact_bypass_reaches_real_stderr(self):

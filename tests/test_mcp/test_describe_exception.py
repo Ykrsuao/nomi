@@ -10,7 +10,7 @@ Regression: a streamable-http MCP transport returns a streaming httpx response.
 
 import httpx
 
-from nooa.mcp.tool import _describe_exception, _describe_exceptions
+from aster.mcp.tool import _describe_exception, _describe_exceptions
 
 
 def _streaming_401() -> httpx.HTTPStatusError:

@@ -25,8 +25,12 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from _run_layout import read_log, read_workspace  # noqa: E402
 
 _ap = argparse.ArgumentParser(description="Per-game world-model usage audit for a run.")
 _ap.add_argument("run_dir", help="multi-run container (or single run) to analyze")
@@ -71,7 +75,7 @@ def main() -> int:
             continue
 
         # ---- built: model helper defs ----
-        helpers = list((run / "team_nemo" / "shared" / "helpers").glob("*.py"))
+        helpers = list(read_workspace(run, "helpers").glob("*.py"))
         model_lines, defs = 0, []
         for p in helpers:
             try:
@@ -88,7 +92,7 @@ def main() -> int:
         }
 
         # ---- called: self.h.<mod>.<fn> in executed cells ----
-        msgs = run / "agent_logs" / "nemo" / "team_leader" / "messages"
+        msgs = read_log(run, "messages")
         calls = {"encode": 0, "predict": 0, "planner": 0, "other": 0}
         for m in _grep_count(r"self\.h\.[a-z0-9_]+\.[a-z0-9_]+", msgs):
             fn = m.rsplit(".", 1)[-1]
@@ -170,7 +174,7 @@ def main() -> int:
         "# World-model usage per game — `" + RUN.name + "`",
         "",
         "How each game's agent builds AND uses its world model. **built** = capability defined in the",
-        "persisted `team_nemo/shared/helpers/*.py`; **called** = times invoked via `self.h.<mod>.<fn>`",
+        "persisted `team_aster/shared/helpers/*.py`; **called** = times invoked via `self.h.<mod>.<fn>`",
         "in executed cells (encode=perception, predict=forward-sim, plan=search/goal). **tier**: ",
         "built-only < perception < planning < predictive < full(predict+search).",
         "",

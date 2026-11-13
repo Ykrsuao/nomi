@@ -17,13 +17,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from nooa.runtime.sandbox import microsandbox_executor as backend
-from nooa.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox import microsandbox_executor as backend
+from aster.runtime.sandbox.config import SandboxConfig
 
 IMAGE = f"python:{platform.python_version()}-slim"
 DEPENDENCIES = ["cloudpickle==3.1.2"]
 ENVIRONMENT = (
-    "nooa-runtime-"
+    "aster-runtime-"
     + hashlib.sha256((IMAGE + "\nuv-0.11.2\n" + "\n".join(DEPENDENCIES)).encode()).hexdigest()[:24]
 )
 
@@ -82,7 +82,7 @@ class _Store:
             Network=SimpleNamespace(allow_all=lambda: None),
         )
 
-    def seed(self, name=ENVIRONMENT, *, group="nooa-prepare-legacy", image=IMAGE, error=None):
+    def seed(self, name=ENVIRONMENT, *, group="aster-prepare-legacy", image=IMAGE, error=None):
         snapshot_id = "snap_" + uuid.uuid4().hex
         path = self.records / f"{snapshot_id}.json"
         record = {
@@ -154,10 +154,10 @@ def store(tmp_path, monkeypatch):
 
 async def test_reuses_legacy_snapshot_without_preparing_another_vm(store, tmp_path):
     store.seed()
-    newest = store.seed(group="nooa-prepare-newest")
-    # A same-named member in a user's group must not be adopted by NOOA.
+    newest = store.seed(group="aster-prepare-newest")
+    # A same-named member in a user's group must not be adopted by ASTER.
     store.seed(group="user-snapshot")
-    store.seed(group="nooa-prepare-wrong-image", image="python:3.12-slim")
+    store.seed(group="aster-prepare-wrong-image", image="python:3.12-slim")
 
     result = await _executor(tmp_path / "workspace")._prepare(store.sdk, IMAGE)
 
@@ -176,7 +176,7 @@ async def test_concurrent_executors_prepare_only_once(store, tmp_path):
     assert len(store.destroyed) == 1
 
 
-@pytest.mark.parametrize("group", ["nooa-runtime", "nooa-prepare-legacy"])
+@pytest.mark.parametrize("group", ["aster-runtime", "aster-prepare-legacy"])
 @pytest.mark.parametrize("error,kind", [("permission", PermissionError), ("corrupt", ValueError)])
 async def test_lookup_errors_do_not_trigger_reinstallation(store, tmp_path, group, error, kind):
     store.seed(group=group, error=error)

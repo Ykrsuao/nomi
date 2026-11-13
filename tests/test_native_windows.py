@@ -11,18 +11,18 @@ import sys
 
 import pytest
 
-from nooa import Agent
-from nooa.storage.sqlite import (
+from aster import Agent
+from aster.storage.sqlite import (
     SessionAlreadyActiveError,
     SQLiteStorageManager,
     delete_sqlite_database,
 )
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 def test_import_and_cli_need_no_platform_override():
-    env = {k: v for k, v in os.environ.items() if k != "NOOA_SKIP_PLATFORM_CHECK"}
-    for args in (["-c", "import nooa"], ["-m", "nooa_cli", "--help"]):
+    env = {k: v for k, v in os.environ.items() if k != "ASTER_SKIP_PLATFORM_CHECK"}
+    for args in (["-c", "import aster"], ["-m", "aster_cli", "--help"]):
         result = subprocess.run([sys.executable, *args], env=env, capture_output=True)
         assert result.returncode == 0, result.stderr.decode(errors="replace")
 
@@ -77,7 +77,7 @@ async def test_inprocess_state_tools_and_return_result():
 
 @pytest.mark.skipif(sys.platform != "win32", reason="native PowerShell")
 async def test_native_shell_persists_state_and_handles_timeout(tmp_path):
-    from nooa.tools.shell_tools import ShellTools
+    from aster.tools.shell_tools import ShellTools
 
     shell = ShellTools(cwd=str(tmp_path))
     try:
@@ -93,7 +93,7 @@ async def test_native_shell_persists_state_and_handles_timeout(tmp_path):
 
 @pytest.mark.skipif(sys.platform != "win32", reason="native PowerShell")
 async def test_native_monitor_streams_lines():
-    from nooa.runtime.producers import monitor
+    from aster.runtime.producers import monitor
 
     assert [line async for line in monitor("Write-Output 'one'; Write-Output '二'")] == [
         "one",
@@ -103,7 +103,7 @@ async def test_native_monitor_streams_lines():
 
 @pytest.mark.skipif(sys.platform != "win32", reason="native PowerShell")
 async def test_native_stdin_preserves_bytes_and_temporary_cwd(tmp_path):
-    from nooa.tools.shell_tools import ShellTools
+    from aster.tools.shell_tools import ShellTools
 
     shell = ShellTools(cwd=str(tmp_path))
     child = tmp_path / "child with spaces"
@@ -124,7 +124,7 @@ async def test_native_shell_user_variables_cannot_change_control_state(
 ):
     import shutil
 
-    from nooa.tools import _powershell_session
+    from aster.tools import _powershell_session
 
     path = shutil.which(executable)
     if path is None:
@@ -165,7 +165,7 @@ async def test_native_shell_preserves_native_exit_code_with_stderr(
 ):
     import shutil
 
-    from nooa.tools import _powershell_session
+    from aster.tools import _powershell_session
 
     path = shutil.which(executable)
     if path is None:
@@ -188,7 +188,7 @@ async def test_native_shell_preserves_native_exit_code_with_stderr(
 
 @pytest.mark.skipif(sys.platform != "win32", reason="native PowerShell")
 async def test_native_search_anchors_handle_single_quotes(tmp_path):
-    from nooa.tools.shell_tools import ShellTools
+    from aster.tools.shell_tools import ShellTools
 
     target = tmp_path / "a'b.txt"
     target.write_text("quoted\n", encoding="utf-8")

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for nooa.media — classmethods and _base64_data edge cases.
+"""Tests for aster.media — classmethods and _base64_data edge cases.
 
 Covers:
 - Image.from_file(path) via tmp_path fixture (lines 64-68)
@@ -11,7 +11,7 @@ Covers:
 import base64
 from pathlib import Path
 
-from nooa.media import Image, Video
+from aster.media import Image, Video
 
 
 class TestImageFromFile:
@@ -65,7 +65,7 @@ class TestMediaFromUrl:
 
     def test_base_media_from_url_stores_url_and_media_type(self):
         """Media.from_url() stores the URL and media type without downloading."""
-        from nooa.media import Media
+        from aster.media import Media
 
         url = "https://example.com/file.bin"
         m = Media.from_url(url, media_type="application/octet-stream")

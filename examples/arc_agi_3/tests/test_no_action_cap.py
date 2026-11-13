@@ -26,7 +26,7 @@ sys.path.insert(0, str(EXAMPLE_DIR))
 import harness as hz  # noqa: E402
 import solver_agent as sa  # noqa: E402
 
-from nooa.strategies.codeact import _ReturnResultSignal  # noqa: E402
+from aster.strategies.codeact import _ReturnResultSignal  # noqa: E402
 
 STATE = {"turn": 0, "state": "NOT_FINISHED", "available_actions": ["UP", "DOWN"]}
 BIG_BATCH = ["UP", "DOWN"] * 13  # 26 actions — over the default cap of 20
@@ -139,7 +139,7 @@ def test_harness_truncation_note_empty_when_nothing_dropped():
 # --------------------------------------------------------------------------- #
 def _codeact_response(code: str):
     """One scripted assistant turn: an execute_python tool call with *code*."""
-    from nooa.unifiedllm.unifiedllm import LLMResponse, ToolCall
+    from aster.unifiedllm.unifiedllm import LLMResponse, ToolCall
 
     args = json.dumps({"code": code})
     return LLMResponse(
@@ -155,7 +155,7 @@ def _codeact_response(code: str):
 
 
 def _build_agent(tmp_path, *, cap: int, scripted_cells: list[str]):
-    from nooa.unifiedllm import FakeLLMClient
+    from aster.unifiedllm import FakeLLMClient
 
     llm = FakeLLMClient(scripted_responses=[_codeact_response(c) for c in scripted_cells])
     agent = sa.MdArcSolverAgent(

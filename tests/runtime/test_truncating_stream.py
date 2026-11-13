@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for TruncatingStringIO."""
 
-from nooa.agentdoc import TruncatingStringIO
+from aster.agentdoc import TruncatingStringIO
 
 
 class TestTruncatingStringIO:

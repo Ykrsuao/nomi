@@ -17,8 +17,8 @@ import textwrap
 
 import pytest
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM (no scripted responses needed - we call execute_code directly)
 _TEST_LLM = FakeLLMClient()
@@ -95,8 +95,8 @@ sys.stderr.flush()
             import asyncio
             import warnings
 
-            from nooa import Agent
-            from nooa.unifiedllm import FakeLLMClient
+            from aster import Agent
+            from aster.unifiedllm import FakeLLMClient
 
             class OutputTestAgent(Agent):
                 pass

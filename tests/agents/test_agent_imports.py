@@ -14,10 +14,10 @@ from pathlib import Path
 import pytest
 
 
-def test_nooa_runtime_imports():
-    """Test that nooa runtime with agentdoc dependency works."""
-    from nooa.runtime.actor import ActorRuntime
-    from nooa.tracing import enable_tracing
+def test_aster_runtime_imports():
+    """Test that aster runtime with agentdoc dependency works."""
+    from aster.runtime.actor import ActorRuntime
+    from aster.tracing import enable_tracing
 
     assert enable_tracing is not None
     assert ActorRuntime is not None
@@ -25,8 +25,8 @@ def test_nooa_runtime_imports():
 
 def test_agentdoc_imports():
     """Test that agentdoc package is installed and importable."""
-    from nooa.agentdoc import doc
-    from nooa.agentdoc.introspect import methods, variables
+    from aster.agentdoc import doc
+    from aster.agentdoc.introspect import methods, variables
 
     assert doc is not None
     assert methods is not None

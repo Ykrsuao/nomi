@@ -5,12 +5,12 @@
 import pytest
 from pydantic import BaseModel
 
-from nooa import strategy
-from nooa.agent import Agent
-from nooa.config.strategy_config import PredictConfig
-from nooa.errors import GenerationError
-from nooa.strategies import PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import strategy
+from aster.agent import Agent
+from aster.config.strategy_config import PredictConfig
+from aster.errors import GenerationError
+from aster.strategies import PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 # Module-level test LLM (can be overridden at instantiation)
 _TEST_LLM = FakeLLMClient()

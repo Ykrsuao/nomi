@@ -6,21 +6,21 @@ import json
 
 import pytest
 
-from nooa import (
+from aster import (
     Agent,
     CodeActStrategy,
     TextOnlyResponseAction,
     return_text_as_result,
     strategy,
 )
-from nooa.config import CodeActConfig
-from nooa.context_blocks import ToolCallEvent
-from nooa.errors import GenerationError
-from nooa.events import PythonOutput, TextOnlyReply
-from nooa.runtime.event_manager import EventManager
-from nooa.runtime.harness_metrics import HarnessMetrics
-from nooa.storage import SQLiteStorageManager
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.config import CodeActConfig
+from aster.context_blocks import ToolCallEvent
+from aster.errors import GenerationError
+from aster.events import PythonOutput, TextOnlyReply
+from aster.runtime.event_manager import EventManager
+from aster.runtime.harness_metrics import HarnessMetrics
+from aster.storage import SQLiteStorageManager
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 _TEST_LLM = FakeLLMClient()
 
@@ -258,7 +258,7 @@ async def test_callback_can_return_non_string_result(monkeypatch):
             ...
 
     metrics = HarnessMetrics()
-    monkeypatch.setattr("nooa.strategies.codeact.get_harness_metrics", lambda: metrics)
+    monkeypatch.setattr("aster.strategies.codeact.get_harness_metrics", lambda: metrics)
     agent = TestAgent(llm=FakeLLMClient(scripted_responses=[_resp("forty-two")]))
 
     assert await agent.my_task() == 42
@@ -294,7 +294,7 @@ async def test_text_only_backstop_still_aborts():
 
 
 def test_text_only_diagnostic_is_not_model_visible():
-    from nooa.context_blocks.roles import Role
+    from aster.context_blocks.roles import Role
 
     assert TextOnlyReply._role == Role.METADATA
 

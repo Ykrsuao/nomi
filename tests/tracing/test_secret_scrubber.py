@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from nooa.tracing._secret_scrubber import (
+from aster.tracing._secret_scrubber import (
     REDACTED,
     ScrubStats,
     scrub_string,
@@ -57,7 +57,7 @@ def test_excessive_nesting_redacts_the_entire_value(shape):
         value = {"encrypted_content": "private"}
         for _ in range(2000):
             value = [value]
-        with patch("nooa.tracing._secret_scrubber.json.loads", return_value=value):
+        with patch("aster.tracing._secret_scrubber.json.loads", return_value=value):
             assert scrub_value("[0]") == (REDACTED, 1)
         return
     else:
@@ -235,12 +235,12 @@ class TestScrubValue:
 
     @pytest.mark.parametrize("text", ["ordinary code output", " \n héllo 世界", "", "42"])
     def test_plain_text_never_attempts_json_parsing(self, text):
-        with patch("nooa.tracing._secret_scrubber.json.loads") as parse:
+        with patch("aster.tracing._secret_scrubber.json.loads") as parse:
             assert scrub_value(text) == (text, 0)
         parse.assert_not_called()
 
     def test_plain_text_still_redacts_without_json_parsing(self):
-        with patch("nooa.tracing._secret_scrubber.json.loads") as parse:
+        with patch("aster.tracing._secret_scrubber.json.loads") as parse:
             result, count = scrub_value("api_key=synthetic-secret")
         parse.assert_not_called()
         assert result == f"api_key={REDACTED}"

@@ -1,15 +1,15 @@
-# A 10-minute tour of NVIDIA-labs Object Oriented Agents
+# A 10-minute tour of Aster
 
-**What if a Python method could think?** NVIDIA-labs Object Oriented Agents
-(NOOA) starts with that idea and keeps ordinary Python in charge. Classes define
+**What if a Python method could think?** Aster
+(Aster) starts with that idea and keeps ordinary Python in charge. Classes define
 roles, methods define capabilities, type annotations define contracts, and an
 ellipsis marks the work delegated to an LLM.
 
-This is a conceptual tour of what makes NOOA different. For a runnable,
+This is a conceptual tour of what makes Aster different. For a runnable,
 step-by-step path, use the
 [notebook tutorials](../notebook_tutorials/README.md).
 
-> NOOA can execute LLM-generated Python. Run CodeAct agents inside an OS-level
+> Aster can execute LLM-generated Python. Run CodeAct agents inside an OS-level
 > sandbox such as a container, VM, or
 > [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell). Framework checks are
 > defense in depth, not a containment boundary.
@@ -21,8 +21,8 @@ Choose a model supported by LiteLLM and put `...` in an async method:
 ```python
 import asyncio
 
-from nooa import Agent
-from nooa.unifiedllm.registry import get_llm_client
+from aster import Agent
+from aster.unifiedllm.registry import get_llm_client
 
 llm = get_llm_client("gpt-5-mini")
 
@@ -86,7 +86,7 @@ and iterate. REPL locals persist across generated cells within the call, while
 the inventory remains one live Python object instead of being copied into every
 prompt.
 
-NOOA documents the visible surface through `doc(self)`, so the model can
+Aster documents the visible surface through `doc(self)`, so the model can
 discover capabilities as it needs them. This is progressive disclosure using
 Python's object model: expose a small set of useful verbs and keep bulky or
 sensitive implementation state private.
@@ -106,8 +106,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from nooa import strategy
-from nooa.strategies import PredictStrategy
+from aster import strategy
+from aster.strategies import PredictStrategy
 
 
 class FeedbackAnalysis(BaseModel):
@@ -123,7 +123,7 @@ class Classifier(Agent, llm=llm):
         ...
 ```
 
-NOOA validates the provider output against the return type. Validation errors
+Aster validates the provider output against the return type. Validation errors
 can trigger another provider attempt, but Predict has no Python or tool loop.
 Use it for focused classification and extraction. Use CodeAct when the method
 must inspect live objects, call tools, execute code, or iterate.
@@ -145,7 +145,7 @@ import os
 from enum import StrEnum
 from typing import Annotated
 
-from nooa import Agent, Criteria, DecisionClient, DecisionModel, DecideStrategy, strategy
+from aster import Agent, Criteria, DecisionClient, DecisionModel, DecideStrategy, strategy
 
 
 class Department(StrEnum):
@@ -203,7 +203,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from nooa import hidden
+from aster import hidden
 
 
 class Finding(BaseModel):
@@ -312,7 +312,7 @@ shows sequential, parallel, and model-directed composition. The
 [multi-agent guide](concepts/multi-agent-systems.md) covers isolation,
 persistence, and concurrency in more depth.
 
-## 7. The NOOA design in one view
+## 7. The Aster design in one view
 
 The framework's shape can be summarized in seven rules:
 
@@ -338,5 +338,5 @@ Continue according to how you prefer to learn:
   execution, validation, events, and traces.
 - [Examples catalog](../examples/README.md) — compact runnable programs by
   capability.
-- [Agent-authoring skill](../skills/nooa-agent-authoring/SKILL.md) — detailed
+- [Agent-authoring skill](../skills/aster-agent-authoring/SKILL.md) — detailed
   reference for coding agents and experienced contributors.

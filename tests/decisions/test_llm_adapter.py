@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from nooa import (
+from aster import (
     Agent,
     BooleanDecision,
     Criteria,
@@ -21,9 +21,9 @@ from nooa import (
     UnifiedDecisionModel,
     strategy,
 )
-from nooa.decisions.client import InvalidDecisionResponseError
-from nooa.events import DecisionRecord
-from nooa.unifiedllm import AssistantText, FakeLLMClient, LLMResponse
+from aster.decisions.client import InvalidDecisionResponseError
+from aster.events import DecisionRecord
+from aster.unifiedllm import AssistantText, FakeLLMClient, LLMResponse
 
 
 class Team(Enum):
@@ -85,7 +85,7 @@ def test_from_llm_resolves_an_alias(monkeypatch) -> None:
         requested.append(alias)
         return llm
 
-    monkeypatch.setattr("nooa.unifiedllm.registry.get_llm_client", resolve)
+    monkeypatch.setattr("aster.unifiedllm.registry.get_llm_client", resolve)
 
     model = DecisionModel.from_llm("chat")
 

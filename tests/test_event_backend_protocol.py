@@ -20,18 +20,18 @@ These tests cover:
 
 import pytest
 
-from nooa.context_blocks import EventStatus
-from nooa.context_blocks.events import (
+from aster.context_blocks import EventStatus
+from aster.context_blocks.events import (
     AssistantEvent,
     ResultStatus,
     ToolCallEvent,
     ToolResult,
     UserEvent,
 )
-from nooa.context_blocks.models import Role
-from nooa.events import LLMResponse, Task
-from nooa.runtime.event_backend import InMemoryBackend
-from nooa.storage.sqlite import SQLiteEventBackend
+from aster.context_blocks.models import Role
+from aster.events import LLMResponse, Task
+from aster.runtime.event_backend import InMemoryBackend
+from aster.storage.sqlite import SQLiteEventBackend
 
 # ---------------------------------------------------------------------------
 # Backend fixture — add new backends here
@@ -370,8 +370,8 @@ def test_tool_call_with_result_type_preserved(backend):
     assert result.result.result_status == ResultStatus.COMPLETE
 
 
-def test_nemo_event_type_preserved(backend):
-    """nooa event types (Task, LLMResponse, etc.) must also round-trip."""
+def test_aster_event_type_preserved(backend):
+    """aster event types (Task, LLMResponse, etc.) must also round-trip."""
     backend.store("1", Task(prompt="do the thing"))
     backend.store("2", LLMResponse(content="done"))
     events = list(backend.all_events())

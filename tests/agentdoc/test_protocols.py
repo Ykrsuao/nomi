@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for extraction protocol support."""
 
-from nooa.agentdoc import doc, pformat
-from nooa.agentdoc.ext import (
+from aster.agentdoc import doc, pformat
+from aster.agentdoc.ext import (
     CallableInfo,
     FieldInfo,
     SupportsInstanceValues,

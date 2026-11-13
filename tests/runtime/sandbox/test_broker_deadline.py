@@ -20,10 +20,10 @@ from typing import Any
 
 import pytest
 
-from nooa.agent import Agent
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.unifiedllm import FakeLLMClient
+from aster.agent import Agent
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.unifiedllm import FakeLLMClient
 
 pytestmark = pytest.mark.sandbox
 

@@ -4,7 +4,7 @@ A strategy decides how an agentic method uses a model client. It does not change
 method's Python interface: callers still pass the same arguments and receive
 the declared return type.
 
-NOOA's primary strategies cover most applications.
+Aster's primary strategies cover most applications.
 
 | Strategy | Use it when | Execution model |
 |---|---|---|
@@ -21,8 +21,8 @@ evidence matters.
 ```python
 from typing import Literal
 
-from nooa import strategy
-from nooa.strategies import PredictStrategy
+from aster import strategy
+from aster.strategies import PredictStrategy
 
 
 class Router(Agent, llm=llm):
@@ -40,8 +40,8 @@ iterative tool-using loop.
 ## CodeAct: inspect, act, and iterate
 
 ```python
-from nooa.config import CodeActConfig
-from nooa.strategies import CodeActStrategy
+from aster.config import CodeActConfig
+from aster.strategies import CodeActStrategy
 
 
 class RepositoryAgent(Agent, llm=llm):
@@ -74,11 +74,11 @@ namespace mutation is outside its contract.
 ### Recovering from a text-only CodeAct turn
 
 CodeAct expects every model turn to call `execute_python` or `return_result`,
-but models sometimes emit plain prose instead. NOOA keeps that original
+but models sometimes emit plain prose instead. Aster keeps that original
 assistant turn in history, then asks a configurable callback what to do:
 
 ```python
-from nooa import CodeActStrategy, return_text_as_result, strategy
+from aster import CodeActStrategy, return_text_as_result, strategy
 
 
 class Summarizer(Agent, llm=llm):
@@ -105,8 +105,8 @@ return type. Custom handlers can return `TextOnlyResponseAction.return_result`,
 For example, an application can supply its own model-visible correction:
 
 ```python
-from nooa import TextOnlyResponseAction, TextOnlyResponseContext
-from nooa.events import Error
+from aster import TextOnlyResponseAction, TextOnlyResponseContext
+from aster.events import Error
 
 
 def require_tool(context: TextOnlyResponseContext) -> TextOnlyResponseAction:
@@ -181,4 +181,4 @@ instance can run concurrently.
 - [Agents and methods](agents-and-methods.md)
 - [Orchestration](orchestration.md)
 - Runnable example: [strategy selection](../../examples/quickstart/04_strategies.py)
-- Advanced reference: [`nooa-codeact-advanced`](../../skills/nooa-codeact-advanced/SKILL.md)
+- Advanced reference: [`aster-codeact-advanced`](../../skills/aster-codeact-advanced/SKILL.md)

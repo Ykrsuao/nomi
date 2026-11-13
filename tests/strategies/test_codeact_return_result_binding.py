@@ -6,12 +6,12 @@ import json
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.codeact_v2 import CodeActV2
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 BACKENDS = ["inprocess", pytest.param("sandbox", marks=pytest.mark.sandbox)]
 

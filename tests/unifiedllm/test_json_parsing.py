@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from nooa.unifiedllm import extract_and_parse_json
-from nooa.unifiedllm.unifiedllm import _llm_metrics_callback
+from aster.unifiedllm import extract_and_parse_json
+from aster.unifiedllm.unifiedllm import _llm_metrics_callback
 
 
 class TestExtractAndParseJson:

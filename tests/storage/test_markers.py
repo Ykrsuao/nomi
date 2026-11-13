@@ -7,7 +7,7 @@ Covers:
 - _resolve_single() lines 72-73 (eval failure path)
 """
 
-from nooa.storage.markers import _resolve_single, is_nosnapshot_field
+from aster.storage.markers import _resolve_single, is_nosnapshot_field
 
 
 class TestResolveSingle:

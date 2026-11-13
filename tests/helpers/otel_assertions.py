@@ -3,7 +3,7 @@
 """OpenTelemetry assertion helpers - STUB.
 
 OpenTelemetry tracing has been moved to an external instrumentation package
-(openinference-instrumentation-nemo-oo-agents). This module is a stub that marks
+(openinference-instrumentation-aster). This module is a stub that marks
 tests as skipped until the instrumentation package is integrated.
 """
 

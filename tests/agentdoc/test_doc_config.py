@@ -3,7 +3,7 @@
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from nooa.agentdoc.doc_config import DocConfig
+from aster.agentdoc.doc_config import DocConfig
 
 
 def test_doc_config_is_pydantic_model():

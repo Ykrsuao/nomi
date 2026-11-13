@@ -1,6 +1,6 @@
-# NVIDIA-labs Object Oriented Agents — Examples
+# Aster — Examples
 
-This page is a catalog of runnable examples. For the explanation of how NOOA's
+This page is a catalog of runnable examples. For the explanation of how Aster's
 ideas fit together—and the design practices behind them—read the
 [framework tour](../docs/tour.md).
 
@@ -14,14 +14,14 @@ uv run python examples/quickstart/01_first_generation_method.py
 ```
 
 Most quickstarts use the model selector in
-[`nooa.util.quickstart`](../src/nooa/util/quickstart.py), which chooses a default
+[`aster.util.quickstart`](../src/aster/util/quickstart.py), which chooses a default
 from the provider credentials in your environment. See the root README's
 [Connect a model](../README.md#1-connect-a-model) section when adapting an example.
 The [multimodal quickstart](quickstart/13_multimodal.py) uses a saved alias
-instead: configure `vision` with `nooa connect` and enable image inputs. For local LLM setup, see
-[Running NOOA With Local Models](../docs/local-models.md).
+instead: configure `vision` with `aster connect` and enable image inputs. For local LLM setup, see
+[Running Aster With Local Models](../docs/local-models.md).
 
-NOOA can execute LLM-generated Python. Run code-executing agents in an OS-level
+Aster can execute LLM-generated Python. Run code-executing agents in an OS-level
 sandbox, as described in the root README's [Quick Start safety note](../README.md#quick-start).
 
 ## Quickstart catalog
@@ -36,7 +36,7 @@ features. Each file is standalone and includes its exact run command.
 | 3 | [`03_codeact_tools.py`](quickstart/03_codeact_tools.py) | Regular Python methods used as deterministic tools | — |
 | 4 | [`04_strategies.py`](quickstart/04_strategies.py) | Choosing between Predict and CodeAct; per-instance `ShellTools` | — |
 | 5 | [`05_progressive_disclosure.py`](quickstart/05_progressive_disclosure.py) | Discovering unfamiliar runtime objects with `doc()` | — |
-| 6 | [`06_tracing.py`](quickstart/06_tracing.py) | Nested spans for orchestrators, generation methods, helpers, and durable journal traces | Optional: `uv run nooa start-dev` |
+| 6 | [`06_tracing.py`](quickstart/06_tracing.py) | Nested spans for orchestrators, generation methods, helpers, and durable journal traces | Optional: `uv run aster start-dev` |
 | 7 | [`07_dynamic_prompts.py`](quickstart/07_dynamic_prompts.py) | Trusted instance configuration in method docstrings | — |
 | 8 | [`08_context_blocks.py`](quickstart/08_context_blocks.py) | Fixed and expression-backed context blocks | — |
 | 9 | [`09_summarization.py`](quickstart/09_summarization.py) | Bounded event history with automatic summarization | — |
@@ -48,7 +48,7 @@ features. Each file is standalone and includes its exact run command.
 | 15 | [`15_nemo_relay.py`](quickstart/15_nemo_relay.py) | NeMo Relay intercepts, guardrails, events, and nested generation | `uv sync --extra nemo-relay` |
 | 16 | [`16_decisions.py`](quickstart/16_decisions.py) | A decision-only agent: choice, thresholded abstention, and batched questions with `DecideStrategy` | A decisions endpoint, e.g. `OPENROUTER_API_KEY` |
 
-If you are new to NOOA, run examples 1–6 in order. After that, choose by the
+If you are new to Aster, run examples 1–6 in order. After that, choose by the
 capability you need rather than treating the remaining files as required steps.
 
 ## Advanced mechanics

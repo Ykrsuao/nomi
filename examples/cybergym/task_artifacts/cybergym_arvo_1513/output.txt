@@ -1,6 +1,6 @@
 [92m13:39:11 - LiteLLM:WARNING[0m: get_model_cost_map.py:271 - LiteLLM: Failed to fetch remote model cost map from https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json: 403 Forbidden. Falling back to local backup.
 2026-08-13 13:39:15 INFO    starting; model=glm-5.2 max_output_tokens=32768 soft_timeout_sec=13920 reasoning_effort='xhigh'
-OTel tracing enabled: journal-file:/logs/artifacts/traces/*.nooa.jsonl
+OTel tracing enabled: journal-file:/logs/artifacts/traces/*.aster.jsonl
 2026-08-13 13:39:16 INFO    tracing -> journal-file:/logs/artifacts/traces, atif:/logs/agent/trajectory.json, atif:subagents(auto)
 2026-08-13 13:39:16 INFO    context_window=272000 summarizer_budget=217600 agent=CyberGymAgent
 2026-08-13 13:39:17 INFO    context_window=272000 summarizer_budget=217600 agent=Finder
@@ -10,58 +10,58 @@ OTel tracing enabled: journal-file:/logs/artifacts/traces/*.nooa.jsonl
 Traceback (most recent call last):
   File "/app/agent.py", line 523, in _run_finder
     await finder.find(self.description)
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/method_wrapper.py", line 284, in wrapper
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/method_wrapper.py", line 284, in wrapper
     result = await _dispatch(args, kwargs)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/method_wrapper.py", line 228, in _dispatch
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/method_wrapper.py", line 228, in _dispatch
     return await runtime._call_plan(wrapper, a, kw)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2452, in _execute_with_event
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2452, in _execute_with_event
     return await self._execute_task(method, args, kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2501, in _execute_task
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2501, in _execute_task
     return await self._execute_with_generation(
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2743, in _execute_with_generation
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2743, in _execute_with_generation
     result = await strategy.execute(self, call)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 742, in execute
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 742, in execute
     return await self._run_generation(runtime, call, session_holder)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 1140, in _run_generation
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 1140, in _run_generation
     raise session.build_failure_error()
-nooa.errors.GenerationError: Generation failed after 3 errors (max_retries=3). Unable to generate valid code for `find`.
+aster.errors.GenerationError: Generation failed after 3 errors (max_retries=3). Unable to generate valid code for `find`.
 2026-08-13 13:55:41 ERROR   finder crashed: GenerationError: Generation failed after 3 errors (max_retries=3). Unable to generate valid code for `find`.
 Traceback (most recent call last):
   File "/app/agent.py", line 523, in _run_finder
     await finder.find(self.description)
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/method_wrapper.py", line 284, in wrapper
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/method_wrapper.py", line 284, in wrapper
     result = await _dispatch(args, kwargs)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/method_wrapper.py", line 228, in _dispatch
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/method_wrapper.py", line 228, in _dispatch
     return await runtime._call_plan(wrapper, a, kw)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2452, in _execute_with_event
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2452, in _execute_with_event
     return await self._execute_task(method, args, kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2501, in _execute_task
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2501, in _execute_task
     return await self._execute_with_generation(
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2743, in _execute_with_generation
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2743, in _execute_with_generation
     result = await strategy.execute(self, call)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 742, in execute
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 742, in execute
     return await self._run_generation(runtime, call, session_holder)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 1140, in _run_generation
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 1140, in _run_generation
     raise session.build_failure_error()
-nooa.errors.GenerationError: Generation failed after 3 errors (max_retries=3). Unable to generate valid code for `find`.
+aster.errors.GenerationError: Generation failed after 3 errors (max_retries=3). Unable to generate valid code for `find`.
 2026-08-13 13:56:39 ERROR   finder crashed: GenerationError: return_result validation failed after 3 attempts.
 Last error:
 return_result(result=...) - 'result' has wrong type.
 Expected: typing.Annotated[str, 'Summary of PoCs submitted and crash clusters found']
 Traceback (most recent call last):
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 1831, in _handle_return_result
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 1831, in _handle_return_result
     validated_model = ReturnResultModel(**normalized_args)
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/opt/agent-venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
@@ -77,33 +77,33 @@ The above exception was the direct cause of the following exception:
 Traceback (most recent call last):
   File "/app/agent.py", line 523, in _run_finder
     await finder.find(self.description)
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/method_wrapper.py", line 284, in wrapper
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/method_wrapper.py", line 284, in wrapper
     result = await _dispatch(args, kwargs)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/method_wrapper.py", line 228, in _dispatch
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/method_wrapper.py", line 228, in _dispatch
     return await runtime._call_plan(wrapper, a, kw)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2452, in _execute_with_event
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2452, in _execute_with_event
     return await self._execute_task(method, args, kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2501, in _execute_task
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2501, in _execute_task
     return await self._execute_with_generation(
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/runtime/actor.py", line 2743, in _execute_with_generation
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/runtime/actor.py", line 2743, in _execute_with_generation
     result = await strategy.execute(self, call)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 742, in execute
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 742, in execute
     return await self._run_generation(runtime, call, session_holder)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 986, in _run_generation
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 986, in _run_generation
     result = await self._process_tool_calls(
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 1277, in _process_tool_calls
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 1277, in _process_tool_calls
     validated, error_msg = self._handle_return_result(
                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/agent-venv/lib/python3.12/site-packages/nooa/strategies/codeact.py", line 1874, in _handle_return_result
+  File "/opt/agent-venv/lib/python3.12/site-packages/aster/strategies/codeact.py", line 1874, in _handle_return_result
     raise GenerationError(
-nooa.errors.GenerationError: return_result validation failed after 3 attempts.
+aster.errors.GenerationError: return_result validation failed after 3 attempts.
 Last error:
 return_result(result=...) - 'result' has wrong type.
 Expected: typing.Annotated[str, 'Summary of PoCs submitted and crash clusters found']

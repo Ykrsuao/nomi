@@ -1,4 +1,4 @@
-# Contributing to NVIDIA OO Agents
+# Contributing to Aster
 
 ## Developer Certificate of Origin
 
@@ -54,9 +54,8 @@ Signed-off-by: Jane Smith <jane.smith@example.com>
 
 ## How to contribute
 
-This repository is the public, open-source home of NVIDIA OO Agents. Development is
-maintained by the NVIDIA team, and external contributions are welcomed through the
-standard pull-request flow.
+This repository contains the Aster terminal workspace and agent framework.
+Contributions use the pull-request flow below.
 
 **1.** **Fork** this repository and create a topic branch for your change.
 
@@ -71,17 +70,15 @@ what you changed.
 **5.** **Automated checks run on your PR**: DCO sign-off verification, license/notice
 checks, linting, and the test suite. Please get these green.
 
-**6.** **A maintainer reviews and lands your change.** Maintainers reconcile incoming
-contributions with NVIDIA's internal development and IP review before merging; once
-merged, your change is published here and your authorship and sign-off are preserved
-in the history.
+**6.** **A maintainer reviews and lands your change.** Your authorship and sign-off
+are preserved in Git history.
 
 For substantial features, open an issue first to discuss the design before investing
 in a large PR.
 
 ## Platform support
 
-nooa currently supports Linux and native Windows. Host features must provide native implementations; Windows shell commands use PowerShell and process-tree cleanup uses Job Objects. Sandbox execution uses microsandbox, with fine-grained permissions applied inside its Linux guest. macOS is outside the current support scope: existing compatibility code is retained, and its CI checks run only when explicitly requested through `workflow_dispatch` (`macos_native` or `macos_sandbox`).
+Aster currently supports Linux and native Windows. Host features must provide native implementations; Windows shell commands use PowerShell and process-tree cleanup uses Job Objects. Sandbox execution uses microsandbox, with fine-grained permissions applied inside its Linux guest. macOS is outside the current support scope: existing compatibility code is retained, and its CI checks run only when explicitly requested through `workflow_dispatch` (`macos_native` or `macos_sandbox`).
 
 - Import platform-specific modules inside the implementation that uses them.
 - Keep microsandbox initialization and virtualization requirements confined to sandbox execution; in-process execution must work without its runtime.

@@ -5,9 +5,9 @@
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent, strategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, strategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 
 class UserProfile(BaseModel):

@@ -10,7 +10,7 @@ import sqlite3
 
 import pytest
 
-import nooa.viewer.otlp_store as store
+import aster.viewer.otlp_store as store
 
 # ---------------------------------------------------------------------------
 # Fixture: isolated database per test

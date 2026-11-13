@@ -9,12 +9,12 @@ from typing import ClassVar
 import pytest
 from pydantic import BaseModel
 
-from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
-from nooa.errors.formatting import format_error_for_llm
-from nooa.events import _NO_RETURN, ExecutionResult, ExecutionSignal
-from nooa.runtime.sandbox import wire
-from nooa.runtime.sandbox.cell_core import run_cell_source
-from nooa.runtime.sandbox.errors import (
+from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+from aster.errors.formatting import format_error_for_llm
+from aster.events import _NO_RETURN, ExecutionResult, ExecutionSignal
+from aster.runtime.sandbox import wire
+from aster.runtime.sandbox.cell_core import run_cell_source
+from aster.runtime.sandbox.errors import (
     CellMemoryError,
     CellSerializationError,
     CellTimeoutError,
@@ -22,9 +22,9 @@ from nooa.runtime.sandbox.errors import (
     SandboxExecutionError,
     WorkerDiedError,
 )
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.runtime.sandbox.readonly import SandboxStateError
-from nooa.runtime.sandbox.serialization import (
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.runtime.sandbox.readonly import SandboxStateError
+from aster.runtime.sandbox.serialization import (
     ErrorDTO,
     ResultDTO,
     dto_from_wire,
@@ -32,7 +32,7 @@ from nooa.runtime.sandbox.serialization import (
     dto_to_wire,
     result_to_dto,
 )
-from nooa.tools.shell_tools import Match, ShellTools, StaleMatchError
+from aster.tools.shell_tools import Match, ShellTools, StaleMatchError
 
 
 def _result_with_error(error: Exception, *, line_offset: int = 0) -> ExecutionResult:
@@ -113,7 +113,7 @@ async def test_stale_match_diagnostic_survives_error_transport(tmp_path, size):
 
 
 async def test_stale_match_broker_error_survives_as_actionable_surrogate(tmp_path):
-    from nooa.runtime.sandbox.worker import ParentToolError, _raise_broker_error
+    from aster.runtime.sandbox.worker import ParentToolError, _raise_broker_error
 
     path = tmp_path / "example.txt"
     path.write_bytes(b"current\n")
@@ -262,7 +262,7 @@ def test_worker_formatter_receives_complete_context() -> None:
 
 
 def test_formatter_failure_does_not_destroy_worker_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    import nooa.errors.formatting as formatting
+    import aster.errors.formatting as formatting
 
     def fail_to_format(*args: object, **kwargs: object) -> str:
         raise RuntimeError("formatter failed")
@@ -305,8 +305,8 @@ def test_non_string_formatter_result_uses_safe_fallback(invalid_result: object) 
 
 
 async def test_worker_uses_formatter_captured_before_cell_module_mutation() -> None:
-    import nooa.errors.formatting as formatting
-    from nooa.runtime.sandbox.guest import _run_one
+    import aster.errors.formatting as formatting
+    from aster.runtime.sandbox.guest import _run_one
 
     original = formatting.format_error_for_llm
     try:
@@ -314,7 +314,7 @@ async def test_worker_uses_formatter_captured_before_cell_module_mutation() -> N
             {},
             {
                 "code": (
-                    "import nooa.errors.formatting as formatting\n"
+                    "import aster.errors.formatting as formatting\n"
                     "formatting.format_error_for_llm = "
                     "lambda *args, **kwargs: 'ValueError: forged'\n"
                     "raise RuntimeError('real failure')"
@@ -428,7 +428,7 @@ def test_worker_formatted_envelope_is_not_nested() -> None:
 
 
 def test_formatter_owned_envelope_is_not_rebounded_by_transport() -> None:
-    from nooa.errors.formatting import format_error_for_llm
+    from aster.errors.formatting import format_error_for_llm
 
     larger = format_error_for_llm(RuntimeError("X" * 2_000), max_error=400)
     dto = result_to_dto(
@@ -576,7 +576,7 @@ async def test_broker_error_text_is_bounded_before_ipc() -> None:
 
 
 def test_broker_error_with_multi_argument_builtin_uses_surrogate() -> None:
-    from nooa.runtime.sandbox.worker import ParentToolError, _raise_broker_error
+    from aster.runtime.sandbox.worker import ParentToolError, _raise_broker_error
 
     with pytest.raises(ParentToolError) as caught:
         _raise_broker_error(
@@ -589,7 +589,7 @@ def test_broker_error_with_multi_argument_builtin_uses_surrogate() -> None:
 
     assert str(caught.value) == "codec failed"
     assert caught.value.original_type == "UnicodeDecodeError"  # type: ignore[attr-defined]
-    assert caught.value._nooa_call_hint == "decode(data: bytes)"  # type: ignore[attr-defined]
+    assert caught.value._aster_call_hint == "decode(data: bytes)"  # type: ignore[attr-defined]
 
 
 def test_sandbox_state_error_reconstructs_concrete_type_without_duplicate_prefix() -> None:

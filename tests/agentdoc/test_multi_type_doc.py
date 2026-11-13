@@ -5,8 +5,8 @@
 import pytest
 from pydantic import BaseModel
 
-from nooa.agentdoc import doc
-from nooa.agentdoc._discover import discover_referenced_types
+from aster.agentdoc import doc
+from aster.agentdoc._discover import discover_referenced_types
 
 
 # Test fixtures - types with overlapping referenced types

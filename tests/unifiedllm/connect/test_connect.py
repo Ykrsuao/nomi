@@ -9,7 +9,7 @@ import httpx
 import pytest
 import yaml
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 from tests.unifiedllm.connect.connect_http import mock_http, mock_post, response_body
 
 
@@ -325,7 +325,7 @@ def test_catalogue_metadata_is_not_claimed_as_probe_evidence():
 
 
 def test_connect_uses_existing_registry_discovery(tmp_path, monkeypatch):
-    from nooa import layered_config, llm_config
+    from aster import layered_config, llm_config
 
     user = tmp_path / "user"
     project = tmp_path / "project"
@@ -337,7 +337,7 @@ def test_connect_uses_existing_registry_discovery(tmp_path, monkeypatch):
     monkeypatch.setattr(llm_config, "bundled_config_paths", lambda: [])
     monkeypatch.setattr(layered_config, "get_user_dir", lambda name: user / name)
     monkeypatch.setattr(layered_config, "get_project_dir", lambda name: project / name)
-    monkeypatch.delenv("NEMO_OO_LLM_CONFIG", raising=False)
+    monkeypatch.delenv("ASTER_LLM_CONFIG", raising=False)
     assert llm_config.llm_config_chain() == [manual]
     persisted = {k: v for k, v in make_plan().entry.items() if k != "provenance"}
     assert yaml.safe_load(manual.read_text())["models"]["local"] == persisted
@@ -474,7 +474,7 @@ def test_fuzzy_match_returns_nothing_below_the_cutoff():
 
 
 def test_entry_loads_through_main_registry(tmp_path, monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     monkeypatch.setattr(registry, "MODELS", {})
     monkeypatch.setattr(registry, "_loaded", False)
@@ -494,7 +494,7 @@ def test_library_source_has_no_ui_or_provider_imports():
 
     imported = []
     for source in Path(connect.__file__).parent.rglob("*.py"):
-        for node in ast.walk(ast.parse(source.read_text())):
+        for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
             if isinstance(node, ast.Import):
                 imported.extend(alias.name for alias in node.names)
             elif isinstance(node, ast.ImportFrom):
@@ -502,7 +502,7 @@ def test_library_source_has_no_ui_or_provider_imports():
     assert all(
         name.split(".")[0]
         not in {
-            "nooa_cli",
+            "aster_cli",
             "click",
             "prompt_toolkit",
             "rich",
@@ -525,16 +525,16 @@ import sys
 from pathlib import Path
 
 # Isolate Connect's dependency boundary from the existing core runtime imports.
-import nooa.unifiedllm
+import aster.unifiedllm
 
 class NoFrontend(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
-        if fullname.split('.')[0] in {'nooa_cli', 'click', 'prompt_toolkit', 'rich', 'textual'}:
+        if fullname.split('.')[0] in {'aster_cli', 'click', 'prompt_toolkit', 'rich', 'textual'}:
             raise AssertionError('Connect imported a frontend dependency: ' + fullname)
 
 sys.meta_path.insert(0, NoFrontend())
-from nooa.unifiedllm import connect
-from nooa.unifiedllm.connect import _diagnostics, _session
+from aster.unifiedllm import connect
+from aster.unifiedllm.connect import _diagnostics, _session
 
 proposal = connect.plan('local', 'example/model', 'chat', 'https://api.test/v1', '')
 assert proposal.entry['max_tokens'] > 0
@@ -615,7 +615,7 @@ async def test_probe_cannot_multiply_generations_or_stream(monkeypatch, settings
 
 @pytest.mark.parametrize("style", ["chat", "responses", "anthropic"])
 def test_written_metadata_does_not_become_output_allocation(tmp_path, monkeypatch, style):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     monkeypatch.setattr(registry, "MODELS", {})
     monkeypatch.setattr(registry, "_loaded", False)

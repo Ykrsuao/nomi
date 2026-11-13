@@ -4,7 +4,7 @@
 
     python examples/arc_agi_3/backfill_messages.py <run_dir> [...]
 
-Reconstructs ``agent_logs/nemo/team_leader/messages/step_NNN_round_00_*.md`` from
+Reconstructs ``agent_logs/aster/team_leader/messages/step_NNN_round_00_*.md`` from
 the ``agent_turn`` + ``env_step`` events in events.jsonl. Idempotent.
 """
 
@@ -14,13 +14,15 @@ import json
 import sys
 from pathlib import Path
 
+from _run_layout import read_log
+
 
 def backfill(run_dir: Path) -> int:
-    events_path = run_dir / "agent_logs" / "nemo" / "team_leader" / "events.jsonl"
+    events_path = read_log(run_dir, "events.jsonl")
     if not events_path.exists():
         return 0
-    msgs = events_path.parent / "messages"
-    msgs.mkdir(exist_ok=True)
+    msgs = run_dir / "agent_logs" / "aster" / "team_leader" / "messages"
+    msgs.mkdir(parents=True, exist_ok=True)
     turns: list[dict] = []
     steps: list[dict] = []
     for line in events_path.read_text().splitlines():

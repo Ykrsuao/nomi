@@ -328,7 +328,7 @@ class MemoryMonitor:
 
         # Flush traces so the viewer has the full execution up to this point
         try:
-            from nooa.tracing import flush_traces
+            from aster.tracing import flush_traces
 
             flush_traces()
         except Exception:

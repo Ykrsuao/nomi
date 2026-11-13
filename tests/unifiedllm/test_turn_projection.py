@@ -9,19 +9,19 @@ from types import SimpleNamespace
 import pytest
 from pydantic import ValidationError
 
-from nooa.context_blocks.events import ToolCallEvent, ToolResult
-from nooa.context_blocks.formatter import OpenAIProviderFormatter
-from nooa.context_blocks.models import BlockMetadata, ResolvedBlock, Role
-from nooa.context_blocks.renderer import render_context
-from nooa.context_blocks.renderers.cached import CachedBlockFormatter
-from nooa.llm_types import AssistantText, LLMResponse, ToolCall
-from nooa.runtime.middleware import LLMCallContext
-from nooa.storage.sqlite import SQLiteStorageManager
-from nooa.tracing._journal_builder import build_journal_payload
-from nooa.tracing._secret_scrubber import scrub_value
-from nooa.unifiedllm import CacheBoundary, ResponsesClient
-from nooa.unifiedllm.replay_state import ReasoningReplayError, prepare_chat_messages, replay_scope
-from nooa.unifiedllm.response_parts import capture_parts, project_turn
+from aster.context_blocks.events import ToolCallEvent, ToolResult
+from aster.context_blocks.formatter import OpenAIProviderFormatter
+from aster.context_blocks.models import BlockMetadata, ResolvedBlock, Role
+from aster.context_blocks.renderer import render_context
+from aster.context_blocks.renderers.cached import CachedBlockFormatter
+from aster.llm_types import AssistantText, LLMResponse, ToolCall
+from aster.runtime.middleware import LLMCallContext
+from aster.storage.sqlite import SQLiteStorageManager
+from aster.tracing._journal_builder import build_journal_payload
+from aster.tracing._secret_scrubber import scrub_value
+from aster.unifiedllm import CacheBoundary, ResponsesClient
+from aster.unifiedllm.replay_state import ReasoningReplayError, prepare_chat_messages, replay_scope
+from aster.unifiedllm.response_parts import capture_parts, project_turn
 
 SCOPE = replay_scope("openai/gpt-5.6", "responses", {})
 
@@ -221,7 +221,7 @@ def test_relay_json_round_trip_preserves_only_unchanged_turn_references(edited):
     assert public[1]["reasoning_content"] == original.reasoning
     if edited:
         public[1]["content"] = "changed"
-    from nooa.nemo_relay_middleware import _reconcile_messages
+    from aster.nemo_relay_middleware import _reconcile_messages
 
     resolved = _reconcile_messages(ctx.messages, public)
     assert (resolved[1] is original) is not edited
@@ -232,7 +232,7 @@ def test_relay_json_round_trip_preserves_only_unchanged_turn_references(edited):
 def test_relay_insertion_does_not_attach_state_to_new_neighbors():
     original = turn()
     ctx = LLMCallContext(messages=[original])
-    from nooa.nemo_relay_middleware import _reconcile_messages
+    from aster.nemo_relay_middleware import _reconcile_messages
 
     public = [{"role": "user", "content": "inserted"}, dict(original)]
     resolved = _reconcile_messages(ctx.messages, public)
@@ -475,7 +475,7 @@ def test_live_flat_constructor_rejects_removed_native_state():
 
 
 def test_generic_snapshot_round_trip_and_flat_archive_migration():
-    from nooa.storage.serialization import deserialize, serialize
+    from aster.storage.serialization import deserialize, serialize
 
     original = turn()
     original.raw_response = object()  # Neither raw SDK values nor parsed values belong in archives.
@@ -498,7 +498,7 @@ def test_generic_snapshot_round_trip_and_flat_archive_migration():
 @pytest.mark.parametrize("is_async", [False, True])
 @pytest.mark.asyncio
 async def test_cache_helpers_and_calibration_receive_projected_dicts(monkeypatch, is_async):
-    from nooa.llm_types import LLMUsage
+    from aster.llm_types import LLMUsage
 
     response = SimpleNamespace(
         output=[
@@ -524,11 +524,11 @@ async def test_cache_helpers_and_calibration_receive_projected_dicts(monkeypatch
     monkeypatch.setattr("litellm.responses", respond)
     monkeypatch.setattr("litellm.aresponses", arespond)
     monkeypatch.setattr(
-        "nooa.unifiedllm.unifiedllm._extract_usage",
+        "aster.unifiedllm.unifiedllm._extract_usage",
         lambda _: LLMUsage(input_tokens=10, output_tokens=1),
     )
     monkeypatch.setattr(
-        "nooa.unifiedllm.unifiedllm._update_token_calibration",
+        "aster.unifiedllm.unifiedllm._update_token_calibration",
         lambda model, messages, usage, **kwargs: calibrated.append(messages),
     )
     client = ResponsesClient("anthropic/claude-sonnet-4-5", api_key="test")
@@ -593,7 +593,7 @@ def test_raw_reasoning_wire_input_requires_explicit_migration(message):
 
 
 def test_search_retains_response_metadata_without_native_parts():
-    from nooa.runtime.event_manager import EventManager
+    from aster.runtime.event_manager import EventManager
 
     response = turn()
     response.model_name = "searchable-model"
@@ -613,7 +613,7 @@ def test_relay_deletion_conservatively_discards_shifted_native_state():
             original,
         ]
     )
-    from nooa.nemo_relay_middleware import _reconcile_messages
+    from aster.nemo_relay_middleware import _reconcile_messages
 
     public = [dict(original)]
     assert type(_reconcile_messages(ctx.messages, public)[0]) is dict

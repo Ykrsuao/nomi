@@ -23,11 +23,11 @@ from __future__ import annotations
 
 import pytest
 
-from nooa.context_blocks import ResultStatus, ToolCallEvent, ToolResult
-from nooa.context_blocks.events import AssistantEvent, UserEvent
-from nooa.context_blocks.formatter import XMLBlockFormatter
-from nooa.context_blocks.models import ResolvedBlock, Role
-from nooa.events import (
+from aster.context_blocks import ResultStatus, ToolCallEvent, ToolResult
+from aster.context_blocks.events import AssistantEvent, UserEvent
+from aster.context_blocks.formatter import XMLBlockFormatter
+from aster.context_blocks.models import ResolvedBlock, Role
+from aster.events import (
     AfterTurn,
     BeforeTurn,
     DecisionRecord,
@@ -40,9 +40,9 @@ from nooa.events import (
     Summary,
     Task,
 )
-from nooa.runtime.event_backend import InMemoryBackend
-from nooa.storage.sqlite import SQLiteEventBackend
-from nooa.unifiedllm import AssistantReasoning, AssistantText, ToolCall
+from aster.runtime.event_backend import InMemoryBackend
+from aster.storage.sqlite import SQLiteEventBackend
+from aster.unifiedllm import AssistantReasoning, AssistantText, ToolCall
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -87,7 +87,7 @@ _ALL_EVENTS = [
         ToolCallEvent,
         Role.ASSISTANT,
     ),
-    # --- nooa types ---
+    # --- aster types ---
     (
         "4",
         Task(prompt="Do the thing"),
@@ -501,7 +501,7 @@ def test_python_output_none_value_is_preserved(backend):
 )
 def test_json_safe_skips_the_probe_for_plain_json_values(monkeypatch, value):
     """Plain JSON values are returned as they are, without a trial ``to_json`` dump."""
-    import nooa.events as events
+    import aster.events as events
 
     def fail(*_args, **_kwargs):
         raise AssertionError("to_json should not be called for a plain JSON value")
@@ -514,7 +514,7 @@ def test_plain_json_walk_refuses_a_large_container_before_queueing_it():
     """A container larger than the remaining budget is refused without queueing its children."""
     import tracemalloc
 
-    import nooa.events as events
+    import aster.events as events
 
     big = list(range(events._PLAIN_JSON_MAX_ITEMS * 100))
     wide = dict.fromkeys(map(str, range(events._PLAIN_JSON_MAX_ITEMS * 10)), 0)
@@ -552,7 +552,7 @@ def test_json_safe_still_probes_other_values(monkeypatch):
     import asyncio
     import datetime
 
-    import nooa.events as events
+    import aster.events as events
 
     calls: list[object] = []
     real = events.to_json

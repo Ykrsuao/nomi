@@ -9,7 +9,7 @@ different skill — can read the history without re-deriving it.
 
 import pytest
 
-from nooa.tools.todo import TodoComment, TodoManager
+from aster.tools.todo import TodoComment, TodoManager
 
 
 def test_comment_returns_stored_instance():
@@ -191,7 +191,7 @@ def test_add_rejects_description_and_legacy_notes_together() -> None:
 
 
 def test_delegation_transfer_methods_are_public_but_hidden() -> None:
-    from nooa.agentdoc import doc
+    from aster.agentdoc import doc
 
     tm = TodoManager()
     assert callable(tm.copy_todo)

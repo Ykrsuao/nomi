@@ -11,7 +11,7 @@ with a data dependency between them:
 
 from typing import Annotated, TypedDict
 
-from nooa import Agent
+from aster import Agent
 
 # ============================================================================
 # Typed return structures

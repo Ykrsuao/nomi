@@ -39,8 +39,8 @@ from typing import TypedDict
 
 import pytest
 
-from nooa import Agent
-from nooa.unifiedllm import LLMResponse, ToolCall
+from aster import Agent
+from aster.unifiedllm import LLMResponse, ToolCall
 
 
 class SimpleResult(TypedDict):
@@ -220,7 +220,7 @@ async def test_real_llm_repeated_runs():
     """
     import os
 
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
     from tests.capability.agents.router import RouterTestWrapper
 
     # Use a fast, cheap model

@@ -1,147 +1,68 @@
-# Releasing
+# Releasing Aster
 
-`nooa`, `nooa-cli`, `nooa-acp`, `nooa-memory`, and `nooa-bench` release together from one
-commit. The version comes from the Git tag: on `v0.0.10` the distributions are
-`0.0.10`; between tags they are development versions.
+`aster`, `aster-cli`, `aster-acp`, `aster-memory`, and `aster-bench` are built from
+one commit. Versions come from Git tags: `vX.Y.Z` produces `X.Y.Z`; commits between
+tags produce development versions.
 
-## Normal release path
+## Build and check locally
 
-Releases are gated by a manually started pipeline on protected `main` in the
-private `interactive-agents/nooa-dev` GitLab project. Supply both:
+Start in the repository root with Python 3.12–3.13, uv, Rust 1.88+, and the native
+compiler toolchain. Source installation uses the local workspace packages.
 
-- `NOOA_RELEASE_TAG`: a new canonical `vX.Y.Z` version;
-- `NOOA_RELEASE_SHA`: the full 40-character SHA of a commit currently reachable
-  from public GitHub `main`.
-
-The controller freezes that SHA. A later push to `main` does not change the
-candidate under test. The job builds the internal NVIDIA model-alias wheel from
-the controller commit, clones this repository at the candidate, and calls
-`scripts/make_release.py --ci`. The public runner remains the implementation of
-the gate; GitLab YAML only provisions and invokes it.
-
-The strict gate performs:
-
-1. Ruff lint and formatting, SPDX checks, unit tests, and explicit OS sandbox
-   containment tests.
-2. Builds all five wheels and source distributions under a temporary local tag,
-   verifies their versions, and smoke-tests imports and `nooa --version` in a
-   clean environment. In a separate core-only environment, installs the built
-   `nooa` wheel from outside the checkout with freshly resolved PyPI dependencies
-   (no lockfile, workspace constraints, or optional extras), then runs quickstarts
-   01–03 against the real LLM: basic generation, structured outputs, and Python
-   tools. A separate release harness validates the examples' printed results:
-   nonempty feedback text, a populated typed analysis, and the expected inventory
-   outcome with a finite cost. The quickstart files run unchanged. A failed
-   result check, example, dependency install, or timeout blocks the
-   release. The examples use the quickstart helper's NVIDIA inference route and
-   the protected inference key; no internal model adapter is installed.
-3. Runs the full capability suite for the candidate and previous release, fresh
-   and back-to-back: four gate models, three runs, full data, no response cache.
-4. Writes private results, traces, distributions, checksums, a JSON manifest,
-   and sanitized public notes to the GitLab job artifacts.
-5. After every hard gate passes, creates or safely updates one GitHub **draft**
-   targeting the exact tested SHA.
-
-The candidate and baseline environments receive the same explicit
-`nemo-oo-agents-nvidia` wheel. Strict CI never copies `.env`, discovers ambient
-packages, or reuses capability results from another candidate. Each sample,
-stalled run, and complete arm has a timeout; completed JSONL evidence remains
-available when a later sample fails.
-
-The stable-tier 60% floor, unusable/missing results, and an arm with more than
-50% errors are hard failures. Collapses, new errors, removed tests, and drops
-beyond the noise band are advisory: they are prominent in the draft but remain
-a human judgment when hard gates pass.
-
-## Human approval
-
-The GitLab job can create only a draft. It has no command that publishes a
-release or uploads to PyPI.
-
-- **Accept:** inspect the draft and private GitLab evidence, then click GitHub's
-  **Publish release** button.
-- **Reject:** delete the draft with its tag, or leave it unpublished until a
-  maintainer performs cleanup. A subsequent pipeline may reuse only a draft
-  whose target is the identical frozen SHA; any different target fails closed.
-
-Publishing is the single human approval. `.github/workflows/publish.yml` listens
-for `release: published` and automatically rebuilds, smoke-tests, and uploads
-all five packages to PyPI using Trusted Publishing. Despite their names, the
-current `pypi-*` GitHub Environments have no configured reviewer protection, so
-there is no second approval after **Publish release**.
-
-## Evidence and recovery
-
-GitLab retains the release evidence for 90 days. Start with `job-summary.md` and
-`release-manifest.json`; the latter indexes exact commits, lock/config hashes,
-toolchain identity, check outcomes, capability scope/results, distribution
-checksums, and draft identity. Raw `.noo-eval.jsonl` files and traces are private
-artifacts and must not be copied into the public draft.
-
-`quickstart-smoke/` records the fresh environment's resolved package versions,
-the example source hashes and outcomes, and per-command logs. The manifest's
-`quickstart_smoke` entry is updated as each example completes, including failures.
-
-Hard-gate failure or capability-infrastructure failure before draft creation
-creates no draft. Fix the problem and start a new pipeline with the same tag
-and SHA. A failure after `gh release create` or `gh release edit` may leave a
-draft requiring reconciliation; rerun to update an exact matching draft without
-duplication. If a draft has the wrong target or a release is already published,
-the runner stops instead of mutating it.
-
-Use the controller's one-model/one-run/one-sample rehearsal mode to exercise
-setup and reporting cheaply; rehearsals can never create a draft. Before first
-production use, run the complete gate once with draft creation disabled and
-review all artifacts.
-
-Before requesting review of coordinated release-process changes, the private
-controller may run an unmerged rehearsal against a canonical GitHub
-`refs/pull/<number>/head` ref and its exact SHA. That mode may relax only the
-candidate's reachability from GitHub `main`; it remains reduced-scope, requires
-the private controller to authenticate the pull ref, runs every deterministic,
-containment, build, smoke, and evidence check, and can never create a draft.
-
-## Publication rehearsal and artifact promotion
-
-A manual run of `publish.yml` always targets TestPyPI and is the safe way to
-rehearse its build, OIDC, and upload jobs without consuming a production PyPI
-version. The production trigger remains `release: published`; do not publish a
-throwaway GitHub release to test it because that event intentionally reaches
-real PyPI.
-
-The current first increment rebuilds after publication from the exact published
-tag. The candidate artifacts and checksums are retained for review, but they are
-not yet promoted. A follow-up should attach the checked artifacts to the draft
-and make `publish.yml` download and verify those exact files while preserving
-the existing PyPI OIDC identities.
-
-## Emergency local fallback
-
-If the private controller is unavailable, a trusted maintainer may run the
-public script from a clean, current `main` checkout:
-
-Export `NVIDIA_INFERENCE_API_KEY` or `NVIDIA_INTERNAL_API_KEY` first. The fresh-wheel
-quickstarts make live calls even with `--skip-capability`, `--checks-only`, or
-`--dry-run`; those options do not skip the quickstart gate. A `.env` file alone
-does not satisfy this preflight check.
-
-```bash
-uv run python scripts/make_release.py v0.0.10
+```powershell
+uv sync --group dev --extra tui
+uv run ruff check .
+uv run ruff format --check .
+uv run python scripts/check_license_headers.py
+uv run pytest
+cargo test --locked --manifest-path packages/aster-tui/Cargo.toml
+cargo build --locked --release --manifest-path packages/aster-tui/Cargo.toml
+uv build --no-sources --package aster --out-dir dist
+uv build --no-sources --package aster-cli --out-dir dist
+uv build --no-sources --package aster-acp --out-dir dist
+uv build --no-sources --package aster-memory --out-dir dist
+uv build --no-sources --package aster-bench --out-dir dist
 ```
 
-This is deliberately narrower than the old workflow: it may create a draft but
-cannot publish it. It retains local compatibility for model aliases, prompts
-before drafting advisory results, and still blocks the capability floor. Use it
-only for recovery, record the evidence separately, and publish only through the
-GitHub draft UI.
+Rebuild the viewer with `npm ci --ignore-scripts` and `npm run build` in
+`src/aster/viewer/frontend-react/` when its sources change; include the resulting
+`dist/`. Keep `LICENSE`, SPDX headers, and `THIRD_PARTY_NOTICES.md` in distributions.
 
-## Trusted Publishing setup
+Smoke-test all five built wheels together in a clean environment. Check imports,
+`aster --help`, `aster --version`, and `aster-acp --help` from outside the checkout.
+The native terminal is built separately; Python wheels currently do not bundle it.
+Retain the commit, version, test results, and artifact checksums with release evidence.
 
-Each project needs a publisher configured for owner `NVIDIA-NeMo`, repository
-`labs-OO-Agents`, workflow `publish.yml`, and its distinct environment:
-`pypi-nooa`, `pypi-nooa-cli`, `pypi-nooa-acp`, `pypi-nooa-memory`, or
-`pypi-nooa-bench`. Repeat
-with `testpypi-*` environments on TestPyPI.
+## Configure a release channel
 
-Every `uses:` entry in `publish.yml` must remain compatible with the NVIDIA
-organization's GitHub Actions allowlist.
+This checkout does not designate an Aster hosting organization or package-index
+owner. Before publication, configure the intended repository, package ownership,
+and credentials for that release channel.
+
+The optional `scripts/make_release.py` gate requires
+`ASTER_RELEASE_REPOSITORY=owner/repo` before it can operate on GitHub. Supply your
+actual Aster repository; the script validates the value. It can create a draft
+release after its checks, and cannot publish that draft itself.
+
+The gate includes live model checks and fresh-wheel quickstarts. The quickstarts
+still run with `--skip-capability`, `--checks-only`, or `--dry-run`. Configure the
+selected model aliases and provider credentials before using it. `--ci` requires
+an explicit candidate SHA and a compatible model-alias wheel supplied through
+`--internal-wheel`; use `--help` for the full gate controls.
+
+The runner retains private reports, logs, traces, distributions, checksums, and a
+manifest. Review sanitized notes and the exact tested commit before approving a
+draft. A failed gate creates no new draft; a failure after draft creation may need
+reconciliation before retrying.
+
+## Publish and rehearse
+
+`.github/workflows/publish.yml` builds all five packages. Manual workflow runs
+target TestPyPI; a published GitHub release targets PyPI. Configure Trusted
+Publishing for your actual repository and `publish.yml`, with a distinct
+`testpypi-<package>` or `pypi-<package>` environment for each distribution. Configure
+environment reviewers to match the project's release policy.
+
+Rehearse on TestPyPI and inspect artifact versions and contents before creating
+a production release. A `release: published` event enables the production upload
+jobs, so use manual dispatch for publication rehearsals.

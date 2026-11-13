@@ -18,8 +18,8 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent, PredictStrategy, strategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent, PredictStrategy, strategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def _resp(content: Any) -> LLMResponse:

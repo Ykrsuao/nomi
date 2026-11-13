@@ -8,14 +8,14 @@ Usage:
     python scripts/rename_imports.py --apply ROOT MAPPING_JSON
 
 MAPPING_JSON is a JSON object like:
-    '{"agentdoc": "nooa.agentdoc", "context_blocks": "nooa.context_blocks"}'
+    '{"agentdoc": "aster.agentdoc", "context_blocks": "aster.context_blocks"}'
 
 Examples:
     # Preview changes
-    python scripts/rename_imports.py --preview . '{"agentdoc": "nooa.agentdoc"}'
+    python scripts/rename_imports.py --preview . '{"agentdoc": "aster.agentdoc"}'
 
     # Apply changes
-    python scripts/rename_imports.py --apply . '{"agentdoc": "nooa.agentdoc"}'
+    python scripts/rename_imports.py --apply . '{"agentdoc": "aster.agentdoc"}'
 """
 
 import ast
@@ -32,7 +32,7 @@ EXCLUDE_DIRS = {
     ".ruff_cache",
     ".pytest_cache",
     "node_modules",
-    ".nooa",
+    ".aster",
     "3p",
 }
 

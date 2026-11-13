@@ -6,9 +6,9 @@ from typing import Annotated
 
 from pydantic import Field
 
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import CompletionClient, Tool
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import CompletionClient, Tool
 
 
 class FakeLLM(CompletionClient):

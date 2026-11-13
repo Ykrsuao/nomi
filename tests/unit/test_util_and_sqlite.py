@@ -16,23 +16,23 @@ import pytest
 
 
 class TestContext:
-    """Tests for nooa.util._context."""
+    """Tests for aster.util._context."""
 
     def setup_method(self):
         """Reset context var before each test."""
-        from nooa.util._context import _current_agent_var
+        from aster.util._context import _current_agent_var
 
         # Reset to None between tests
         _current_agent_var.set(None)
 
     def test_current_agent_raises_when_not_set(self):
-        from nooa.util._context import _current_agent
+        from aster.util._context import _current_agent
 
         with pytest.raises(RuntimeError, match="No agent in context"):
             _current_agent()
 
     def test_current_agent_returns_agent_when_set(self):
-        from nooa.util._context import _current_agent, _current_agent_var
+        from aster.util._context import _current_agent, _current_agent_var
 
         fake_agent = MagicMock()
         _current_agent_var.set(fake_agent)
@@ -40,7 +40,7 @@ class TestContext:
 
     def test_runtime_var_exists(self):
         """The _current_runtime_var ContextVar is also exported."""
-        from nooa.util._context import _current_runtime_var
+        from aster.util._context import _current_runtime_var
 
         assert _current_runtime_var is not None
 
@@ -57,9 +57,9 @@ class TestArtwork:
         # Import must be done under patch to avoid module-level side effects
         with (
             patch("dotenv.load_dotenv"),
-            patch("nooa.unifiedllm.registry.get_llm_client"),
+            patch("aster.unifiedllm.registry.get_llm_client"),
         ):
-            from nooa.util import quickstart
+            from aster.util import quickstart
 
             return quickstart.Artwork("Starry Night", "van Gogh", 1_000_000.0)
 
@@ -84,9 +84,9 @@ class TestArtwork:
         # collapse them.
         with (
             patch("dotenv.load_dotenv"),
-            patch("nooa.unifiedllm.registry.get_llm_client"),
+            patch("aster.unifiedllm.registry.get_llm_client"),
         ):
-            from nooa.util import quickstart
+            from aster.util import quickstart
 
             a = quickstart.Artwork("Starry Night", "van Gogh", 1_000_000.0)
             b = quickstart.Artwork("Mona Lisa", "da Vinci", 2_000_000.0)
@@ -101,9 +101,9 @@ class TestStockHolding:
     def _make(self):
         with (
             patch("dotenv.load_dotenv"),
-            patch("nooa.unifiedllm.registry.get_llm_client"),
+            patch("aster.unifiedllm.registry.get_llm_client"),
         ):
-            from nooa.util import quickstart
+            from aster.util import quickstart
 
             return quickstart.StockHolding("AAPL", 100, 150.0)
 
@@ -122,9 +122,9 @@ class TestJewelry:
     def _make(self):
         with (
             patch("dotenv.load_dotenv"),
-            patch("nooa.unifiedllm.registry.get_llm_client"),
+            patch("aster.unifiedllm.registry.get_llm_client"),
         ):
-            from nooa.util import quickstart
+            from aster.util import quickstart
 
             return quickstart.Jewelry("Diamond Ring", 2.5, 10_000.0)
 
@@ -143,9 +143,9 @@ class TestCollectible:
     def _make(self, condition="mint"):
         with (
             patch("dotenv.load_dotenv"),
-            patch("nooa.unifiedllm.registry.get_llm_client"),
+            patch("aster.unifiedllm.registry.get_llm_client"),
         ):
-            from nooa.util import quickstart
+            from aster.util import quickstart
 
             return quickstart.Collectible("Baseball Card", 1000.0, condition)
 
@@ -177,9 +177,9 @@ class TestAutorun:
     def test_autorun_calls_asyncio_run(self):
         with (
             patch("dotenv.load_dotenv"),
-            patch("nooa.unifiedllm.registry.get_llm_client"),
+            patch("aster.unifiedllm.registry.get_llm_client"),
         ):
-            from nooa.util import quickstart
+            from aster.util import quickstart
 
             async def my_func():
                 return 42
@@ -197,9 +197,9 @@ class TestAutorun:
     def test_autorun_returns_original_function(self):
         with (
             patch("dotenv.load_dotenv"),
-            patch("nooa.unifiedllm.registry.get_llm_client"),
+            patch("aster.unifiedllm.registry.get_llm_client"),
         ):
-            from nooa.util import quickstart
+            from aster.util import quickstart
 
             async def my_func():
                 return 42
@@ -211,9 +211,9 @@ class TestAutorun:
     def test_autorun_prints_example_output(self):
         with (
             patch("dotenv.load_dotenv"),
-            patch("nooa.unifiedllm.registry.get_llm_client"),
+            patch("aster.unifiedllm.registry.get_llm_client"),
         ):
-            from nooa.util import quickstart
+            from aster.util import quickstart
 
             async def my_func():
                 pass
@@ -230,7 +230,7 @@ class TestAutorun:
 
 def _make_backend():
     """Create an in-memory SQLiteEventBackend for testing."""
-    from nooa.storage.sqlite import SQLiteEventBackend, _ensure_schema
+    from aster.storage.sqlite import SQLiteEventBackend, _ensure_schema
 
     conn = sqlite3.connect(":memory:")
     _ensure_schema(conn)
@@ -241,7 +241,7 @@ class TestEnsureSchema:
     """Tests for _ensure_schema."""
 
     def test_creates_tables(self):
-        from nooa.storage.sqlite import _ensure_schema
+        from aster.storage.sqlite import _ensure_schema
 
         conn = sqlite3.connect(":memory:")
         _ensure_schema(conn)
@@ -255,7 +255,7 @@ class TestEnsureSchema:
         assert "schema_version" in tables
 
     def test_inserts_schema_version(self):
-        from nooa.storage.sqlite import _SCHEMA_VERSION, _ensure_schema
+        from aster.storage.sqlite import _SCHEMA_VERSION, _ensure_schema
 
         conn = sqlite3.connect(":memory:")
         _ensure_schema(conn)
@@ -263,7 +263,7 @@ class TestEnsureSchema:
         assert row[0] == _SCHEMA_VERSION
 
     def test_schema_version_mismatch_raises(self):
-        from nooa.storage.sqlite import _SCHEMA_VERSION, _ensure_schema
+        from aster.storage.sqlite import _SCHEMA_VERSION, _ensure_schema
 
         conn = sqlite3.connect(":memory:")
         _ensure_schema(conn)
@@ -275,7 +275,7 @@ class TestEnsureSchema:
 
     def test_idempotent_on_second_call(self):
         """Calling _ensure_schema twice on the same DB should not raise."""
-        from nooa.storage.sqlite import _ensure_schema
+        from aster.storage.sqlite import _ensure_schema
 
         conn = sqlite3.connect(":memory:")
         _ensure_schema(conn)
@@ -286,7 +286,7 @@ class TestSQLiteEventBackendStore:
     """Tests for SQLiteEventBackend.store and get."""
 
     def test_store_and_get_message(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msg = Message(content="hello world")
@@ -296,7 +296,7 @@ class TestSQLiteEventBackendStore:
         assert result.content == "hello world"
 
     def test_store_adds_to_active_tags(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msg = Message(content="test")
@@ -304,7 +304,7 @@ class TestSQLiteEventBackendStore:
         assert "mytag" in backend.active_tags()
 
     def test_store_multiple_preserves_order(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         for i in range(5):
@@ -313,7 +313,7 @@ class TestSQLiteEventBackendStore:
         assert tags == ["tag0", "tag1", "tag2", "tag3", "tag4"]
 
     def test_len_counts_events(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         assert len(backend) == 0
@@ -327,7 +327,7 @@ class TestSQLiteEventBackendStore:
         assert backend.get("nonexistent") is None
 
     def test_get_by_id(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msg = Message(content="by_id_test")
@@ -345,7 +345,7 @@ class TestSQLiteEventBackendUpdate:
     """Tests for SQLiteEventBackend.update."""
 
     def test_update_field(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msg = Message(content="original")
@@ -356,7 +356,7 @@ class TestSQLiteEventBackendUpdate:
         assert result.content == "updated"
 
     def test_update_metadata(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msg = Message(content="test")
@@ -372,7 +372,7 @@ class TestSQLiteEventBackendUpdate:
 
     def test_update_nonexistent_field_is_ignored(self):
         """Updating a field that doesn't exist on the event is silently ignored."""
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msg = Message(content="test")
@@ -385,7 +385,7 @@ class TestSQLiteEventBackendRemove:
     """Tests for SQLiteEventBackend.remove."""
 
     def test_remove_existing(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         backend.store("tag1", Message(content="test"))
@@ -399,7 +399,7 @@ class TestSQLiteEventBackendRemove:
         assert backend.remove("nonexistent") is False
 
     def test_remove_decrements_len(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         backend.store("t1", Message(content="a"))
@@ -413,8 +413,8 @@ class TestSQLiteEventBackendSetStatus:
     """Tests for SQLiteEventBackend.set_status."""
 
     def test_set_status_to_archived(self):
-        from nooa.context_blocks import EventStatus
-        from nooa.events import Message
+        from aster.context_blocks import EventStatus
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msg = Message(content="test")
@@ -425,7 +425,7 @@ class TestSQLiteEventBackendSetStatus:
         assert result.status == EventStatus.ARCHIVED
 
     def test_set_status_returns_false_for_missing(self):
-        from nooa.context_blocks import EventStatus
+        from aster.context_blocks import EventStatus
 
         backend, _ = _make_backend()
         assert backend.set_status("nonexistent", EventStatus.ACTIVE) is False
@@ -439,7 +439,7 @@ class TestSQLiteEventBackendActiveTags:
         assert backend.active_tags() == []
 
     def test_insert_active_tag_at_position(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         backend.store("tag0", Message(content="a"))
@@ -450,7 +450,7 @@ class TestSQLiteEventBackendActiveTags:
         assert tags.index("tag1") < tags.index("tag2")
 
     def test_remove_active_tag_existing(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         backend.store("tag1", Message(content="x"))
@@ -471,7 +471,7 @@ class TestSQLiteEventBackendAllEvents:
         assert list(backend.all_events()) == []
 
     def test_all_events_in_insertion_order(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msgs = [Message(content=f"msg{i}") for i in range(3)]
@@ -488,7 +488,7 @@ class TestSQLiteEventBackendFindTag:
     """Tests for find_tag()."""
 
     def test_find_tag_existing(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         msg = Message(content="test")
@@ -496,7 +496,7 @@ class TestSQLiteEventBackendFindTag:
         assert backend.find_tag(msg) == "mytag"
 
     def test_find_tag_nonexistent_returns_none(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         assert backend.find_tag(Message(content="x")) is None
@@ -506,7 +506,7 @@ class TestSQLiteEventBackendClear:
     """Tests for clear()."""
 
     def test_clear_removes_all_events_and_tags(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         for i in range(3):
@@ -516,7 +516,7 @@ class TestSQLiteEventBackendClear:
         assert backend.active_tags() == []
 
     def test_clear_resets_insertion_counter(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         backend.store("t1", Message(content="a"))
@@ -529,7 +529,7 @@ class TestSQLiteEventBackendDeserialization:
     """Tests for _deserialize with unknown event types."""
 
     def test_unknown_event_type_falls_back_to_metadata(self, caplog):
-        from nooa.context_blocks import Metadata
+        from aster.context_blocks import Metadata
 
         backend, _ = _make_backend()
         import json
@@ -541,13 +541,13 @@ class TestSQLiteEventBackendDeserialization:
                 "status": "active",
             }
         )
-        with caplog.at_level(logging.WARNING, logger="nooa.storage.sqlite"):
+        with caplog.at_level(logging.WARNING, logger="aster.storage.sqlite"):
             event = backend._deserialize(raw)
         assert isinstance(event, Metadata)
         assert "Unknown event_type" in caplog.text
 
     def test_known_event_type_uses_correct_class(self):
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
         import json
@@ -564,7 +564,7 @@ class TestSQLiteEventBackendRegisterEventType:
     """Tests for register_event_type()."""
 
     def test_register_new_type(self):
-        from nooa.context_blocks import EventBase
+        from aster.context_blocks import EventBase
 
         backend, _ = _make_backend()
 
@@ -577,16 +577,16 @@ class TestSQLiteEventBackendRegisterEventType:
 
     def test_register_same_type_no_warning(self, caplog):
         """Re-registering the same class for same key should not warn."""
-        from nooa.events import Message
+        from aster.events import Message
 
         backend, _ = _make_backend()
-        with caplog.at_level(logging.WARNING, logger="nooa.storage.sqlite"):
+        with caplog.at_level(logging.WARNING, logger="aster.storage.sqlite"):
             backend.register_event_type(Message)
         assert "overwrites" not in caplog.text
 
     def test_register_different_class_same_key_warns(self, caplog):
         """Registering a different class for an existing key should warn."""
-        from nooa.context_blocks import EventBase
+        from aster.context_blocks import EventBase
 
         backend, _ = _make_backend()
 
@@ -594,7 +594,7 @@ class TestSQLiteEventBackendRegisterEventType:
             event_type: str = "Message"  # Same as Message!
             content: str = ""
 
-        with caplog.at_level(logging.WARNING, logger="nooa.storage.sqlite"):
+        with caplog.at_level(logging.WARNING, logger="aster.storage.sqlite"):
             backend.register_event_type(FakeMessage)
         assert "overwrites" in caplog.text
 
@@ -603,14 +603,14 @@ class TestSQLiteStorageManager:
     """Tests for SQLiteStorageManager."""
 
     def test_in_memory_creation(self):
-        from nooa.storage.sqlite import SQLiteStorageManager
+        from aster.storage.sqlite import SQLiteStorageManager
 
         sm = SQLiteStorageManager(":memory:")
         assert sm.event_backend is not None
         sm.close()
 
     def test_file_based_creation(self, tmp_path):
-        from nooa.storage.sqlite import SQLiteStorageManager
+        from aster.storage.sqlite import SQLiteStorageManager
 
         db_path = tmp_path / "test.db"
         sm = SQLiteStorageManager(db_path)
@@ -619,22 +619,22 @@ class TestSQLiteStorageManager:
         assert db_path.exists()
 
     def test_context_manager(self):
-        from nooa.storage.sqlite import SQLiteStorageManager
+        from aster.storage.sqlite import SQLiteStorageManager
 
         with SQLiteStorageManager(":memory:") as sm:
             assert sm.event_backend is not None
         # After __exit__, connection is closed (further operations would fail)
 
     def test_get_latest_snapshot_id_empty(self):
-        from nooa.storage.sqlite import SQLiteStorageManager
+        from aster.storage.sqlite import SQLiteStorageManager
 
         sm = SQLiteStorageManager(":memory:")
         assert sm.get_latest_snapshot_id() is None
         sm.close()
 
     def test_event_backend_property(self):
-        from nooa.runtime.event_backend import EventBackend
-        from nooa.storage.sqlite import SQLiteStorageManager
+        from aster.runtime.event_backend import EventBackend
+        from aster.storage.sqlite import SQLiteStorageManager
 
         sm = SQLiteStorageManager(":memory:")
         assert isinstance(sm.event_backend, EventBackend)
@@ -642,8 +642,8 @@ class TestSQLiteStorageManager:
 
     def test_backend_uses_insertion_counter(self):
         """Insertion counter increments with each stored event."""
-        from nooa.events import Message
-        from nooa.storage.sqlite import SQLiteStorageManager
+        from aster.events import Message
+        from aster.storage.sqlite import SQLiteStorageManager
 
         sm = SQLiteStorageManager(":memory:")
         backend = sm._backend
@@ -662,7 +662,7 @@ class TestSQLiteStorageManager:
         """
         import sqlite3
 
-        from nooa.storage.sqlite import SQLiteStorageManager
+        from aster.storage.sqlite import SQLiteStorageManager
 
         sm = SQLiteStorageManager(":memory:")
         real_conn = sm._conn
@@ -677,8 +677,8 @@ class TestSQLiteStorageManager:
             real_conn.close()
 
     def test_restore_snapshot_not_found_raises(self):
-        from nooa.errors.storage import SnapshotNotFoundError
-        from nooa.storage.sqlite import SQLiteStorageManager
+        from aster.errors.storage import SnapshotNotFoundError
+        from aster.storage.sqlite import SQLiteStorageManager
 
         sm = SQLiteStorageManager(":memory:")
         mock_agent = MagicMock()

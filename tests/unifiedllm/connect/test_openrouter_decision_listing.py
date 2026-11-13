@@ -5,7 +5,7 @@
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 from tests.unifiedllm.connect.connect_http import mock_http
 
 JEV = {
@@ -81,8 +81,8 @@ async def test_explicit_openrouter_shared_listing_includes_decisions(monkeypatch
     [(["decisions"], "systemone"), (["text"], "discover"), (["text", "decisions"], "discover")],
 )
 def test_interface_suggestion_uses_declared_output_not_name(monkeypatch, outputs, expected):
-    from nooa_cli.commands import _connect_prompts as prompts
-    from nooa_cli.commands._connect_wizard import WizardState, select_request_interface
+    from aster_cli.commands import _connect_prompts as prompts
+    from aster_cli.commands._connect_wizard import WizardState, select_request_interface
 
     model = {**JEV, "architecture": {"output_modalities": outputs}}
     state = WizardState(
@@ -110,8 +110,8 @@ def test_interface_suggestion_uses_declared_output_not_name(monkeypatch, outputs
 
 
 def test_explicit_interface_is_preserved(monkeypatch):
-    from nooa_cli.commands import _connect_prompts as prompts
-    from nooa_cli.commands._connect_wizard import WizardState, select_request_interface
+    from aster_cli.commands import _connect_prompts as prompts
+    from aster_cli.commands._connect_wizard import WizardState, select_request_interface
 
     monkeypatch.setattr(
         prompts, "prompt", lambda *args, **kwargs: pytest.fail("Explicit style must not prompt")
@@ -126,8 +126,8 @@ def test_explicit_interface_is_preserved(monkeypatch):
 def test_server_decision_type_suggests_systemone_but_keeps_user_choice(
     monkeypatch, capsys, field, answer
 ):
-    from nooa_cli.commands import _connect_prompts as prompts
-    from nooa_cli.commands._connect_wizard import WizardState, select_request_interface
+    from aster_cli.commands import _connect_prompts as prompts
+    from aster_cli.commands._connect_wizard import WizardState, select_request_interface
 
     state = WizardState(
         model="nvidia/alexwortega/openjev-4b",
@@ -150,8 +150,8 @@ def test_server_decision_type_suggests_systemone_but_keeps_user_choice(
 
 
 def test_litellm_detection_and_decision_type_shown_before_interface(monkeypatch, capsys):
-    from nooa_cli.commands import _connect_prompts as prompts
-    from nooa_cli.commands._connect_wizard import (
+    from aster_cli.commands import _connect_prompts as prompts
+    from aster_cli.commands._connect_wizard import (
         WizardState,
         prepare_metadata,
         select_request_interface,

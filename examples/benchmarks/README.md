@@ -1,23 +1,28 @@
 # Benchmarks Example
 
-Everything needed to run the NOOA BenchAgent under the open-source
+Everything needed to run the Aster BenchAgent under the open-source
 [Harbor](https://github.com/harbor-framework/harbor) benchmark harness
 (the setup used for the tech report's SWE-bench Verified and
 Terminal-Bench 2.0 results).
 
 | File | What |
 |------|------|
-| `harbor_adapter.py` | Harbor "installed agent" adapter: clones this repo into the trial container, installs `packages/nooa-bench`, and invokes the `nemo-harbor` CLI |
+| `harbor_adapter.py` | Harbor "installed agent" adapter: clones this repo into the trial container, installs `packages/aster-bench`, and invokes the `aster-harbor` CLI |
 | `harbor_minimal.yaml` | Minimal Harbor config wiring the adapter to a model and dataset |
-| `bench_agent.py` | Standalone 35-line minimal agent, for reading — the real BenchAgent lives in [`packages/nooa-bench`](../../packages/nooa-bench/) |
+| `bench_agent.py` | Standalone 35-line minimal agent, for reading — the real BenchAgent lives in [`packages/aster-bench`](../../packages/aster-bench/) |
 
 ## Run
 
 ```bash
 # 1. Install Harbor (see the Harbor repo for details) and have apptainer/docker available.
-# 2. Point the config at your task dataset, then from the repo root:
+# 2. Set ASTER_GIT_URL to the clone URL of your Aster source repository.
+# 3. Point the config at your task dataset, then from the repo root:
 PYTHONPATH=examples/benchmarks harbor run --config examples/benchmarks/harbor_minimal.yaml
 ```
+
+Set `ASTER_GIT_REF` to a commit or tag to reproduce a specific checkout. The
+repository must contain the Aster packages; the adapter requires an explicit
+source URL and does not choose a hosted repository for you.
 
 Credentials: set `NVIDIA_INFERENCE_API_KEY` (inference.nvidia.com gateway) or
 `NVIDIA_API_KEY` (public NIM endpoint) on your host — the adapter forwards it
@@ -30,7 +35,7 @@ download).
 Inside the container, Harbor invokes:
 
 ```
-nemo-harbor --instruction '...' --model '...' --agent-type bench
+aster-harbor --instruction '...' --model '...' --agent-type bench
 ```
 
 which runs the BenchAgent and writes `result.json` (success, response, token

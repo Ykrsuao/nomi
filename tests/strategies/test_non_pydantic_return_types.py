@@ -23,10 +23,10 @@ from typing import Annotated, Any
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # --- Non-Pydantic types for testing ---
 

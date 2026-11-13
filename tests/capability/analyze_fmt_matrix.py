@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Analyze the fmt_matrix run.
 
-Reads all .noo-eval.jsonl files under a results dir, filters to
+Reads all .aster-eval.jsonl files under a results dir, filters to
 fmt_<format>_<type>_<strategy> tests, computes pass rate per cell, and
 emits a markdown report grouped by format.
 
@@ -65,7 +65,11 @@ def parse_test_name(name: str) -> tuple[str, str, str] | None:
 
 def load_results(results_dir: Path) -> list[dict]:
     rows = []
-    for path in results_dir.rglob("*.noo-eval.jsonl"):
+    for path in sorted(
+        path
+        for pattern in ("*.aster-eval.jsonl", "*.noo-eval.jsonl")
+        for path in results_dir.rglob(pattern)
+    ):
         with path.open() as f:
             for line in f:
                 d = json.loads(line)

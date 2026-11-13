@@ -13,8 +13,8 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from nooa.runtime.channels import QueueManager
-from nooa.runtime.producers import monitor
+from aster.runtime.channels import QueueManager
+from aster.runtime.producers import monitor
 
 pytestmark = pytest.mark.skipif(os.name != "posix", reason="monitor() requires POSIX")
 

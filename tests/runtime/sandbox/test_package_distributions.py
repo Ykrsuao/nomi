@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from nooa.runtime.sandbox.dependencies import packages_distributions
+from aster.runtime.sandbox.dependencies import packages_distributions
 
 
 def _write_file(root: Path, relative: str, content: str = "") -> None:

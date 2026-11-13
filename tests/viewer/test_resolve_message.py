@@ -18,7 +18,7 @@ today but the resolver must still handle gracefully:
 
 from __future__ import annotations
 
-from nooa.viewer.otlp_store import _resolve_message
+from aster.viewer.otlp_store import _resolve_message
 
 
 def test_mixed_text_and_block_parts_concatenate_in_order():

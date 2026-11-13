@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""ARC-AGI-3 single-agent solver built on the normal nemo-oo TUI agent.
+"""ARC-AGI-3 single-agent solver built on the normal aster TUI agent.
 
 One agent (no team) plays an ARC-AGI-3 game through a file-IPC harness:
 
@@ -12,7 +12,7 @@ One agent (no team) plays an ARC-AGI-3 game through a file-IPC harness:
 
 Two knowledge variants share this base:
 
-- :class:`MemArcSolverAgent` — the nemo-oo **memory system** (``self.memory.*``,
+- :class:`MemArcSolverAgent` — the aster **memory system** (``self.memory.*``,
   installed as a skill by the launcher) holds accumulated knowledge, hypotheses
   and reflections;
 - :class:`MdArcSolverAgent` — the knowledge-file baseline: knowledge lives in
@@ -33,10 +33,10 @@ from types import SimpleNamespace
 
 import numpy as np  # noqa: F401
 
-from nooa import hidden, strategy
-from nooa.interactive import Done, InteractiveAgent, Waiting  # noqa: F401
-from nooa.media import Image  # visual grid input (show()n to the LLM)
-from nooa.runtime import show  # CodeAct builtin — attach an image to the turn
+from aster import hidden, strategy
+from aster.interactive import Done, InteractiveAgent, Waiting  # noqa: F401
+from aster.media import Image  # visual grid input (show()n to the LLM)
+from aster.runtime import show  # CodeAct builtin — attach an image to the turn
 
 with hidden:
     import importlib.util
@@ -45,25 +45,26 @@ with hidden:
     import time
     from typing import Annotated
 
+    from _run_layout import read_log as _read_log
     from PIL import Image as _PILImage  # PNG rendering only
 
-    from nooa.agentdoc import pformat, spec
-    from nooa.config import CodeActConfig
-    from nooa.interactive import SummarizationConfig, install_summarizer
-    from nooa.runtime.channels import Channel, ChannelReader
-    from nooa.runtime.restrictions import (
+    from aster.agentdoc import pformat, spec
+    from aster.config import CodeActConfig
+    from aster.interactive import SummarizationConfig, install_summarizer
+    from aster.runtime.channels import Channel, ChannelReader
+    from aster.runtime.restrictions import (
         DEFAULT_BLOCKED_MODULES,
         RestrictionsConfig,
     )
-    from nooa.runtime.sandbox import SandboxConfig
-    from nooa.skill_registry import SkillRegistry
-    from nooa.storage.markers import nosnapshot
-    from nooa.strategies import CodeActStrategy
+    from aster.runtime.sandbox import SandboxConfig
+    from aster.skill_registry import SkillRegistry
+    from aster.storage.markers import nosnapshot
+    from aster.strategies import CodeActStrategy
 
     # _ReturnResultSignal is the internal signal raised by return_result(); no public
-    # re-export exists yet. If nooa ever exposes a public path, update this import.
-    from nooa.strategies.codeact import _ReturnResultSignal
-    from nooa.strategy_validation import InvariantError
+    # re-export exists yet. If aster ever exposes a public path, update this import.
+    from aster.strategies.codeact import _ReturnResultSignal
+    from aster.strategy_validation import InvariantError
 
 # L2 guard (isolation plan §L2): deny file/network/process modules in generated
 # CodeAct cells. The agent's own tools (which use pathlib internally) are
@@ -581,7 +582,7 @@ class ArcSolverBase(InteractiveAgent):
         self.game_id = game_id
         self.alias = alias or "the game"
         self.reflect_every = reflect_every
-        self.workspace = self.run_dir / "team_nemo" / "shared"
+        self.workspace = self.run_dir / "team_aster" / "shared"
         self.helpers_dir = self.workspace / "helpers"
         self.ipc_dir = self.run_dir / "ipc"
         self._states_path = self.ipc_dir / "states.jsonl"
@@ -764,7 +765,7 @@ class ArcSolverBase(InteractiveAgent):
         Assign to a variable and compute — avoid printing whole entries.
         """
         if per_step:
-            events_path = self.run_dir / "agent_logs" / "nemo" / "team_leader" / "events.jsonl"
+            events_path = _read_log(self.run_dir, "events.jsonl")
             entries: list[dict] = []
             turn = None
 

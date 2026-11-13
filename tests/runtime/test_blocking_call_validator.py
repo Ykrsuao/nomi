@@ -6,11 +6,11 @@ import time
 
 import pytest
 
-from nooa.runtime.code_validator import (
+from aster.runtime.code_validator import (
     BlockingCallValidator,
     ValidationContext,
 )
-from nooa.runtime.restrictions import DEFAULT_BLOCKED_MODULES, RestrictionsConfig
+from aster.runtime.restrictions import DEFAULT_BLOCKED_MODULES, RestrictionsConfig
 
 
 @pytest.fixture

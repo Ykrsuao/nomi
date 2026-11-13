@@ -1,17 +1,17 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for agentdoc integration with nooa.
+"""Tests for agentdoc integration with aster.
 
 These tests verify that agentdoc functions (doc, brief, methods, variables)
-work correctly with nooa Agent instances.
+work correctly with aster Agent instances.
 
 Note: The output format uses Python class syntax per the agentdoc design doc.
 """
 
-from nooa import Agent
-from nooa.agentdoc import doc
-from nooa.agentdoc.introspect import methods, variables
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.agentdoc import doc
+from aster.agentdoc.introspect import methods, variables
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM (can be overridden at instantiation)
 _TEST_LLM = FakeLLMClient()
@@ -65,7 +65,7 @@ class TestAgentDocProtocol:
 
     def test_agent_doc_is_callable(self):
         """Test that doc() works on Agent instances."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         agent_instance = SimpleAgent()
         # doc() should return useful documentation for agents
@@ -76,7 +76,7 @@ class TestAgentDocProtocol:
 
     def test_agent_uses_type_info_protocol(self):
         """Test that Agent class uses __type_info__ protocol for documentation."""
-        from nooa.agentdoc.ext import has_type_info
+        from aster.agentdoc.ext import has_type_info
 
         # Agent implements __type_info__ protocol directly
         assert has_type_info(SimpleAgent)
@@ -292,7 +292,7 @@ class TestAgentDocFrameworkAPIs:
 
     def test_context_always_present_on_agent(self):
         """Test that self.context is always present on agent."""
-        from nooa.runtime.context import ContextApi
+        from aster.runtime.context import ContextApi
 
         agent_instance = SimpleAgent()
         assert hasattr(agent_instance, "context"), "self.context should always be present"
@@ -317,7 +317,7 @@ class TestAgentDocFrameworkAPIs:
 
     def test_events_always_present_on_agent(self):
         """Test that self.events is always present on agent."""
-        from nooa.runtime.events import EventsApi
+        from aster.runtime.events import EventsApi
 
         agent_instance = SimpleAgent()
         assert hasattr(agent_instance, "events"), "self.events should always be present"
@@ -374,7 +374,7 @@ class TestAgentDocFieldExtraction:
 
     def test_extract_type_info_finds_subclass_init_fields(self):
         """Test that fields from subclass __init__ are found."""
-        from nooa.agentdoc.ext import extract_type_info
+        from aster.agentdoc.ext import extract_type_info
 
         info = extract_type_info(SimpleAgent, _skip_protocol=True)
         field_names = {f.name for f in info.fields}
@@ -407,7 +407,7 @@ def test_hidden_method_excluded_from_type_info():
     """@hidden methods should not appear in __type_info__()."""
     from unittest.mock import MagicMock
 
-    from nooa import Agent, hidden
+    from aster import Agent, hidden
 
     llm = MagicMock()
     llm.model = "test"
@@ -432,8 +432,8 @@ def test_underscore_method_hidden_by_default():
     """_private methods are hidden by default; @spec(hidden=False) opts them back in."""
     from unittest.mock import MagicMock
 
-    from nooa import Agent
-    from nooa.agentdoc import spec
+    from aster import Agent
+    from aster.agentdoc import spec
 
     llm = MagicMock()
     llm.model = "test"
@@ -459,7 +459,7 @@ def test_hidden_field_excluded_from_instance_values():
     from typing import Annotated
     from unittest.mock import MagicMock
 
-    from nooa import Agent, hidden
+    from aster import Agent, hidden
 
     llm = MagicMock()
     llm.model = "test"
@@ -480,7 +480,7 @@ def test_underscore_field_visible_without_hidden():
     """_private fields should now be VISIBLE (no underscore convention)."""
     from unittest.mock import MagicMock
 
-    from nooa import Agent
+    from aster import Agent
 
     llm = MagicMock()
     llm.model = "test"
@@ -496,8 +496,8 @@ def test_underscore_field_visible_without_hidden():
 
 def test_framework_attrs_hidden_via_annotation():
     """runtime, _event_manager, event_query, render_config should be hidden via Annotated[T, hidden]."""
-    from nooa import Agent
-    from nooa.agentdoc.visibility import is_hidden_field
+    from aster import Agent
+    from aster.agentdoc.visibility import is_hidden_field
 
     assert is_hidden_field(Agent, "runtime") is True
     assert is_hidden_field(Agent, "event_manager") is True

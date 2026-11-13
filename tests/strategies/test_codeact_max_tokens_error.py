@@ -8,12 +8,12 @@ from typing import Literal
 
 import pytest
 
-from nooa import Agent, return_text_as_result, strategy
-from nooa.config import CodeActConfig
-from nooa.errors import GenerationError
-from nooa.events import DebugTrace, Error
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, return_text_as_result, strategy
+from aster.config import CodeActConfig
+from aster.errors import GenerationError
+from aster.events import DebugTrace, Error
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 _TEST_LLM = FakeLLMClient()
 

@@ -2,12 +2,15 @@
 # SPDX-License-Identifier: Apache-2.0
 """prompt_cache_key doubles as the provider-side session-affinity hint."""
 
+from unittest.mock import AsyncMock, Mock
+
+import httpx
 import pytest
 from litellm.types.llms.openai import ResponsesAPIResponse
 from litellm.types.utils import Choices, Message, ModelResponse
 
-from nooa.unifiedllm import CompletionClient, ResponsesClient
-from nooa.unifiedllm.cache_policy import SESSION_AFFINITY_HEADER, add_session_affinity_header
+from aster.unifiedllm import CompletionClient, ResponsesClient, RetryConfig
+from aster.unifiedllm.cache_policy import SESSION_AFFINITY_HEADER, add_session_affinity_header
 
 
 def test_header_mirrors_prompt_cache_key():
@@ -92,6 +95,7 @@ async def test_completion_client_sends_the_header_only_with_a_key(monkeypatch, k
         await client.acall([{"role": "user", "content": "hi"}], **extra)
     if key:
         assert sent["extra_headers"][SESSION_AFFINITY_HEADER] == key
+        assert sent["prompt_cache_key"] == key
     else:
         assert "extra_headers" not in sent
 
@@ -113,6 +117,7 @@ async def test_responses_client_sends_the_header(monkeypatch):
             extra_headers={"x-other": "1"},
         )
     assert sent["extra_headers"] == {"x-other": "1", SESSION_AFFINITY_HEADER: "s-9"}
+    assert sent["prompt_cache_key"] == "s-9"
 
 
 @pytest.mark.parametrize("key", [None, "session-7-CodeActV2"])
@@ -133,6 +138,7 @@ def test_completion_client_sync_call_sends_the_header_only_with_a_key(monkeypatc
         client.close()
     if key:
         assert sent["extra_headers"][SESSION_AFFINITY_HEADER] == key
+        assert sent["prompt_cache_key"] == key
     else:
         assert "extra_headers" not in sent
 
@@ -156,3 +162,87 @@ def test_responses_client_sync_call_sends_the_header(monkeypatch):
     finally:
         client.close()
     assert sent["extra_headers"] == {"x-other": "1", SESSION_AFFINITY_HEADER: "s-9"}
+    assert sent["prompt_cache_key"] == "s-9"
+
+
+@pytest.mark.parametrize(
+    ("configured_model", "overrides", "body_key"),
+    [
+        ("openai/model", {"model": "anthropic/claude-sonnet-4-5"}, False),
+        ("anthropic/claude-sonnet-4-5", {"model": "openai/anthropic/gateway-model"}, True),
+        ("openai/model", {"custom_llm_provider": "anthropic"}, False),
+        ("test-model", {}, True),
+    ],
+)
+@pytest.mark.parametrize("is_async", [False, True])
+async def test_completion_affinity_follows_the_call_route(
+    monkeypatch, configured_model, overrides, body_key, is_async
+):
+    sent = {}
+
+    async def fake_async(**kwargs):
+        sent.update(kwargs)
+        return _chat_response()
+
+    def fake_sync(**kwargs):
+        sent.update(kwargs)
+        return _chat_response()
+
+    monkeypatch.setattr("litellm.acompletion", fake_async)
+    monkeypatch.setattr("litellm.completion", fake_sync)
+    client = CompletionClient(configured_model, api_key="test", cache_breakpoint=None)
+    try:
+        if is_async:
+            await client.acall(
+                [{"role": "user", "content": "hi"}],
+                prompt_cache_key="conversation-key",
+                **overrides,
+            )
+        else:
+            client.call(
+                [{"role": "user", "content": "hi"}],
+                prompt_cache_key="conversation-key",
+                **overrides,
+            )
+    finally:
+        await client.aclose()
+    assert sent["extra_headers"][SESSION_AFFINITY_HEADER] == "conversation-key"
+    assert ("prompt_cache_key" in sent) is body_key
+    if body_key:
+        assert sent["prompt_cache_key"] == "conversation-key"
+
+
+@pytest.mark.parametrize("is_async", [False, True])
+async def test_unknown_completion_provider_is_rejected_by_dispatch(monkeypatch, is_async):
+    from aster.unifiedllm._litellm import litellm
+
+    operation = "acompletion" if is_async else "completion"
+    request = (AsyncMock if is_async else Mock)(wraps=getattr(litellm, operation))
+    monkeypatch.setattr(litellm, operation, request)
+    network = Mock(side_effect=AssertionError("Unknown providers must fail before HTTP dispatch"))
+    monkeypatch.setattr(httpx.Client, "send", network)
+    monkeypatch.setattr(httpx.AsyncClient, "send", network)
+    client = CompletionClient(
+        "test-model",
+        api_key="test",
+        retry_config=RetryConfig(max_retries=0, rate_limit_extra_retries=0),
+    )
+    try:
+        with pytest.raises(litellm.BadRequestError, match="LLM Provider NOT provided"):
+            if is_async:
+                await client.acall(
+                    [{"role": "user", "content": "hi"}], prompt_cache_key="conversation-key"
+                )
+            else:
+                client.call(
+                    [{"role": "user", "content": "hi"}], prompt_cache_key="conversation-key"
+                )
+    finally:
+        await client.aclose()
+    request.assert_called_once()
+    if is_async:
+        request.assert_awaited_once()
+    sent = request.call_args.kwargs
+    assert sent["extra_headers"][SESSION_AFFINITY_HEADER] == "conversation-key"
+    assert sent["prompt_cache_key"] == "conversation-key"
+    network.assert_not_called()

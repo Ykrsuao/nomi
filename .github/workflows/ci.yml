@@ -132,7 +132,7 @@ jobs:
     permissions:
       contents: read
     env:
-      NOOA_MODEL_METADATA_REFRESH: "False"
+      ASTER_MODEL_METADATA_REFRESH: "False"
       LITELLM_LOCAL_MODEL_COST_MAP: "True"
     steps:
       - uses: actions/checkout@v4
@@ -159,7 +159,7 @@ jobs:
             tests/tools/test_shell_lifecycle.py \
             tests/storage/test_sqlite_public_options.py \
             tests/test_secrets.py \
-            packages/nooa-acp/tests \
+            packages/aster-acp/tests \
             --junitxml=artifacts/macos-native.xml
       - name: Upload macOS native results
         if: always()
@@ -207,7 +207,7 @@ jobs:
             tests/runtime/sandbox/test_codeact_sandbox.py \
             tests/runtime/sandbox/test_executor.py::test_declared_data_types_cross_the_boundary_both_ways \
             tests/runtime/sandbox/test_executor.py::test_numpy_values_cross_the_boundary_both_ways \
-            packages/nooa-acp/tests/test_protocol.py \
+            packages/aster-acp/tests/test_protocol.py \
             --junitxml=artifacts/macos-sandbox.xml
       - name: Report remaining sandboxes
         if: always()
@@ -236,7 +236,7 @@ jobs:
       - name: Build all packages
         run: |
           rm -rf dist
-          for pkg in nooa nooa-cli nooa-acp nooa-memory nooa-bench; do
+          for pkg in aster aster-cli aster-acp aster-memory aster-bench; do
             uv build --no-sources --package "$pkg" --out-dir dist
           done
       - name: Upload wheels
@@ -276,10 +276,11 @@ jobs:
           # below 22.22.0 without reintroducing that advisory.
           node-version: "22.23.2"
       - name: Rebuild the viewer bundle from source
-        working-directory: src/nooa/viewer/frontend-react
+        working-directory: src/aster/viewer/frontend-react
         run: |
           set -euo pipefail
           npm ci --ignore-scripts
+          npm test
           # Build into an EMPTY dist/. Two reasons, both load-bearing:
           #  1. A file that is committed but that the build does not produce
           #     (i.e. smuggled in) then shows up as deleted rather than silently
@@ -294,7 +295,7 @@ jobs:
       - name: Fail if committed dist/ is not exactly what the build produced
         run: |
           set -euo pipefail
-          DIST=src/nooa/viewer/frontend-react/dist
+          DIST=src/aster/viewer/frontend-react/dist
           # Guard against a vacuous pass. `git status --porcelain <path>` warns
           # on stderr and prints NOTHING when the path does not resolve, which
           # reads as success — so a wrong path or a relocated dist/ would report
@@ -315,7 +316,7 @@ jobs:
             echo "$CHANGES"
             echo
             echo "If you changed the viewer UI, rebuild and commit the result:"
-            echo "  cd src/nooa/viewer/frontend-react && npm ci --ignore-scripts && rm -rf dist && npm run build"
+            echo "  cd src/aster/viewer/frontend-react && npm ci --ignore-scripts && rm -rf dist && npm run build"
             exit 1
           fi
           echo "OK — committed dist/ is reproducible from source."
@@ -364,8 +365,8 @@ jobs:
     permissions:
       contents: read
     env:
-      # Fail instead of skipping when nooa.exe or nooa-cli is missing.
-      NOOA_SMOKE_STRICT: "1"
+      # Fail instead of skipping when aster.exe or aster-cli is missing.
+      ASTER_SMOKE_STRICT: "1"
     defaults:
       run:
         shell: bash
@@ -381,7 +382,7 @@ jobs:
       - name: Build wheels
         run: |
           rm -rf dist
-          for pkg in nooa nooa-cli nooa-acp nooa-memory nooa-bench; do
+          for pkg in aster aster-cli aster-acp aster-memory aster-bench; do
             uv build --no-sources --package "$pkg" --out-dir dist
           done
       - name: Install wheels into a clean environment
@@ -389,8 +390,25 @@ jobs:
           uv venv .smoke
           uv pip install --python .smoke/Scripts/python.exe dist/*.whl
       - name: Import every distribution
-        run: .smoke/Scripts/python.exe -c "import nooa, nooa_cli, nooa_acp, nooa_memory, nooa_bench; print(nooa.__version__)"
+        run: .smoke/Scripts/python.exe -c "import aster, aster_cli, aster_acp, aster_memory, aster_bench; print(aster.__version__)"
       - name: CLI help
-        run: .smoke/Scripts/nooa.exe --help
+        run: .smoke/Scripts/aster.exe --help
       - name: Pure-Python core smoke
         run: .smoke/Scripts/python.exe scripts/windows_smoke.py
+      - name: Terminal chat regressions
+        run: |
+          uv sync --extra tui
+          uv run --no-sync python -m pytest -q \
+            packages/aster-cli/tests/test_tui_command.py \
+            packages/aster-cli/tests/test_cli_utf8_output.py \
+            packages/aster-acp/tests/test_session_titles.py
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Rust terminal regressions
+        run: |
+          cargo fmt --manifest-path packages/aster-tui/Cargo.toml -- --check
+          cargo clippy --locked --manifest-path packages/aster-tui/Cargo.toml --all-targets -- -D warnings
+          cargo test --locked --manifest-path packages/aster-tui/Cargo.toml
+          cargo build --locked --release --manifest-path packages/aster-tui/Cargo.toml

@@ -30,7 +30,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-EXAMPLE = Path("/root/projects/nemo_oo_agents/examples/arc_agi_3")
+EXAMPLE = Path("/root/projects/aster/examples/arc_agi_3")
 sys.path.insert(0, str(EXAMPLE))
 from solver_agent import _scan_cell  # noqa: E402
 

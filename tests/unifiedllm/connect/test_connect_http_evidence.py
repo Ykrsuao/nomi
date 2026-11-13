@@ -6,7 +6,7 @@ import httpx
 import pytest
 from litellm import InternalServerError
 
-from nooa.unifiedllm.connect._media import exception_reason
+from aster.unifiedllm.connect._media import exception_reason
 
 
 @pytest.mark.parametrize("observed_status", [None, 422, 500])
@@ -50,7 +50,7 @@ async def test_mock_http_rejects_cached_unmocked_client_before_io(monkeypatch):
 
 @pytest.mark.parametrize("kind", ["image", "video"])
 async def test_captured_422_survives_sdk_connection_error_chain(monkeypatch, kind):
-    from nooa.unifiedllm import connect
+    from aster.unifiedllm import connect
     from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
     sent = []

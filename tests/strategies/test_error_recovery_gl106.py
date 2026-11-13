@@ -17,13 +17,13 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig, PredictConfig
-from nooa.errors import GenerationError
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.predict import PredictStrategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ReasoningReplayError, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig, PredictConfig
+from aster.errors import GenerationError
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.predict import PredictStrategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ReasoningReplayError, ToolCall
 
 # ---------------------------------------------------------------------------
 # Module-level Pydantic models (required for PredictStrategy type resolution)

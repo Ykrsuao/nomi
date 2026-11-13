@@ -16,11 +16,11 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from nooa import Agent, strategy
-from nooa.config.strategy_config import PredictConfig
-from nooa.errors import GenerationError
-from nooa.strategies.base import GenerationStrategy
-from nooa.strategies.codeact_errors import (
+from aster import Agent, strategy
+from aster.config.strategy_config import PredictConfig
+from aster.errors import GenerationError
+from aster.strategies.base import GenerationStrategy
+from aster.strategies.codeact_errors import (
     _format_actual_value,
     _format_error_path,
     _format_expected_schema,
@@ -32,9 +32,9 @@ from nooa.strategies.codeact_errors import (
     get_type_example,
     get_type_hint_str,
 )
-from nooa.strategies.current_call import CurrentCall
-from nooa.strategies.predict import PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.strategies.current_call import CurrentCall
+from aster.strategies.predict import PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -561,7 +561,7 @@ class TestCallWithInstrumentation:
         async def raising_fn():
             raise TypeError("test error")
 
-        with patch("nooa.runtime.hooks.call_after_hook") as mock_after:
+        with patch("aster.runtime.hooks.call_after_hook") as mock_after:
             with pytest.raises(TypeError):
                 await strat.call_with_instrumentation(
                     raising_fn, (), {}, runtime=runtime, method_name="test"
@@ -1198,7 +1198,7 @@ class TestPredictStrategyCreateResponseModel:
     def test_pydantic_model_with_hidden_creates_public_subset(self):
         from typing import Annotated
 
-        from nooa.agentdoc import hidden
+        from aster.agentdoc import hidden
 
         class M(BaseModel):
             public: str
@@ -1254,7 +1254,7 @@ class TestPredictStrategyValidateResponse:
         """When model has hidden fields, validate_response returns original type."""
         from typing import Annotated
 
-        from nooa.agentdoc import hidden
+        from aster.agentdoc import hidden
 
         class M(BaseModel):
             public: str

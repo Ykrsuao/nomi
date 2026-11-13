@@ -33,7 +33,7 @@ def test_gpt5_family_routes_through_responses_api(monkeypatch, model):
 
     import arc_llm
 
-    from nooa.unifiedllm.unifiedllm import ResponsesClient
+    from aster.unifiedllm.unifiedllm import ResponsesClient
 
     client = arc_llm.build_llm()  # constructs the client; does NOT call the gateway
     assert isinstance(client, ResponsesClient), (
@@ -49,7 +49,7 @@ def test_non_gpt5_model_uses_completions(monkeypatch):
 
     import arc_llm
 
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     assert type(arc_llm.build_llm()) is CompletionClient
 
@@ -62,7 +62,7 @@ def test_use_responses_env_override(monkeypatch):
 
     import arc_llm
 
-    from nooa.unifiedllm.unifiedllm import ResponsesClient
+    from aster.unifiedllm.unifiedllm import ResponsesClient
 
     assert isinstance(arc_llm.build_llm(), ResponsesClient)
 

@@ -10,15 +10,15 @@ import litellm
 import pytest
 import yaml
 
-from nooa.config.model_config import ModelConfig
-from nooa.llm_types import AssistantReasoning, AssistantText, LLMResponse, ToolCall
-from nooa.media import Audio, File, Image, Video
-from nooa.runtime.media_capture import media_to_content_block
-from nooa.unifiedllm import CompletionClient, ResponsesClient
-from nooa.unifiedllm.connect import configure_entry, plan, refresh_plan, write
-from nooa.unifiedllm.media_inputs import attachment_kind, filter_media_messages
-from nooa.unifiedllm.registry import client_from_config, get_llm_client, reload_registry
-from nooa.unifiedllm.replay_state import replay_scope
+from aster.config.model_config import ModelConfig
+from aster.llm_types import AssistantReasoning, AssistantText, LLMResponse, ToolCall
+from aster.media import Audio, File, Image, Video
+from aster.runtime.media_capture import media_to_content_block
+from aster.unifiedllm import CompletionClient, ResponsesClient
+from aster.unifiedllm.connect import configure_entry, plan, refresh_plan, write
+from aster.unifiedllm.media_inputs import attachment_kind, filter_media_messages
+from aster.unifiedllm.registry import client_from_config, get_llm_client, reload_registry
+from aster.unifiedllm.replay_state import replay_scope
 
 ALL = ["image", "audio", "video", "pdf"]
 
@@ -257,7 +257,7 @@ async def test_reasoning_replay_and_tool_order_untouched(client_type, asynchrono
 
 
 def test_no_recursive_rewriting_and_opaque_media_fail_closed():
-    from nooa.unifiedllm.errors import ReasoningReplayError
+    from aster.unifiedllm.errors import ReasoningReplayError
 
     nested = {
         "role": "assistant",
@@ -394,7 +394,7 @@ def test_incompatible_opaque_media_turn_replays_portably():
 
 
 def test_fake_and_admission_share_explicit_declaration():
-    from nooa.unifiedllm import AdmissionControl, AdmissionControlConfig, FakeLLMClient
+    from aster.unifiedllm import AdmissionControl, AdmissionControlConfig, FakeLLMClient
 
     for enabled in ([], ["image"]):
         fake = FakeLLMClient(media_inputs=enabled)
@@ -464,11 +464,11 @@ def test_native_input_file_mime_hint_is_not_sent():
 
 
 def test_missing_media_inputs_warns_once_that_the_model_is_text_only(caplog):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     registry._warned_text_only.discard("plain-alias")
     config = {"model_name": "openai/test", "api_base": "https://one.test"}
-    with caplog.at_level("WARNING", logger="nooa.unifiedllm.registry"):
+    with caplog.at_level("WARNING", logger="aster.unifiedllm.registry"):
         client_from_config("plain-alias", config).close()
         client_from_config("plain-alias", config).close()
         client_from_config("declared-alias", {**config, "media_inputs": []}).close()

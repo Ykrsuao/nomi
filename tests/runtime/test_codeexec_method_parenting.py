@@ -13,9 +13,9 @@ import json
 
 import pytest
 
-from nooa import Agent
-from nooa.runtime.hooks import set_hooks
-from nooa.unifiedllm import LLMResponse, ToolCall
+from aster import Agent
+from aster.runtime.hooks import set_hooks
+from aster.unifiedllm import LLMResponse, ToolCall
 
 
 class _FakeLLM:
@@ -99,7 +99,7 @@ def in_memory_spans():
         InMemorySpanExporter,
     )
 
-    from nooa.tracing import NOOAInstrumentor
+    from aster.tracing import ASTERInstrumentor
 
     exporter = InMemorySpanExporter()
     provider = trace.get_tracer_provider()
@@ -107,7 +107,7 @@ def in_memory_spans():
         provider = TracerProvider()
         trace.set_tracer_provider(provider)
     provider.add_span_processor(SimpleSpanProcessor(exporter))
-    NOOAInstrumentor().instrument(tracer_provider=provider)
+    ASTERInstrumentor().instrument(tracer_provider=provider)
     yield exporter
     set_hooks(None)
 

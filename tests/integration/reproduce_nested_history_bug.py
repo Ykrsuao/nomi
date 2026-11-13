@@ -34,7 +34,7 @@ import os
 import sys
 from pathlib import Path
 
-from nooa.config import CodeActConfig
+from aster.config import CodeActConfig
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -47,13 +47,13 @@ if env_file.exists():
 
     load_dotenv(env_file)
 
-from nooa import Agent, strategy  # noqa: E402
-from nooa.strategies.codeact import CodeActStrategy  # noqa: E402
+from aster import Agent, strategy  # noqa: E402
+from aster.strategies.codeact import CodeActStrategy  # noqa: E402
 
 
 def get_llm_client(provider: str, model: str | None = None):
     """Get LLM client for the specified provider."""
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     # Default models per provider (litellm format)
     default_models = {

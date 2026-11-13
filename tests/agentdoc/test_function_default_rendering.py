@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Contract tests for function/lambda default rendering in doc()."""
 
-from nooa.agentdoc import doc
+from aster.agentdoc import doc
 
 
 def _my_validator(x: int) -> bool:

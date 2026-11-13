@@ -14,9 +14,9 @@ import weakref
 
 import pytest
 
-from nooa.tools._bash_session import BashSession
-from nooa.tools.shell_lifecycle import preserve_background_services
-from nooa.tools.shell_tools import ShellTools
+from aster.tools._bash_session import BashSession
+from aster.tools.shell_lifecycle import preserve_background_services
+from aster.tools.shell_tools import ShellTools
 
 
 @pytest.mark.asyncio
@@ -105,7 +105,7 @@ async def test_scope_isolation_adoption_and_failure_cleanup(tmp_path):
 def test_preservation_destructor_does_not_kill_process_group(monkeypatch):
     from unittest.mock import Mock
 
-    import nooa.tools._bash_session as module
+    import aster.tools._bash_session as module
 
     session = BashSession(keep_background_on_close=True)
     process = Mock(returncode=None)

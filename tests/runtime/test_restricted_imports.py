@@ -8,12 +8,12 @@ SecurityValidator, and the ValidationContext integration.
 
 import pytest
 
-from nooa.runtime.code_validator import (
+from aster.runtime.code_validator import (
     UnifiedCodeValidator,
     ValidationContext,
     ValidationError,
 )
-from nooa.runtime.restrictions import (
+from aster.runtime.restrictions import (
     DEFAULT_BLOCKED_MODULES,
     RestrictionsConfig,
 )
@@ -34,7 +34,7 @@ class TestRestrictedImportsConfig:
 
     def test_default_restricted_imports_constant_is_empty(self):
         """DEFAULT_RESTRICTED_IMPORTS constant should be empty — no restrictions by default."""
-        from nooa.runtime.restrictions import DEFAULT_RESTRICTED_IMPORTS
+        from aster.runtime.restrictions import DEFAULT_RESTRICTED_IMPORTS
 
         assert DEFAULT_RESTRICTED_IMPORTS == frozenset()
 
@@ -58,7 +58,7 @@ class TestRestrictedImportsConfig:
 
     def test_importlib_in_blocked_calls(self):
         """importlib.import_module should be in DEFAULT_BLOCKED_CALLS."""
-        from nooa.runtime.restrictions import DEFAULT_BLOCKED_CALLS
+        from aster.runtime.restrictions import DEFAULT_BLOCKED_CALLS
 
         assert "importlib" in DEFAULT_BLOCKED_CALLS
         assert "import_module" in DEFAULT_BLOCKED_CALLS["importlib"]
@@ -211,23 +211,23 @@ class TestProcessGlobalRestrictedImports:
 
     def setup_method(self):
         """Clear global override before each test."""
-        from nooa.runtime.restrictions import set_restricted_imports
+        from aster.runtime.restrictions import set_restricted_imports
 
         set_restricted_imports(None)
 
     def teardown_method(self):
         """Clear global override after each test."""
-        from nooa.runtime.restrictions import set_restricted_imports
+        from aster.runtime.restrictions import set_restricted_imports
 
         set_restricted_imports(None)
 
     def test_default_is_none(self):
-        from nooa.runtime.restrictions import get_restricted_imports
+        from aster.runtime.restrictions import get_restricted_imports
 
         assert get_restricted_imports() is None
 
     def test_set_and_get(self):
-        from nooa.runtime.restrictions import (
+        from aster.runtime.restrictions import (
             get_restricted_imports,
             set_restricted_imports,
         )
@@ -237,7 +237,7 @@ class TestProcessGlobalRestrictedImports:
         assert get_restricted_imports() == deny
 
     def test_clear_with_none(self):
-        from nooa.runtime.restrictions import (
+        from aster.runtime.restrictions import (
             get_restricted_imports,
             set_restricted_imports,
         )
@@ -247,7 +247,7 @@ class TestProcessGlobalRestrictedImports:
         assert get_restricted_imports() is None
 
     def test_global_overrides_config_default(self):
-        from nooa.runtime.restrictions import set_restricted_imports
+        from aster.runtime.restrictions import set_restricted_imports
 
         set_restricted_imports(frozenset({"numpy", "pandas"}))
         rc = RestrictionsConfig()
@@ -255,7 +255,7 @@ class TestProcessGlobalRestrictedImports:
 
     def test_explicit_config_overrides_global(self):
         """If restricted_imports is explicitly passed, global is ignored."""
-        from nooa.runtime.restrictions import set_restricted_imports
+        from aster.runtime.restrictions import set_restricted_imports
 
         set_restricted_imports(frozenset({"numpy"}))
         rc = RestrictionsConfig(restricted_imports=frozenset({"os"}))
@@ -263,7 +263,7 @@ class TestProcessGlobalRestrictedImports:
 
     def test_global_empty_frozenset_overrides_default(self):
         """Setting frozenset() globally should override field default."""
-        from nooa.runtime.restrictions import set_restricted_imports
+        from aster.runtime.restrictions import set_restricted_imports
 
         set_restricted_imports(frozenset())
         rc = RestrictionsConfig()
@@ -276,7 +276,7 @@ class TestProcessGlobalRestrictedImports:
 
     def test_global_affects_validation(self):
         """Process-global restricted_imports flows through to SecurityValidator."""
-        from nooa.runtime.restrictions import set_restricted_imports
+        from aster.runtime.restrictions import set_restricted_imports
 
         set_restricted_imports(frozenset({"pandas"}))
         rc = RestrictionsConfig()
@@ -322,7 +322,7 @@ class TestSetRestrictedImportsBlocked:
             code="",
             restricted_imports=frozenset(),  # allow the import
         )
-        code = """from nooa.runtime.restrictions import set_restricted_imports as foo
+        code = """from aster.runtime.restrictions import set_restricted_imports as foo
 foo(frozenset())"""
         with pytest.raises(ValidationError, match="foo.*forbidden.*set_restricted_imports"):
             validator.validate(code, context)
@@ -333,7 +333,7 @@ foo(frozenset())"""
             code="",
             restricted_imports=frozenset(),  # allow the import
         )
-        code = """import nooa.runtime.restrictions as r
+        code = """import aster.runtime.restrictions as r
 r.set_restricted_imports(frozenset())"""
         with pytest.raises(ValidationError, match="set_restricted_imports.*forbidden"):
             validator.validate(code, context)
@@ -344,7 +344,7 @@ r.set_restricted_imports(frozenset())"""
             code="",
             restricted_imports=frozenset(),
         )
-        code = """import nooa.runtime.restrictions as r
+        code = """import aster.runtime.restrictions as r
 r.get_restricted_imports()"""
         with pytest.raises(ValidationError, match="get_restricted_imports.*forbidden"):
             validator.validate(code, context)

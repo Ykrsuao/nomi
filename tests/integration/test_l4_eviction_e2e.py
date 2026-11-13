@@ -8,16 +8,16 @@ require a real LLM and should run in nightly CI only.
 
 import pytest
 
-from nooa import Agent
-from nooa.config.truncation_config import TruncationConfig
-from nooa.context_blocks import BlockMetadata, ResolvedBlock, Role
-from nooa.context_blocks.events import ResultStatus, ToolCallEvent, ToolResult
-from nooa.context_blocks.formatter import OpenAIProviderFormatter, XMLBlockFormatter
-from nooa.context_blocks.renderer import render_context
-from nooa.events import PythonOutput
-from nooa.runtime.actor import _current_llm_var
-from nooa.runtime.harness_metrics import harness_metrics_session
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.config.truncation_config import TruncationConfig
+from aster.context_blocks import BlockMetadata, ResolvedBlock, Role
+from aster.context_blocks.events import ResultStatus, ToolCallEvent, ToolResult
+from aster.context_blocks.formatter import OpenAIProviderFormatter, XMLBlockFormatter
+from aster.context_blocks.renderer import render_context
+from aster.events import PythonOutput
+from aster.runtime.actor import _current_llm_var
+from aster.runtime.harness_metrics import harness_metrics_session
+from aster.unifiedllm import FakeLLMClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -217,24 +217,24 @@ class TestUnquoteStrings:
     """Context blocks render strings verbatim (no quotes) via unquote_strings."""
 
     def test_short_string_no_quotes(self):
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         assert pformat("Hello world", unquote_strings=True) == "Hello world"
 
     def test_long_string_gets_truncation_marker(self):
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         result = pformat("a" * 1000, unquote_strings=True, max_string=100)
         assert result.startswith("str(len=1000")
         assert "[:50]=" in result
 
     def test_non_string_unaffected(self):
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         assert pformat([1, 2, 3], unquote_strings=True) == pformat([1, 2, 3])
 
     def test_multiline_string_verbatim(self):
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         text = "line1\nline2\nline3"
         result = pformat(text, unquote_strings=True)
@@ -242,7 +242,7 @@ class TestUnquoteStrings:
 
     def test_triple_quote_string_preserved(self):
         """String consisting of triple quotes (''') is not deleted by unquote logic."""
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         # Edge case: input is literally 3 single-quote chars
         result = pformat("'''", unquote_strings=True)
@@ -250,7 +250,7 @@ class TestUnquoteStrings:
 
     def test_string_with_embedded_triple_quotes(self):
         """String containing triple quotes inside is preserved."""
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         text = "before''' after"
         result = pformat(text, unquote_strings=True)

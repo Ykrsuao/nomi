@@ -4,8 +4,8 @@
 
 import pytest
 
-from nooa.errors.storage import StorageNotConfiguredError
-from nooa.storage.in_memory import InMemoryStorageManager
+from aster.errors.storage import StorageNotConfiguredError
+from aster.storage.in_memory import InMemoryStorageManager
 
 
 class TestInMemoryStorageManager:

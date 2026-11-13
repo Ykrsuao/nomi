@@ -8,7 +8,7 @@ the post-JSON string slicing that produces invalid JSON on large return values.
 
 import json
 
-from nooa.tracing._hooks_impl import OpenInferenceHooks
+from aster.tracing._hooks_impl import OpenInferenceHooks
 
 
 class TestGl74ReturnedValueCap:
@@ -18,7 +18,7 @@ class TestGl74ReturnedValueCap:
         self.hooks = OpenInferenceHooks.__new__(OpenInferenceHooks)
 
     def _make_result(self, returned_value):
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         return ExecutionResult(stdout="", stderr="", returned_value=returned_value)
 
@@ -60,7 +60,7 @@ class TestGl74ReturnedValueCap:
         assert isinstance(parsed, dict)
 
     def test_none_returned_value_not_in_output(self):
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         result = ExecutionResult(stdout="", stderr="")
         serialized = self.hooks._safe_serialize_execution_result(result)

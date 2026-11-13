@@ -4,8 +4,8 @@
 
 import pytest
 
-from nooa.agentdoc import doc, pformat
-from nooa.agentdoc.ext import (
+from aster.agentdoc import doc, pformat
+from aster.agentdoc.ext import (
     FieldInfo,
     TypeInfo,
     clear_registry,

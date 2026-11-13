@@ -4,7 +4,7 @@
 
 The explorer was migrated to read OpenInference-standard I/O attrs
 (``input.value`` / ``output.value``) first, falling back to the legacy
-nooa-native attrs (``code``, ``result``, ``agent.args``/``kwargs``,
+aster-native attrs (``code``, ``result``, ``agent.args``/``kwargs``,
 ``agent.result``, ``generation.result``, ``tool.arguments``). These tests build
 synthetic spans that carry **only** the OI attrs (no native I/O attrs at all) —
 simulating a future OI-only export — and assert the explorer still recovers
@@ -22,8 +22,8 @@ from pathlib import Path
 
 import pytest
 
-from nooa.trace_explorer import TraceExplorer
-from nooa.trace_explorer.explorer import ExecutionTurn
+from aster.trace_explorer import TraceExplorer
+from aster.trace_explorer.explorer import ExecutionTurn
 
 
 def _otlp_attrs(flat: dict) -> list[dict]:

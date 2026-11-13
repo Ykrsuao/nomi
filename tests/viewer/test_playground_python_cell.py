@@ -10,7 +10,7 @@ import pytest
 async def test_playground_declares_historical_python_tool(monkeypatch, tool_name):
     import litellm
 
-    from nooa.viewer import trace_routes
+    from aster.viewer import trace_routes
 
     captured = {}
 

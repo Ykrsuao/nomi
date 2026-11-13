@@ -6,12 +6,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nooa import Agent
-from nooa.context_blocks import ResultStatus
-from nooa.events import LLMResponse, PythonOutput, Task
-from nooa.runtime.event_manager import EventManager
-from nooa.runtime.events import EventsApi
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.context_blocks import ResultStatus
+from aster.events import LLMResponse, PythonOutput, Task
+from aster.runtime.event_manager import EventManager
+from aster.runtime.events import EventsApi
+from aster.unifiedllm import FakeLLMClient
 
 _LLM = FakeLLMClient()
 
@@ -313,7 +313,7 @@ class TestCallIdAutoInjection:
 
     def test_add_auto_injects_call_id_nested_stacks(self):
         """Nested call stacks should inject the innermost call_id."""
-        from nooa.runtime.context_vars import _pop_agent_call_id, _push_agent_call_id
+        from aster.runtime.context_vars import _pop_agent_call_id, _push_agent_call_id
 
         manager = EventManager()
 
@@ -343,7 +343,7 @@ class TestCallIdAutoInjection:
 
     def test_add_auto_injects_call_id_on_unrecorded_events(self):
         """call_id should be injected even for record=False events."""
-        from nooa.runtime.context_vars import _pop_agent_call_id, _push_agent_call_id
+        from aster.runtime.context_vars import _pop_agent_call_id, _push_agent_call_id
 
         manager = EventManager()
         _push_agent_call_id("call-xyz")
@@ -361,7 +361,7 @@ class TestEventsViewCallId:
 
     def test_events_view_filter_by_call_id(self):
         """Events.filter(call_id=...) delegates to EventManager."""
-        from nooa.runtime.context_vars import _pop_agent_call_id, _push_agent_call_id
+        from aster.runtime.context_vars import _pop_agent_call_id, _push_agent_call_id
 
         agent = _TestAgent()
 
@@ -397,8 +397,8 @@ class TestPrefillCallId:
 
     def test_inspect_inputs_prefill_includes_call_signature(self):
         """InspectInputsPrefill generates code with an inspection comment and call signature."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.prefill import InspectInputsPrefill
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.prefill import InspectInputsPrefill
 
         call = CurrentCall(
             id="test-call-1",
@@ -419,8 +419,8 @@ class TestPrefillCallId:
 
     def test_inspect_inputs_prefill_no_params_returns_none(self):
         """InspectInputsPrefill returns None when no kwargs."""
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.prefill import InspectInputsPrefill
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.prefill import InspectInputsPrefill
 
         call = CurrentCall(
             id="test-call-2",

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Test all models in models.yaml with agents.
 
-These tests verify that each model configuration works with nooa agents.
+These tests verify that each model configuration works with aster agents.
 Tests are skipped if the required API key is not set.
 
 SKIPPED BY DEFAULT: These tests make real API calls. Run explicitly:
@@ -13,8 +13,8 @@ import os
 
 import pytest
 
+from aster import Agent
 from eval_pipeline.model_factory import client, get, list_models
-from nooa import Agent
 
 # Skip entire module by default - only run when explicitly requested
 pytestmark = pytest.mark.skipif(

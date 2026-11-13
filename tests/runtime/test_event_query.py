@@ -4,8 +4,8 @@
 
 import pytest
 
-from nooa.events import Task
-from nooa.runtime.event_query import EventQuery
+from aster.events import Task
+from aster.runtime.event_query import EventQuery
 
 
 class TestEventQueryApply:

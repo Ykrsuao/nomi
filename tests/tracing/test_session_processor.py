@@ -9,9 +9,9 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from otlp_test_helpers import read_otlp_jsonl_spans
 
-from nooa.tracing._otlp_file_exporter import OtlpJsonFileExporter
-from nooa.tracing._session import set_session
-from nooa.tracing._session_processor import SessionSpanProcessor
+from aster.tracing._otlp_file_exporter import OtlpJsonFileExporter
+from aster.tracing._session import set_session
+from aster.tracing._session_processor import SessionSpanProcessor
 
 
 class TestSessionSpanProcessor:

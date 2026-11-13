@@ -11,8 +11,8 @@ from unittest import mock
 
 import pytest
 
-from nooa.storage import SQLiteStorageManager
-from nooa.storage import sqlite as sqlite_module
+from aster.storage import SQLiteStorageManager
+from aster.storage import sqlite as sqlite_module
 
 
 def _rows(path):
@@ -72,8 +72,8 @@ def test_save_snapshot_json_rejects_a_non_json_blob(tmp_path):
 
 def test_save_snapshot_does_not_reparse_its_own_json(tmp_path):
     """``save_snapshot`` serializes the snapshot itself, so it skips the JSON check."""
-    from nooa import Agent
-    from nooa.unifiedllm import FakeLLMClient
+    from aster import Agent
+    from aster.unifiedllm import FakeLLMClient
 
     class Snap(Agent, llm=FakeLLMClient()):
         pass
@@ -158,10 +158,10 @@ def test_journal_mode_rejects_other_values(tmp_path):
 
 
 def test_read_lock_owner_is_public_and_reads_the_owner_record(tmp_path):
-    import nooa.storage
-    from nooa.storage import read_lock_owner
+    import aster.storage
+    from aster.storage import read_lock_owner
 
-    assert "read_lock_owner" in nooa.storage.__all__
+    assert "read_lock_owner" in aster.storage.__all__
     lock_path = str(tmp_path / "s.lock")
     assert read_lock_owner(lock_path) == (None, None)
     fd = sqlite_module._acquire_session_lock(lock_path)
@@ -173,7 +173,7 @@ def test_read_lock_owner_is_public_and_reads_the_owner_record(tmp_path):
 
 def test_delete_leaves_a_blank_lock_record(tmp_path):
     """Deleting takes the lock; the retained lock file must not name a live owner."""
-    from nooa.storage import delete_sqlite_database, read_lock_owner
+    from aster.storage import delete_sqlite_database, read_lock_owner
 
     path = tmp_path / "s.db"
     with SQLiteStorageManager(path) as storage:

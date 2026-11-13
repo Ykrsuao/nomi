@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nooa.skill import Skill
-from nooa.skill_registry import SkillRegistry
+from aster.skill import Skill
+from aster.skill_registry import SkillRegistry
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -34,7 +34,7 @@ def agent():
 @pytest.fixture
 def registry(agent):
     """SkillRegistry with no real entry points discovered."""
-    with patch("nooa.skill_registry.entry_points", return_value=[]):
+    with patch("aster.skill_registry.entry_points", return_value=[]):
         return SkillRegistry(agent)
 
 
@@ -49,14 +49,14 @@ class TestDiscovery:
 
     def test_discovered_finds_entry_points(self, agent):
         ep = MagicMock()
-        ep.name = "nemo.shell"
-        with patch("nooa.skill_registry.entry_points", return_value=[ep]):
+        ep.name = "aster.shell"
+        with patch("aster.skill_registry.entry_points", return_value=[ep]):
             reg = SkillRegistry(agent)
-        assert "nemo.shell" in reg.discovered()
+        assert "aster.shell" in reg.discovered()
 
     def test_discovered_handles_exception(self, agent):
         with patch(
-            "nooa.skill_registry.entry_points",
+            "aster.skill_registry.entry_points",
             side_effect=Exception("broken"),
         ):
             reg = SkillRegistry(agent)
@@ -64,13 +64,13 @@ class TestDiscovery:
 
     def test_entry_returns_record_for_discovered_skill(self, agent):
         ep = MagicMock()
-        ep.name = "nemo.shell"
-        with patch("nooa.skill_registry.entry_points", return_value=[ep]):
+        ep.name = "aster.shell"
+        with patch("aster.skill_registry.entry_points", return_value=[ep]):
             reg = SkillRegistry(agent)
-        entry = reg.entry("nemo.shell")
+        entry = reg.entry("aster.shell")
         assert entry is not None
-        assert entry.name == "nemo.shell"
-        assert entry.category == "nemo"
+        assert entry.name == "aster.shell"
+        assert entry.category == "aster"
 
     def test_entry_returns_none_for_unknown_skill(self, registry):
         assert registry.entry("does.not.exist") is None
@@ -84,8 +84,8 @@ class TestDiscovery:
 class TestRegistration:
     def test_register_adds_to_loaded(self, registry):
         skill = FakeSkill()
-        registry.register("nemo.test", skill)
-        assert "nemo.test" in registry.loaded()
+        registry.register("aster.test", skill)
+        assert "aster.test" in registry.loaded()
 
     def test_register_adds_to_discovered(self, registry):
         skill = FakeSkill()
@@ -101,42 +101,42 @@ class TestRegistration:
 class TestLoading:
     def test_load_from_entry_point(self, agent):
         ep = MagicMock()
-        ep.name = "nemo.fake"
+        ep.name = "aster.fake"
         ep.load.return_value = FakeSkill
 
-        with patch("nooa.skill_registry.entry_points", return_value=[ep]):
+        with patch("aster.skill_registry.entry_points", return_value=[ep]):
             reg = SkillRegistry(agent)
 
-        reg.load(["nemo.fake"])
-        assert "nemo.fake" in reg.loaded()
+        reg.load(["aster.fake"])
+        assert "aster.fake" in reg.loaded()
         assert hasattr(agent, "fake")
         assert isinstance(agent.fake, FakeSkill)
 
     def test_load_glob_pattern(self, agent):
         ep1 = MagicMock()
-        ep1.name = "nemo.a"
+        ep1.name = "aster.a"
         ep1.load.return_value = FakeSkill
         ep2 = MagicMock()
-        ep2.name = "nemo.b"
+        ep2.name = "aster.b"
         ep2.load.return_value = FakeSkill
 
-        with patch("nooa.skill_registry.entry_points", return_value=[ep1, ep2]):
+        with patch("aster.skill_registry.entry_points", return_value=[ep1, ep2]):
             reg = SkillRegistry(agent)
 
-        reg.load(["nemo.*"])
-        assert "nemo.a" in reg.loaded()
-        assert "nemo.b" in reg.loaded()
+        reg.load(["aster.*"])
+        assert "aster.a" in reg.loaded()
+        assert "aster.b" in reg.loaded()
 
     def test_load_skip_non_skill(self, agent):
         ep = MagicMock()
-        ep.name = "nemo.bad"
+        ep.name = "aster.bad"
         ep.load.return_value = "not a skill"
 
-        with patch("nooa.skill_registry.entry_points", return_value=[ep]):
+        with patch("aster.skill_registry.entry_points", return_value=[ep]):
             reg = SkillRegistry(agent)
 
-        reg.load(["nemo.bad"])
-        assert "nemo.bad" not in reg.loaded()
+        reg.load(["aster.bad"])
+        assert "aster.bad" not in reg.loaded()
 
 
 # ---------------------------------------------------------------------------
@@ -147,37 +147,37 @@ class TestLoading:
 class TestActivation:
     def test_activate_marks_as_activated(self, registry):
         skill = FakeSkill()
-        registry.register("nemo.test", skill)
-        registry.activate(["nemo.test"])
-        assert "nemo.test" in registry.activated()
+        registry.register("aster.test", skill)
+        registry.activate(["aster.test"])
+        assert "aster.test" in registry.activated()
 
     def test_deactivate_removes_from_activated(self, registry):
         skill = FakeSkill()
-        registry.register("nemo.test", skill)
-        registry.activate(["nemo.test"])
-        registry.deactivate(["nemo.test"])
-        assert "nemo.test" not in registry.activated()
+        registry.register("aster.test", skill)
+        registry.activate(["aster.test"])
+        registry.deactivate(["aster.test"])
+        assert "aster.test" not in registry.activated()
 
     def test_activate_glob(self, registry):
-        registry.register("nemo.a", FakeSkill())
-        registry.register("nemo.b", FakeSkill())
+        registry.register("aster.a", FakeSkill())
+        registry.register("aster.b", FakeSkill())
         registry.register("super.c", FakeSkill())
-        registry.activate(["nemo.*"])
-        assert "nemo.a" in registry.activated()
-        assert "nemo.b" in registry.activated()
+        registry.activate(["aster.*"])
+        assert "aster.a" in registry.activated()
+        assert "aster.b" in registry.activated()
         assert "super.c" not in registry.activated()
 
     def test_activate_auto_loads(self, agent):
         ep = MagicMock()
-        ep.name = "nemo.auto"
+        ep.name = "aster.auto"
         ep.load.return_value = FakeSkill
 
-        with patch("nooa.skill_registry.entry_points", return_value=[ep]):
+        with patch("aster.skill_registry.entry_points", return_value=[ep]):
             reg = SkillRegistry(agent)
 
-        reg.activate(["nemo.auto"])
-        assert "nemo.auto" in reg.loaded()
-        assert "nemo.auto" in reg.activated()
+        reg.activate(["aster.auto"])
+        assert "aster.auto" in reg.loaded()
+        assert "aster.auto" in reg.activated()
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +205,7 @@ class _FakeAgentWithContext:
     """Agent mock with a context_manager."""
 
     def __init__(self):
-        from nooa.runtime.context_manager import ContextManager
+        from aster.runtime.context_manager import ContextManager
 
         self.context_manager = ContextManager()
 
@@ -218,15 +218,15 @@ def agent_ctx():
 @pytest.fixture
 def registry_ctx(agent_ctx):
     """SkillRegistry with context_manager available on the agent."""
-    with patch("nooa.skill_registry.entry_points", return_value=[]):
+    with patch("aster.skill_registry.entry_points", return_value=[]):
         return SkillRegistry(agent_ctx)
 
 
 class TestContextBlockRegistration:
     def test_activate_registers_context_block(self, registry_ctx, agent_ctx):
         skill = SkillWithContextBlock()
-        registry_ctx.register("nemo.my_skill", skill)
-        registry_ctx.activate(["nemo.my_skill"])
+        registry_ctx.register("aster.my_skill", skill)
+        registry_ctx.activate(["aster.my_skill"])
 
         # The context_manager should now have the dynamic block
         cm = agent_ctx.context_manager
@@ -234,23 +234,23 @@ class TestContextBlockRegistration:
 
     def test_activate_does_not_register_when_no_context_block(self, registry_ctx, agent_ctx):
         skill = SkillWithoutContextBlock()
-        registry_ctx.register("nemo.plain", skill)
-        registry_ctx.activate(["nemo.plain"])
+        registry_ctx.register("aster.plain", skill)
+        registry_ctx.activate(["aster.plain"])
 
         cm = agent_ctx.context_manager
         assert "my_status" not in cm
 
     def test_deactivate_removes_context_block(self, registry_ctx, agent_ctx):
         skill = SkillWithContextBlock()
-        registry_ctx.register("nemo.my_skill", skill)
-        registry_ctx.activate(["nemo.my_skill"])
+        registry_ctx.register("aster.my_skill", skill)
+        registry_ctx.activate(["aster.my_skill"])
 
         # Verify it's registered
         cm = agent_ctx.context_manager
         assert "my_status" in cm
 
         # Deactivate should remove it
-        registry_ctx.deactivate(["nemo.my_skill"])
+        registry_ctx.deactivate(["aster.my_skill"])
         assert "my_status" not in cm
 
     def test_deactivate_does_not_remove_protected_block(self, registry_ctx, agent_ctx):
@@ -259,9 +259,9 @@ class TestContextBlockRegistration:
         cm.set_dynamic_protected("my_status", "self.something()")
 
         skill = SkillWithContextBlock()
-        registry_ctx.register("nemo.my_skill", skill)
-        registry_ctx.activate(["nemo.my_skill"])
-        registry_ctx.deactivate(["nemo.my_skill"])
+        registry_ctx.register("aster.my_skill", skill)
+        registry_ctx.activate(["aster.my_skill"])
+        registry_ctx.deactivate(["aster.my_skill"])
 
         # Protected block should still be present
         assert "my_status" in cm
@@ -269,9 +269,9 @@ class TestContextBlockRegistration:
     def test_context_block_with_mocked_skill_is_ignored(self, registry_ctx, agent_ctx):
         """MagicMock skills (from test patches) should not crash context block registration."""
         mock_skill = MagicMock()
-        registry_ctx.register("nemo.mocked", mock_skill)
+        registry_ctx.register("aster.mocked", mock_skill)
         # Should not raise — MagicMock.context_block is a Mock, not a tuple
-        registry_ctx.activate(["nemo.mocked"])
+        registry_ctx.activate(["aster.mocked"])
 
         cm = agent_ctx.context_manager
         # Only the SkillRegistry's own "skills" block should exist (from __init__),
@@ -291,13 +291,13 @@ class TestContextBlockRegistration:
     def test_skill_registry_registers_own_context_block(self, agent_ctx):
         """SkillRegistry itself has context_block and registers it on activate."""
         # SkillRegistry is registered on the agent as "skills" attr
-        with patch("nooa.skill_registry.entry_points", return_value=[]):
+        with patch("aster.skill_registry.entry_points", return_value=[]):
             reg = SkillRegistry(agent_ctx)
         agent_ctx.skills = reg
         # Manually trigger context block registration for the registry itself
-        reg._attr_map["nemo.skills"] = "skills"
-        reg._loaded.add("nemo.skills")
-        reg.activate(["nemo.skills"])
+        reg._attr_map["aster.skills"] = "skills"
+        reg._loaded.add("aster.skills")
+        reg.activate(["aster.skills"])
 
         cm = agent_ctx.context_manager
         assert "skills" in cm
@@ -320,7 +320,7 @@ def test_a_skill_cannot_take_over_another_skills_agent_attribute():
 
     agent = _Agent()
     registry = SkillRegistry(agent)
-    registry.register("nemo.shell", _Tool())
+    registry.register("aster.shell", _Tool())
     original = agent.shell
 
     with pytest.raises(ValueError, match="shell"):
@@ -328,14 +328,14 @@ def test_a_skill_cannot_take_over_another_skills_agent_attribute():
 
     assert agent.shell is original
     # Re-registering the same name stays allowed.
-    registry.register("nemo.shell", _Tool())
+    registry.register("aster.shell", _Tool())
 
 
 def test_load_also_refuses_to_take_over_a_protected_attribute():
     """register() was guarded; load() assigned directly and was not.
 
     activate() calls load() for anything not yet loaded, so a *discovered*
-    mcp.shell could still replace the agent's real shell after nemo.shell
+    mcp.shell could still replace the agent's real shell after aster.shell
     owned it — the guard only covered the explicit registration path.
     """
 
@@ -347,7 +347,7 @@ def test_load_also_refuses_to_take_over_a_protected_attribute():
 
     agent = _Agent()
     registry = SkillRegistry(agent)
-    registry.register("nemo.shell", _Tool())
+    registry.register("aster.shell", _Tool())
     original = agent.shell
 
     # load() resolves via entry_point.load(), so the stub must provide it.
@@ -389,7 +389,7 @@ def test_an_undeclared_attribute_is_still_freely_overwritten():
 
     agent = _Agent()
     registry = SkillRegistry(agent)
-    registry.register("nemo.notes", _Tool())
+    registry.register("aster.notes", _Tool())
     first = agent.notes
 
     # 'notes' is not declared, so a second claimant is allowed as before.

@@ -15,11 +15,11 @@ from pathlib import Path
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.atif import Trajectory, atif_scope, install_atif
-from nooa.config import CodeActConfig
-from nooa.strategies import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.atif import Trajectory, atif_scope, install_atif
+from aster.config import CodeActConfig
+from aster.strategies import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 from tests.atif.normative import assert_atif_normative
 
 # ---------------------------------------------------------------------------

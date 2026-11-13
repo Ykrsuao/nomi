@@ -16,9 +16,9 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, field_validator
 
-from nooa import Agent
-from nooa.decorators import strategy
-from nooa.strategies import CodeActStrategy
+from aster import Agent
+from aster.decorators import strategy
+from aster.strategies import CodeActStrategy
 from tests.capability.agents.truncation_formats import _patch_eval_pipeline_loader
 
 _patch_eval_pipeline_loader()

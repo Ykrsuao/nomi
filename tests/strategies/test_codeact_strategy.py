@@ -17,16 +17,16 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.events import PythonOutput, ResultStatus
-from nooa.strategies.codeact import CodeActStrategy, return_text_as_result
-from nooa.strategies.codeact_errors import (
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.events import PythonOutput, ResultStatus
+from aster.strategies.codeact import CodeActStrategy, return_text_as_result
+from aster.strategies.codeact_errors import (
     format_validation_error,
     get_type_example,
     get_type_hint_str,
 )
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 def _resp(content: str, tool_calls: list | None = None) -> LLMResponse:
@@ -147,7 +147,7 @@ class TestCodeActStrategyInheritance:
 
     def test_is_generation_strategy(self):
         """CodeActStrategy should inherit from GenerationStrategy."""
-        from nooa.strategies.base import GenerationStrategy
+        from aster.strategies.base import GenerationStrategy
 
         strat = CodeActStrategy(config=CodeActConfig())
         assert isinstance(strat, GenerationStrategy)
@@ -217,7 +217,7 @@ class TestCodeActStrategySimpleExecution:
     @pytest.mark.asyncio
     async def test_reasoning_items_are_stored_once_and_fail_closed_on_replay(self):
         """The IR retains opaque state but never sends it to a fake provider."""
-        from nooa.llm_types import AssistantReasoning
+        from aster.llm_types import AssistantReasoning
 
         class TestAgent(Agent, llm=_TEST_LLM):
             async def compute(self) -> int:
@@ -979,7 +979,7 @@ class TestCodeActStrategyErrorHandling:
     @pytest.mark.asyncio
     async def test_max_iterations_exceeded(self):
         """Should raise GenerationError when max_iterations exceeded."""
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig(max_iterations=2)))
@@ -1006,7 +1006,7 @@ class TestCodeActStrategyErrorHandling:
     @pytest.mark.asyncio
     async def test_missing_return_type_raises_error(self):
         """Should raise GenerationError if method has no return type."""
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig()))
@@ -1359,7 +1359,7 @@ class TestCodeActStrategyEventSequence:
     @pytest.mark.asyncio
     async def test_text_only_whitespace_response_uses_default_retry(self):
         """Whitespace-only stop output uses text-only recovery without synthetic calls."""
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig(max_retries=1)))
@@ -1587,7 +1587,7 @@ class TestCodeActStrategyEventSequence:
         consecutive_text_only counter increments. After max_consecutive_text_only
         consecutive failures, the guard aborts with a clear error message.
         """
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(
@@ -1663,7 +1663,7 @@ class TestCodeActStrategyEventSequence:
     @pytest.mark.asyncio
     async def test_text_only_loop_disabled_when_threshold_zero(self):
         """max_consecutive_text_only=0 disables the abort guard."""
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(
@@ -1700,7 +1700,7 @@ class TestCodeActStrategyEventSequence:
         AfterTurn uses record=False (runtime event, not persisted in backend),
         so we capture it via the event-manager subscription channel.
         """
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig(max_consecutive_text_only=2)))
@@ -2048,13 +2048,13 @@ class TestCodeActStrategyExport:
 
     def test_exported_from_strategies_module(self):
         """CodeActStrategy should be exported from strategies module."""
-        from nooa.strategies import CodeActStrategy
+        from aster.strategies import CodeActStrategy
 
         assert CodeActStrategy is not None
 
     def test_exported_from_main_module(self):
-        """CodeActStrategy should be exported from main nooa module."""
-        from nooa import CodeActStrategy
+        """CodeActStrategy should be exported from main aster module."""
+        from aster import CodeActStrategy
 
         assert CodeActStrategy is not None
 
@@ -2585,7 +2585,7 @@ class TestCodeActReturnTypeInspection:
 @pytest.fixture
 def mock_runtime():
     """Create mock runtime for strategy tests."""
-    from nooa.events import ExecutionResult
+    from aster.events import ExecutionResult
 
     class MockRuntime:
         def __init__(self):
@@ -3009,7 +3009,7 @@ class TestCodeActTurnEvents:
     @pytest.mark.asyncio
     async def test_emits_before_and_after_turn_events_on_success(self):
         """Strategy should emit BeforeTurn and AfterTurn on successful execution."""
-        from nooa.events import AfterTurn, BeforeTurn
+        from aster.events import AfterTurn, BeforeTurn
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig()))
@@ -3067,7 +3067,7 @@ class TestCodeActTurnEvents:
     @pytest.mark.asyncio
     async def test_turn_number_increments_across_iterations(self):
         """Turn number should increment with each iteration."""
-        from nooa.events import BeforeTurn
+        from aster.events import BeforeTurn
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig()))
@@ -3118,7 +3118,7 @@ class TestCodeActTurnEvents:
     @pytest.mark.asyncio
     async def test_inline_return_result_emits_success_event(self):
         """Inline return_result() should emit AfterTurn with success=True."""
-        from nooa.events import AfterTurn, BeforeTurn
+        from aster.events import AfterTurn, BeforeTurn
 
         class TestAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig()))

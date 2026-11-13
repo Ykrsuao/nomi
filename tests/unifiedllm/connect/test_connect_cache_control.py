@@ -7,9 +7,9 @@ import json
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect, registry
-from nooa.unifiedllm.connect._baseline import typed_baseline
-from nooa.unifiedllm.connect._records import text_baseline_passed
+from aster.unifiedllm import connect, registry
+from aster.unifiedllm.connect._baseline import typed_baseline
+from aster.unifiedllm.connect._records import text_baseline_passed
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -33,7 +33,7 @@ def assert_cache_off_schema(body, *, cache_off=True):
                     "prompt_cache_options",
                     "prompt_cache_breakpoint",
                     "cache_control",
-                    "nooa_cache_boundary",
+                    "aster_cache_boundary",
                 }
                 & value.keys()
             )

@@ -4,7 +4,7 @@
 
 Added to the launcher's tracing exporters, it receives each LLM-call span as it
 completes (~5s batch flush) and writes the actual prompt + response into
-``agent_logs/nemo/team_leader/messages/step_NNN_round_NN_{user,assistant}.md`` —
+``agent_logs/aster/team_leader/messages/step_NNN_round_NN_{user,assistant}.md`` —
 the exact path/format the arc_league web viewer (``analyze/messages``) and the
 ``viewer`` read. So the real conversation is visible LIVE in both
 viewers and stored in the logs, replacing the synthetic reconstruction.
@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from _run_layout import canonical_team, read_log
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
 LLM_SPANS = {"aresponses", "responses", "acompletion", "completion"}
@@ -53,9 +54,14 @@ def _indexed(at: dict, kind: str) -> list[tuple[str, str]]:
 class ViewerMessageExporter(SpanExporter):
     """Writes real LLM prompts/responses to the viewer's messages/ dir, live."""
 
-    def __init__(self, run_dir: str | Path, team: str = "nemo", role: str = "team_leader"):
+    def __init__(self, run_dir: str | Path, team: str = "aster", role: str = "team_leader"):
+        team = canonical_team(team)
         self.msgs_dir = Path(run_dir) / "agent_logs" / team / role / "messages"
-        self.events_path = Path(run_dir) / "agent_logs" / team / role / "events.jsonl"
+        self.events_path = (
+            read_log(Path(run_dir), "events.jsonl", role=role)
+            if team == "aster"
+            else Path(run_dir) / "agent_logs" / team / role / "events.jsonl"
+        )
         self.msgs_dir.mkdir(parents=True, exist_ok=True)
         self._round_by_step: dict[int, int] = {}
         self._cleared = False

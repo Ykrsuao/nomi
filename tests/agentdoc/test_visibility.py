@@ -10,7 +10,7 @@ from typing import Annotated
 
 import pytest
 
-from nooa.agentdoc._visibility import (
+from aster.agentdoc._visibility import (
     _Hidden,
     filter_module_globals,
     hidden,
@@ -337,14 +337,14 @@ class TestIsHiddenModuleVariableStringAnnotation:
         # Simulate string annotation stored as a string (as if from __future__ import annotations)
         mod.__annotations__ = {"api_key": "Annotated[str, hidden]"}
         # Put hidden and Annotated in the module namespace so eval can resolve them
-        from nooa.agentdoc._visibility import hidden as hidden_marker
+        from aster.agentdoc._visibility import hidden as hidden_marker
 
         mod.hidden = hidden_marker  # type: ignore[attr-defined]
         from typing import Annotated
 
         mod.Annotated = Annotated  # type: ignore[attr-defined]
 
-        from nooa.agentdoc._visibility import is_hidden_module_variable
+        from aster.agentdoc._visibility import is_hidden_module_variable
 
         assert is_hidden_module_variable(mod, "api_key") is True
 
@@ -355,6 +355,6 @@ class TestIsHiddenModuleVariableStringAnnotation:
         mod = types.ModuleType("test_string_ann_mod2")
         mod.__annotations__ = {"label": "str"}
 
-        from nooa.agentdoc._visibility import is_hidden_module_variable
+        from aster.agentdoc._visibility import is_hidden_module_variable
 
         assert is_hidden_module_variable(mod, "label") is False

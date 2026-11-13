@@ -1,6 +1,6 @@
 # Assistant turns, persistence, and reasoning replay
 
-NOOA stores each model response as one `LLMResponse` event containing ordered
+Aster stores each model response as one `LLMResponse` event containing ordered
 text, tool-call, and reasoning parts. UnifiedLLM interprets provider extensions;
 the renderer and middleware pass the response object alongside ordinary message
 dictionaries. Public read-only mapping access keeps consumers independent of
@@ -130,13 +130,13 @@ continuations completed. Both calls included trailing live-context messages.
 Total: 2,759 input tokens (including cached input), 797 output tokens, no retries.
 These tests establish field preservation and successful continuation, not whether
 each route rejects an omitted field or guarantees a cache hit. Run with
-`NOOA_RUN_OPEN_MODEL_REPLAY=1` and `NVIDIA_INFERENCE_API_KEY`:
+`ASTER_RUN_OPEN_MODEL_REPLAY=1` and `NVIDIA_INFERENCE_API_KEY`:
 
 ```bash
 uv run pytest -m integration -s tests/integration/test_open_model_tool_reasoning_live.py
 ```
 
-Set `NOOA_TEST_OMITTED_REASONING=1` to add one continuation per model with
+Set `ASTER_TEST_OMITTED_REASONING=1` to add one continuation per model with
 `reasoning_content` removed from the final HTTP body, after LiteLLM serialization.
 The test checks that this is the only changed field and reports the HTTP outcome.
 A successful omitted-field request does not prove that reasoning was retained or

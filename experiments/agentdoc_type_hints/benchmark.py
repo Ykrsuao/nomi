@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Annotated
 
-from nooa.agentdoc import hidden, truncating_pformat
+from aster.agentdoc import hidden, truncating_pformat
 
 
 @dataclass

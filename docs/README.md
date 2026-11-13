@@ -3,15 +3,15 @@
 <picture>
   <source
     media="(prefers-color-scheme: dark)"
-    srcset="../assets/nvidia-labs-object-oriented-agents-dark.svg"
+    srcset="../assets/aster-dark.svg"
   >
   <source
     media="(prefers-color-scheme: light)"
-    srcset="../assets/nvidia-labs-object-oriented-agents-light.svg"
+    srcset="../assets/aster-light.svg"
   >
   <img
-    alt="NVIDIA-labs Object Oriented Agents"
-    src="../assets/nvidia-labs-object-oriented-agents-light.svg"
+    alt="Aster"
+    src="../assets/aster-light.svg"
     width="820"
   >
 </picture>
@@ -20,7 +20,7 @@
 
 # Documentation
 
-NVIDIA-labs Object Oriented Agents (NOOA) is a Python framework in which an
+Aster is a Python framework in which an
 agent is an object and its methods are its capabilities. An asynchronous method
 ending in `...` is implemented by an LLM at runtime; a method with a real body
 remains ordinary Python.
@@ -32,7 +32,7 @@ directory. For code you can run immediately, use the
 
 ## Choose a path
 
-### Understand NOOA in 10 minutes
+### Understand Aster in 10 minutes
 
 1. Read the [framework tour](tour.md).
 2. If you want the runtime mechanics, skim
@@ -70,7 +70,7 @@ First [connect a model](model-connect.md). Then:
 
 | Document | Question it answers |
 |---|---|
-| [Agents and methods](concepts/agents-and-methods.md) | What is an agent in NOOA, and what does `...` mean? |
+| [Agents and methods](concepts/agents-and-methods.md) | What is an agent in Aster, and what does `...` mean? |
 | [Strategies](concepts/strategies.md) | When should a method use Predict or CodeAct? |
 | [Decision models](concepts/decisions.md) | How do I use typed probability, choice, and score decisions? |
 | [Tools and visibility](concepts/tools-and-visibility.md) | How does generated code discover and call capabilities? |
@@ -78,16 +78,16 @@ First [connect a model](model-connect.md). Then:
 | [Connect a model](model-connect.md) | How do I configure and test an endpoint, then use an alias? |
 | [Model configuration](model-configuration.md) | What do model settings mean, and how do I find the effective configuration? |
 | [Media inputs](media.md) | How do I attach images, audio, video, or PDFs, and authorize them on a route? |
-| [Local models](local-models.md) | How do I run NOOA with local models? |
+| [Local models](local-models.md) | How do I run Aster with local models? |
 | [Orchestration](concepts/orchestration.md) | How do I make a workflow deterministic without turning it into one giant prompt? |
 | [Multi-agent systems](concepts/multi-agent-systems.md) | When should I use another agent, and what state does it share? |
 | [LLM admission control](concepts/llm-admission-control.md) | How can one process or application bound concurrent outbound LLM calls? |
 | [Tracing](concepts/tracing.md) | How do I inspect the complete Python and LLM call tree? |
-| [Safety](concepts/safety.md) | What security boundary does NOOA provide, and what must the deployment provide? |
+| [Safety](concepts/safety.md) | What security boundary does Aster provide, and what must the deployment provide? |
 
 ## A note for users of graph and chain frameworks
 
-NOOA does not require a separate graph, chain, or tool-schema representation of
+Aster does not require a separate graph, chain, or tool-schema representation of
 your program. Python remains the control plane:
 
 - Agentic methods contain the fuzzy work delegated to an LLM.
@@ -97,7 +97,7 @@ your program. Python remains the control plane:
 - Type annotations define the boundary between model output and application
   code.
 
-You can still build graphs, routers, supervisors, and worker pools. In NOOA,
+You can still build graphs, routers, supervisors, and worker pools. In Aster,
 they are normally expressed as Python control flow over agent objects rather
 than as a second declarative program.
 

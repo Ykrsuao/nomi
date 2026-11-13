@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Unit tests covering remaining gaps in nooa modules.
+"""Unit tests covering remaining gaps in aster modules.
 
 Targets:
 - nemo_relay_middleware.py: async middleware handlers
@@ -68,7 +68,7 @@ def _nemo_relay_patched():
     fake_llm_request_cls = MagicMock(return_value=MagicMock(content={}))
 
     # Ensure the module is imported before patching (KeyError if not in sys.modules)
-    import nooa.nemo_relay_middleware as _nm_ensure  # noqa: F811, F401
+    import aster.nemo_relay_middleware as _nm_ensure  # noqa: F811, F401
 
     with patch.dict(
         sys.modules,
@@ -77,7 +77,7 @@ def _nemo_relay_patched():
             "nemo_relay.LLMRequest": fake_llm_request_cls,
         },
     ):
-        nm = sys.modules["nooa.nemo_relay_middleware"]
+        nm = sys.modules["aster.nemo_relay_middleware"]
         importlib.reload(nm)
         try:
             yield nm, fake_nemo_relay, fake_handle
@@ -98,7 +98,7 @@ class TestNemoRelayLLMMiddleware:
 
     async def _run_llm_middleware(self, fake_nemo_relay, nm, ctx_kwargs=None, nxt_response=None):
         """Helper: build ctx/nxt and run nemo_relay_llm_middleware."""
-        from nooa.runtime.middleware import LLMCallContext
+        from aster.runtime.middleware import LLMCallContext
 
         ctx = LLMCallContext(
             messages=[{"role": "user", "content": "hello"}],
@@ -141,7 +141,7 @@ class TestNemoRelayLLMMiddleware:
 
             fake_nemo_relay.llm.execute.side_effect = capturing_execute
 
-            from nooa.runtime.middleware import LLMCallContext
+            from aster.runtime.middleware import LLMCallContext
 
             ctx = LLMCallContext(
                 messages=[{"role": "user", "content": "hi"}],
@@ -163,7 +163,7 @@ class TestNemoRelayLLMMiddleware:
 
     async def test_llm_middleware_returns_captured_ctx(self):
         with _nemo_relay_patched() as (nm, fake_nemo_relay, _):
-            from nooa.runtime.middleware import LLMCallContext
+            from aster.runtime.middleware import LLMCallContext
 
             ctx = LLMCallContext(messages=[{"role": "user", "content": "hi"}], params={})
             inner = LLMCallContext(messages=ctx.messages, params={})
@@ -183,7 +183,7 @@ class TestNemoRelayLLMMiddleware:
 
             fake_nemo_relay.llm.execute.side_effect = blocking_execute
 
-            from nooa.runtime.middleware import LLMCallContext
+            from aster.runtime.middleware import LLMCallContext
 
             ctx = LLMCallContext(messages=[{"role": "user", "content": "hi"}], params={})
 
@@ -211,7 +211,7 @@ class TestNemoRelayLLMMiddleware:
 
             fake_nemo_relay.llm.execute.side_effect = recording_execute
 
-            from nooa.runtime.middleware import LLMCallContext
+            from aster.runtime.middleware import LLMCallContext
 
             # agent=None is fine; model extraction returns "" in that case
             ctx = LLMCallContext(
@@ -229,7 +229,7 @@ class TestNemoRelayLLMMiddleware:
     async def test_llm_middleware_response_none_returns_empty(self):
         """When response is None, wrapper returns {}."""
         with _nemo_relay_patched() as (nm, fake_nemo_relay, _):
-            from nooa.runtime.middleware import LLMCallContext
+            from aster.runtime.middleware import LLMCallContext
 
             ctx = LLMCallContext(messages=[{"role": "user", "content": "hi"}], params={})
             inner = LLMCallContext(messages=ctx.messages, params={})
@@ -259,7 +259,7 @@ class TestNemoRelayLLMMiddleware:
 
             fake_nemo_relay.llm.execute.side_effect = intercepting_execute
 
-            from nooa.runtime.middleware import LLMCallContext
+            from aster.runtime.middleware import LLMCallContext
 
             ctx = LLMCallContext(messages=[{"role": "user", "content": "hi"}], params={})
             inner = LLMCallContext(messages=ctx.messages, params={})
@@ -283,7 +283,7 @@ class TestNemoRelayLLMMiddleware:
 
             fake_nemo_relay.llm.execute.side_effect = intercepting_execute
 
-            from nooa.runtime.middleware import LLMCallContext
+            from aster.runtime.middleware import LLMCallContext
 
             ctx = LLMCallContext(
                 messages=[{"role": "user", "content": "hi"}],
@@ -303,7 +303,7 @@ class TestNemoRelayToolMiddleware:
     """Tests for nemo_relay_tool_middleware (lines 197–258)."""
 
     async def _make_exec_ctx(self, code="print('hi')", params=None, result=None):
-        from nooa.runtime.middleware import ExecutePythonContext
+        from aster.runtime.middleware import ExecutePythonContext
 
         ctx = ExecutePythonContext(code=code, params=params or {})
         inner = ExecutePythonContext(code=code, params=params or {})
@@ -363,7 +363,7 @@ class TestNemoRelayToolMiddleware:
     async def test_tool_middleware_result_with_returned_value(self):
         """When result.returned_value is set, it is passed to codec."""
         with _nemo_relay_patched() as (nm, fake_nemo_relay, _):
-            from nooa.events import ExecutionResult
+            from aster.events import ExecutionResult
 
             exec_result = ExecutionResult(stdout="", returned_value=42)
             ctx, inner = await self._make_exec_ctx(result=exec_result)
@@ -378,7 +378,7 @@ class TestNemoRelayToolMiddleware:
     async def test_tool_middleware_result_with_no_return_uses_stdout(self):
         """When result has _NO_RETURN and no signal, stdout is used."""
         with _nemo_relay_patched() as (nm, fake_nemo_relay, _):
-            from nooa.events import _NO_RETURN, ExecutionResult
+            from aster.events import _NO_RETURN, ExecutionResult
 
             exec_result = ExecutionResult(stdout="some output", signal=None)
             # Force returned_value to be _NO_RETURN sentinel
@@ -395,7 +395,7 @@ class TestNemoRelayToolMiddleware:
     async def test_tool_middleware_result_signal_with_result_key(self):
         """When result has a signal with 'result' key, that is used."""
         with _nemo_relay_patched() as (nm, fake_nemo_relay, _):
-            from nooa.events import _NO_RETURN, ExecutionResult, ExecutionSignal
+            from aster.events import _NO_RETURN, ExecutionResult, ExecutionSignal
 
             class TestSignal(ExecutionSignal):
                 pass
@@ -424,7 +424,7 @@ class TestNemoRelayToolMiddleware:
 
             fake_nemo_relay.tools.execute.side_effect = intercepting_execute
 
-            from nooa.runtime.middleware import ExecutePythonContext
+            from aster.runtime.middleware import ExecutePythonContext
 
             ctx = ExecutePythonContext(code="print('original')", params={})
             inner = ExecutePythonContext(code=ctx.code, params={})
@@ -440,7 +440,7 @@ class TestNemoRelayToolMiddleware:
     async def test_tool_middleware_result_signal_without_result_key(self):
         """When signal.result is not a dict with 'result', rv is None."""
         with _nemo_relay_patched() as (nm, fake_nemo_relay, _):
-            from nooa.events import _NO_RETURN, ExecutionResult, ExecutionSignal
+            from aster.events import _NO_RETURN, ExecutionResult, ExecutionSignal
 
             class TestSignal(ExecutionSignal):
                 pass
@@ -469,7 +469,7 @@ class TestNemoRelayAgentCallMiddleware:
     """
 
     def _make_ctx(self, method_name="solve", agent=None):
-        from nooa.runtime.middleware import AgentCallContext
+        from aster.runtime.middleware import AgentCallContext
 
         ctx = AgentCallContext(agent=agent, method_name=method_name, args=(), kwargs={})
         return ctx
@@ -558,97 +558,97 @@ class TestTruncationConfigValidators:
     """Cover the model_validator _check_values (lines 60-101)."""
 
     def test_default_config_valid(self):
-        from nooa.config.truncation_config import TruncationConfig
+        from aster.config.truncation_config import TruncationConfig
 
         cfg = TruncationConfig()
         assert cfg.capture.max_stdout == 50_000
 
     def test_max_stdout_negative_raises(self):
-        from nooa.config.truncation_config import CaptureConfig
+        from aster.config.truncation_config import CaptureConfig
 
         with pytest.raises(Exception, match="max_stdout must be > 0"):
             CaptureConfig(max_stdout=-1)
 
     def test_max_stderr_zero_raises(self):
-        from nooa.config.truncation_config import CaptureConfig
+        from aster.config.truncation_config import CaptureConfig
 
         with pytest.raises(Exception, match="max_stderr must be > 0"):
             CaptureConfig(max_stderr=0)
 
     def test_max_context_tokens_zero_raises(self):
-        from nooa.config.truncation_config import TruncationConfig
+        from aster.config.truncation_config import TruncationConfig
 
         with pytest.raises(Exception, match="max_context_tokens must be > 0 or None"):
             TruncationConfig(max_context_tokens=0)
 
     def test_max_event_tokens_negative_raises(self):
-        from nooa.config.truncation_config import TruncationConfig
+        from aster.config.truncation_config import TruncationConfig
 
         with pytest.raises(Exception, match="max_event_tokens must be > 0 or None"):
             TruncationConfig(max_event_tokens=-5)
 
     def test_max_context_tokens_none_valid(self):
-        from nooa.config.truncation_config import TruncationConfig
+        from aster.config.truncation_config import TruncationConfig
 
         cfg = TruncationConfig(max_context_tokens=None)
         assert cfg.max_context_tokens is None
 
     def test_value_max_length_zero_raises(self):
-        from nooa.config.truncation_config import FormatConfig
+        from aster.config.truncation_config import FormatConfig
 
         with pytest.raises(Exception, match="max_length must be > 0 or None"):
             FormatConfig(max_length=0)
 
     def test_value_max_string_negative_raises(self):
-        from nooa.config.truncation_config import FormatConfig
+        from aster.config.truncation_config import FormatConfig
 
         with pytest.raises(Exception, match="max_string must be > 0 or None"):
             FormatConfig(max_string=-1)
 
     def test_value_max_depth_zero_raises(self):
-        from nooa.config.truncation_config import FormatConfig
+        from aster.config.truncation_config import FormatConfig
 
         with pytest.raises(Exception, match="max_depth must be > 0 or None"):
             FormatConfig(max_depth=0)
 
     def test_value_max_length_none_valid(self):
-        from nooa.config.truncation_config import FormatConfig
+        from aster.config.truncation_config import FormatConfig
 
         cfg = FormatConfig(max_length=None)
         assert cfg.max_length is None
 
     def test_capture_tail_negative_raises(self):
-        from nooa.config.truncation_config import CaptureConfig
+        from aster.config.truncation_config import CaptureConfig
 
         with pytest.raises(Exception, match="tail must be >= 0"):
             CaptureConfig(tail=-1)
 
     def test_capture_tail_equal_to_max_stdout_raises(self):
-        from nooa.config.truncation_config import CaptureConfig
+        from aster.config.truncation_config import CaptureConfig
 
         with pytest.raises(Exception, match="tail.*must be less than.*max_stdout"):
             CaptureConfig(max_stdout=1000, tail=1000)
 
     def test_capture_tail_greater_than_max_stdout_raises(self):
-        from nooa.config.truncation_config import CaptureConfig
+        from aster.config.truncation_config import CaptureConfig
 
         with pytest.raises(Exception, match="tail.*must be less than.*max_stdout"):
             CaptureConfig(max_stdout=1000, tail=1500)
 
     def test_capture_tail_equal_to_max_stderr_raises(self):
-        from nooa.config.truncation_config import CaptureConfig
+        from aster.config.truncation_config import CaptureConfig
 
         with pytest.raises(Exception, match="tail.*must be less than.*max_stderr"):
             CaptureConfig(max_stdout=50_000, max_stderr=1000, tail=1000)
 
     def test_capture_tail_valid(self):
-        from nooa.config.truncation_config import CaptureConfig
+        from aster.config.truncation_config import CaptureConfig
 
         cfg = CaptureConfig(max_stdout=50_000, max_stderr=20_000, tail=5000)
         assert cfg.tail == 5000
 
     def test_multiple_errors_all_reported(self):
-        from nooa.config.truncation_config import CaptureConfig, TruncationConfig
+        from aster.config.truncation_config import CaptureConfig, TruncationConfig
 
         # Top-level error
         with pytest.raises(Exception, match="max_context_tokens"):
@@ -662,14 +662,14 @@ class TestTruncationConfigValidators:
         assert "max_stderr" in msg
 
     def test_merge_with_none_returns_self(self):
-        from nooa.config.truncation_config import TruncationConfig
+        from aster.config.truncation_config import TruncationConfig
 
         cfg = TruncationConfig()
         result = cfg.merge_with(None)
         assert result is cfg
 
     def test_merge_with_overrides_set_fields(self):
-        from nooa.config.truncation_config import TruncationConfig
+        from aster.config.truncation_config import TruncationConfig
 
         base = TruncationConfig()
         override = TruncationConfig(max_context_tokens=5000)
@@ -677,7 +677,7 @@ class TestTruncationConfigValidators:
         assert result.max_context_tokens == 5000
 
     def test_merge_with_no_fields_set_raises(self):
-        from nooa.config.truncation_config import TruncationConfig
+        from aster.config.truncation_config import TruncationConfig
 
         base = TruncationConfig()
         # Construct a TruncationConfig with empty model_fields_set by using
@@ -696,7 +696,7 @@ class TestAsyncSafety:
     """Test async safety patches (lines 44-46, 64, 77-82, 89-94)."""
 
     def test_agent_context_sets_flag(self):
-        from nooa.runtime.async_safety import (
+        from aster.runtime.async_safety import (
             _in_agent_context,
             agent_async_safety_context,
         )
@@ -707,7 +707,7 @@ class TestAsyncSafety:
         assert _in_agent_context.get() is False
 
     def test_agent_context_resets_on_exception(self):
-        from nooa.runtime.async_safety import (
+        from aster.runtime.async_safety import (
             _in_agent_context,
             agent_async_safety_context,
         )
@@ -721,7 +721,7 @@ class TestAsyncSafety:
 
     def test_is_event_loop_thread_no_loop(self):
         """Outside event loop, _is_event_loop_thread returns False."""
-        from nooa.runtime.async_safety import _is_event_loop_thread
+        from aster.runtime.async_safety import _is_event_loop_thread
 
         # We're not in an event loop here (sync test)
         result = _is_event_loop_thread()
@@ -729,14 +729,14 @@ class TestAsyncSafety:
 
     async def test_is_event_loop_thread_inside_loop(self):
         """Inside event loop, _is_event_loop_thread returns True."""
-        from nooa.runtime.async_safety import _is_event_loop_thread
+        from aster.runtime.async_safety import _is_event_loop_thread
 
         result = _is_event_loop_thread()
         assert result is True
 
     async def test_future_result_blocks_in_agent_context(self):
         """Future.result() raises inside agent context on event loop thread."""
-        from nooa.runtime.async_safety import agent_async_safety_context
+        from aster.runtime.async_safety import agent_async_safety_context
 
         future: concurrent.futures.Future[int] = concurrent.futures.Future()
 
@@ -746,7 +746,7 @@ class TestAsyncSafety:
 
     async def test_future_exception_blocks_in_agent_context(self):
         """Future.exception() raises inside agent context on event loop thread."""
-        from nooa.runtime.async_safety import agent_async_safety_context
+        from aster.runtime.async_safety import agent_async_safety_context
 
         future: concurrent.futures.Future[int] = concurrent.futures.Future()
 
@@ -756,7 +756,7 @@ class TestAsyncSafety:
 
     async def test_future_result_allowed_when_done(self):
         """Future.result() does NOT raise for done futures (no deadlock risk)."""
-        from nooa.runtime.async_safety import agent_async_safety_context
+        from aster.runtime.async_safety import agent_async_safety_context
 
         future: concurrent.futures.Future[int] = concurrent.futures.Future()
         future.set_result(42)
@@ -767,7 +767,7 @@ class TestAsyncSafety:
 
     async def test_future_exception_allowed_when_done(self):
         """Future.exception() does NOT raise for done futures (no deadlock risk)."""
-        from nooa.runtime.async_safety import agent_async_safety_context
+        from aster.runtime.async_safety import agent_async_safety_context
 
         future: concurrent.futures.Future[int] = concurrent.futures.Future()
         future.set_result(42)
@@ -778,7 +778,7 @@ class TestAsyncSafety:
 
     async def test_wait_blocks_in_agent_context(self):
         """concurrent.futures.wait() raises inside agent context on event loop thread."""
-        from nooa.runtime.async_safety import agent_async_safety_context
+        from aster.runtime.async_safety import agent_async_safety_context
 
         future: concurrent.futures.Future[int] = concurrent.futures.Future()
         future.set_result(42)
@@ -789,7 +789,7 @@ class TestAsyncSafety:
 
     async def test_as_completed_blocks_in_agent_context(self):
         """concurrent.futures.as_completed() raises inside agent context on event loop thread."""
-        from nooa.runtime.async_safety import agent_async_safety_context
+        from aster.runtime.async_safety import agent_async_safety_context
 
         future: concurrent.futures.Future[int] = concurrent.futures.Future()
         future.set_result(42)
@@ -832,27 +832,27 @@ class TestEventQuery:
         return ev
 
     def test_by_type_classmethod(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         q = EventQuery.by_type("Task", limit=5)
         assert q.type == "Task"
         assert q.limit == 5
 
     def test_last_n_classmethod(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         q = EventQuery.last_n(10)
         assert q.limit == 10
 
     def test_current_call_classmethod(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         q = EventQuery.current_call(limit=3)
         assert q.call_id == "current"
         assert q.limit == 3
 
     def test_apply_filter_by_type(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [
             self._make_event("Task"),
@@ -865,7 +865,7 @@ class TestEventQuery:
         assert all(e.__class__.__name__ == "Task" for e in result)
 
     def test_apply_filter_by_call_id_literal(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [
             self._make_event("Task", call_id="call-1"),
@@ -877,7 +877,7 @@ class TestEventQuery:
         assert len(result) == 2
 
     def test_apply_filter_by_call_id_current(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [
             self._make_event("Task", call_id="call-abc"),
@@ -888,7 +888,7 @@ class TestEventQuery:
         assert len(result) == 1
 
     def test_apply_filter_by_query_text(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [
             self._make_event("Task", content="find the answer"),
@@ -899,7 +899,7 @@ class TestEventQuery:
         assert len(result) == 1
 
     def test_apply_filter_by_query_regex(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [
             self._make_event("Task", content="error 404 not found"),
@@ -910,7 +910,7 @@ class TestEventQuery:
         assert len(result) == 1
 
     def test_apply_limit(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [self._make_event("Task") for _ in range(10)]
         q = EventQuery(limit=3)
@@ -919,7 +919,7 @@ class TestEventQuery:
 
     def test_apply_limit_takes_last_n(self):
         """limit slices from the end."""
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [self._make_event("Task", content=f"event {i}") for i in range(5)]
         q = EventQuery(limit=2)
@@ -927,7 +927,7 @@ class TestEventQuery:
         assert result == events[-2:]
 
     def test_apply_combined_filters(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [
             self._make_event("Task", call_id="c1", content="alpha"),
@@ -940,7 +940,7 @@ class TestEventQuery:
         assert len(result) == 1
 
     def test_apply_no_filters_returns_all(self):
-        from nooa.runtime.event_query import EventQuery
+        from aster.runtime.event_query import EventQuery
 
         events = [self._make_event("Task") for _ in range(5)]
         q = EventQuery()
@@ -957,7 +957,7 @@ class TestMediaCapture:
     """Cover media_capture.py (lines 48, 67, 111, 120-124, 138-142)."""
 
     def _make_image(self, media_type="image/png", vendor_metadata=None):
-        from nooa.media import Image
+        from aster.media import Image
 
         return Image(
             data_url="data:image/png;base64,abc123",
@@ -966,17 +966,17 @@ class TestMediaCapture:
         )
 
     def _make_audio(self, media_type="audio/wav"):
-        from nooa.media import Audio
+        from aster.media import Audio
 
         return Audio(data_url="data:audio/wav;base64,abc123", media_type=media_type)
 
     def _make_file(self):
-        from nooa.media import File
+        from aster.media import File
 
         return File(data_url="data:application/pdf;base64,abc123", media_type="application/pdf")
 
     def test_image_content_block_basic(self):
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.runtime.media_capture import media_to_content_block
 
         img = self._make_image()
         block = media_to_content_block(img)
@@ -985,7 +985,7 @@ class TestMediaCapture:
         assert block["image_url"]["url"] == "data:image/png;base64,abc123"
 
     def test_image_content_block_includes_format(self):
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.runtime.media_capture import media_to_content_block
 
         img = self._make_image(media_type="image/jpeg")
         block = media_to_content_block(img)
@@ -993,7 +993,7 @@ class TestMediaCapture:
 
     def test_image_content_block_skips_octet_stream_format(self):
         """media_type=application/octet-stream should not add 'format' key."""
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.runtime.media_capture import media_to_content_block
 
         img = self._make_image(media_type="application/octet-stream")
         block = media_to_content_block(img)
@@ -1001,14 +1001,14 @@ class TestMediaCapture:
 
     def test_image_content_block_vendor_metadata_merged(self):
         """vendor_metadata is merged into image_url dict."""
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.runtime.media_capture import media_to_content_block
 
         img = self._make_image(vendor_metadata={"detail": "high"})
         block = media_to_content_block(img)
         assert block["image_url"]["detail"] == "high"
 
     def test_audio_content_block(self):
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.runtime.media_capture import media_to_content_block
 
         audio = self._make_audio()
         block = media_to_content_block(audio)
@@ -1018,14 +1018,14 @@ class TestMediaCapture:
 
     def test_audio_content_block_format_extracted(self):
         """Format is the last part of the media type."""
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.runtime.media_capture import media_to_content_block
 
         audio = self._make_audio(media_type="audio/mp3")
         block = media_to_content_block(audio)
         assert block["input_audio"]["format"] == "mp3"
 
     def test_file_content_block(self):
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.runtime.media_capture import media_to_content_block
 
         file_obj = self._make_file()
         block = media_to_content_block(file_obj)
@@ -1034,8 +1034,8 @@ class TestMediaCapture:
 
     def test_unknown_media_subclass_fallback(self):
         """Unknown Media subclass falls back to image_url type."""
-        from nooa.media import Media
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.media import Media
+        from aster.runtime.media_capture import media_to_content_block
 
         # Custom subclass not Image/Audio/File
         class UnknownMedia(Media):
@@ -1047,13 +1047,13 @@ class TestMediaCapture:
         assert block["image_url"]["url"] == "https://example.com/foo"
 
     def test_non_media_raises_type_error(self):
-        from nooa.runtime.media_capture import media_to_content_block
+        from aster.runtime.media_capture import media_to_content_block
 
         with pytest.raises(TypeError, match="Expected Media"):
             media_to_content_block("not a media object")
 
     def test_show_outside_context_prints_message(self, capsys):
-        from nooa.runtime.media_capture import show
+        from aster.runtime.media_capture import show
 
         img = self._make_image()
         show(img)
@@ -1061,7 +1061,7 @@ class TestMediaCapture:
         assert "outside execution context" in captured.out
 
     def test_show_inside_context_appends_block(self, capsys):
-        from nooa.runtime.media_capture import (
+        from aster.runtime.media_capture import (
             _media_buffer_var,
             _MediaBuffer,
             show,
@@ -1078,7 +1078,7 @@ class TestMediaCapture:
         assert buf.blocks[0]["type"] == "image_url"
 
     def test_show_unsupported_type_raises(self):
-        from nooa.runtime.media_capture import (
+        from aster.runtime.media_capture import (
             _media_buffer_var,
             _MediaBuffer,
             show,
@@ -1094,7 +1094,7 @@ class TestMediaCapture:
 
     def test_try_pil_to_content_block_import_error(self):
         """When PIL is not available, returns None gracefully."""
-        from nooa.runtime.media_capture import _try_pil_to_content_block
+        from aster.runtime.media_capture import _try_pil_to_content_block
 
         with patch.dict(sys.modules, {"PIL": None, "PIL.Image": None}):
             result = _try_pil_to_content_block("not a pil image")
@@ -1102,7 +1102,7 @@ class TestMediaCapture:
 
     def test_try_matplotlib_to_content_block_import_error(self):
         """When matplotlib is not available, returns None gracefully."""
-        from nooa.runtime.media_capture import _try_matplotlib_to_content_block
+        from aster.runtime.media_capture import _try_matplotlib_to_content_block
 
         with patch.dict(sys.modules, {"matplotlib": None, "matplotlib.figure": None}):
             result = _try_matplotlib_to_content_block("not a figure")
@@ -1110,7 +1110,7 @@ class TestMediaCapture:
 
     def test_image_alias(self):
         """image_to_content_block is an alias for media_to_content_block."""
-        from nooa.runtime.media_capture import (
+        from aster.runtime.media_capture import (
             image_to_content_block,
             media_to_content_block,
         )
@@ -1132,7 +1132,7 @@ class TestMediaCapturePILAndMatplotlib:
         """When PIL is available and obj is a PIL Image, returns image_url block."""
         import importlib
 
-        import nooa.runtime.media_capture as mc
+        import aster.runtime.media_capture as mc
 
         # Create a mock PIL Image class and instance
         pil_cls = type("Image", (), {})
@@ -1160,7 +1160,7 @@ class TestMediaCapturePILAndMatplotlib:
 
     def test_try_matplotlib_returns_none_for_non_figure(self):
         """When matplotlib is available but obj is not a Figure, returns None."""
-        from nooa.runtime.media_capture import _try_matplotlib_to_content_block
+        from aster.runtime.media_capture import _try_matplotlib_to_content_block
 
         mock_matplotlib = MagicMock()
         mock_figure_cls = type("Figure", (), {})
@@ -1179,7 +1179,7 @@ class TestMediaCapturePILAndMatplotlib:
 
     def test_try_pil_returns_none_for_non_pil_image(self):
         """When PIL is available but obj is not a PIL Image, returns None."""
-        from nooa.runtime.media_capture import _try_pil_to_content_block
+        from aster.runtime.media_capture import _try_pil_to_content_block
 
         mock_pil = MagicMock()
         mock_pil.Image.Image = type("Image", (), {})
@@ -1191,7 +1191,7 @@ class TestMediaCapturePILAndMatplotlib:
 
     def test_show_with_auto_convert_failure_raises(self):
         """show() with unsupported type inside buffer context raises TypeError."""
-        from nooa.runtime.media_capture import (
+        from aster.runtime.media_capture import (
             _media_buffer_var,
             _MediaBuffer,
             show,

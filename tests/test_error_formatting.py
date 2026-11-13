@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pytest
 
-from nooa.errors import IPythonErrorFormatter, RestrictedCodeError, format_error_for_llm
-from nooa.errors.formatting import (
+from aster.errors import IPythonErrorFormatter, RestrictedCodeError, format_error_for_llm
+from aster.errors.formatting import (
     _adjust_line_numbers,
     _diagnostic_budget,
     _is_user_code_frame,
@@ -38,18 +38,18 @@ class TestIsUserCodeFrame:
         """Frames from <execute_code> are user code (legacy compatibility)."""
         assert _is_user_code_frame("<execute_code>") is True
 
-    def test_nooa_is_framework(self):
-        """Package-relative and actual NOOA source frames are framework code."""
-        import nooa
+    def test_aster_is_framework(self):
+        """Package-relative and actual ASTER source frames are framework code."""
+        import aster
 
-        assert _is_user_code_frame("nooa/strategies/pure_python.py") is False
-        package_frame = str(Path(nooa.__file__).resolve().parent / "runtime" / "actor.py")
+        assert _is_user_code_frame("aster/strategies/pure_python.py") is False
+        package_frame = str(Path(aster.__file__).resolve().parent / "runtime" / "actor.py")
         assert _is_user_code_frame(package_frame) is False
 
-    def test_user_checkout_named_nooa_is_not_framework(self):
-        """A directory component named nooa must not hide user/helper frames."""
-        assert _is_user_code_frame("/home/user/repos/nooa/helpers/agent.py") is True
-        assert _is_user_code_frame("/tmp/nooa/project/task.py") is True
+    def test_user_checkout_named_aster_is_not_framework(self):
+        """A directory component named aster must not hide user/helper frames."""
+        assert _is_user_code_frame("/home/user/repos/aster/helpers/agent.py") is True
+        assert _is_user_code_frame("/tmp/aster/project/task.py") is True
 
     def test_site_packages_is_framework(self):
         """Frames from site-packages are framework code."""
@@ -245,7 +245,7 @@ class TestFormatRuntimeError:
 
             assert "ZeroDivisionError" in result
             # Should NOT contain framework paths
-            assert "nooa/" not in result
+            assert "aster/" not in result
             assert "site-packages/" not in result
 
     def test_runtime_error_ipython_format(self):
@@ -416,13 +416,13 @@ class TestBeforeAfterComparison:
         BEFORE (noisy - from the trace file):
         ```
         Traceback (most recent call last):
-          File "/Volumes/dev/dev/nooa/src/nooa/runtime/actor.py", line 261, in execute_code
+          File "/Volumes/dev/dev/aster/src/aster/runtime/actor.py", line 261, in execute_code
             validate_planning_code(
-          File "/Volumes/dev/dev/nooa/src/nooa/runtime/validator.py", line 113, in validate_planning_code
+          File "/Volumes/dev/dev/aster/src/aster/runtime/validator.py", line 113, in validate_planning_code
             validator.validate(code)
-          File "/Volumes/dev/dev/nooa/src/nooa/runtime/validator.py", line 53, in validate
+          File "/Volumes/dev/dev/aster/src/aster/runtime/validator.py", line 53, in validate
             raise ValidationError("\\n".join(self.errors))
-        nooa.errors.RestrictedCodeError: Line 1: import statements are forbidden...
+        aster.errors.RestrictedCodeError: Line 1: import statements are forbidden...
         ```
 
         AFTER (clean):
@@ -452,7 +452,7 @@ class TestBeforeAfterComparison:
         BEFORE (noisy):
         ```
         Traceback (most recent call last):
-          File "/Volumes/dev/dev/nooa/src/nooa/runtime/actor.py", line 313, in execute_code
+          File "/Volumes/dev/dev/aster/src/aster/runtime/actor.py", line 313, in execute_code
             result_value = await exec_globals["__repl_wrapper__"]()
                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<execute_code>", line 6, in __repl_wrapper__
@@ -515,7 +515,7 @@ class TestIPythonErrorFormatter:
                     f"({code=}, {line_offset=}, {max_error=}, {tail_chars=})"
                 )
 
-        from nooa.strategies.codeact import CodeActStrategy
+        from aster.strategies.codeact import CodeActStrategy
 
         formatter = CustomFormatter()
         result = CodeActStrategy(error_formatter=formatter)._format_error(
@@ -758,7 +758,7 @@ class TestBadCallAgentdoc:
 
     def test_unresolvable_callable_falls_back_cleanly(self):
         """If the callable can't be resolved, no agentdoc is appended (no regression)."""
-        from nooa.errors.formatting import _bad_call_agentdoc
+        from aster.errors.formatting import _bad_call_agentdoc
 
         err = TypeError("Nonexistent.method() got an unexpected keyword argument 'z'")
         assert _bad_call_agentdoc(err) is None
@@ -878,7 +878,7 @@ class TestBadCallAgentdocHardening:
             def __str__(self):
                 raise RuntimeError("boom")
 
-        from nooa.errors.formatting import _bad_call_agentdoc
+        from aster.errors.formatting import _bad_call_agentdoc
 
         assert _bad_call_agentdoc(_BadStr()) is None
 
@@ -1068,7 +1068,7 @@ class TestFormatterReviewRegressions:
 
     def test_non_string_call_hint_is_ignored(self):
         error = RuntimeError("real failure")
-        error._nooa_call_hint = {"forged": "ValueError: forged success"}
+        error._aster_call_hint = {"forged": "ValueError: forged success"}
 
         result = format_error_for_llm(error)
 
@@ -1076,7 +1076,7 @@ class TestFormatterReviewRegressions:
         assert "forged success" not in result
 
     def test_sandbox_exception_is_the_transport_trust_boundary(self):
-        from nooa.runtime.sandbox.errors import SandboxExecutionError
+        from aster.runtime.sandbox.errors import SandboxExecutionError
 
         original = RuntimeError("real failure")
         error = SandboxExecutionError(
@@ -1091,7 +1091,7 @@ class TestFormatterReviewRegressions:
         assert result == error.diagnostic
 
     def test_sandbox_diagnostic_respects_transport_ceiling(self):
-        from nooa.runtime.sandbox.errors import SandboxExecutionError
+        from aster.runtime.sandbox.errors import SandboxExecutionError
 
         error = SandboxExecutionError(
             original_type="RuntimeError",
@@ -1107,7 +1107,7 @@ class TestFormatterReviewRegressions:
     def test_invalid_tail_fallback_is_clamped_to_active_budget(self, monkeypatch):
         from types import SimpleNamespace
 
-        import nooa.errors.formatting as formatting
+        import aster.errors.formatting as formatting
 
         monkeypatch.setattr(
             formatting,
@@ -1127,7 +1127,7 @@ class TestFormatterReviewRegressions:
     def test_very_large_diagnostic_is_bounded_with_tail_preserved(self):
         result = format_error_for_llm(RuntimeError("X" * 5_000_000))
 
-        from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+        from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
 
         max_error = DEFAULT_TRUNCATION_CONFIG.capture.max_error
         configured_tail = DEFAULT_TRUNCATION_CONFIG.capture.tail

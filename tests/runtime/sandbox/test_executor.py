@@ -20,12 +20,12 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent
-from nooa.runtime.sandbox.config import FileRule, SandboxConfig
-from nooa.runtime.sandbox.errors import CellSerializationError
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.runtime.sandbox.guards import probe_capabilities
-from nooa.unifiedllm.fake import FakeLLMClient
+from aster import Agent
+from aster.runtime.sandbox.config import FileRule, SandboxConfig
+from aster.runtime.sandbox.errors import CellSerializationError
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.runtime.sandbox.guards import probe_capabilities
+from aster.unifiedllm.fake import FakeLLMClient
 
 pytestmark = pytest.mark.sandbox
 
@@ -98,25 +98,25 @@ class _ToolAgent(Agent, llm=FakeLLMClient()):
 
     def finish(self, payload: int) -> None:
         # Mirrors ARC submit_actions: a tool that ends the turn by raising a signal.
-        from nooa.strategies.codeact import _ReturnResultSignal
+        from aster.strategies.codeact import _ReturnResultSignal
 
         raise _ReturnResultSignal(result={"result": payload})
 
     def finish_unpicklable(self) -> None:
         """Raise a completion signal whose result cannot cross the process boundary."""
-        from nooa.strategies.codeact import _ReturnResultSignal
+        from aster.strategies.codeact import _ReturnResultSignal
 
         raise _ReturnResultSignal(result={"result": lambda: None})
 
     def finish_none(self) -> None:
         """Raise a completion signal carrying a legitimate ``None`` payload."""
-        from nooa.strategies.codeact import _ReturnResultSignal
+        from aster.strategies.codeact import _ReturnResultSignal
 
         raise _ReturnResultSignal(result=None)  # type: ignore[arg-type]
 
 
 def _return_result_builtins() -> dict:
-    from nooa.strategies.codeact import _ReturnResultSignal
+    from aster.strategies.codeact import _ReturnResultSignal
 
     def return_result(*args, **kwargs):
         if args:
@@ -167,7 +167,7 @@ async def test_persistent_namespace_keeps_assignments_from_failed_cell():
     try:
         failed = await _run(ex, "answer = 41\nraise ValueError('boom')", 1)
         assert not failed.success
-        from nooa.runtime.sandbox.errors import SandboxExecutionError
+        from aster.runtime.sandbox.errors import SandboxExecutionError
 
         assert isinstance(failed.error, SandboxExecutionError)
         assert isinstance(failed.error.original_error, ValueError)
@@ -213,13 +213,13 @@ async def test_sync_tool_brokering_hits_live_agent():
 
 async def test_brokered_bad_call_preserves_parent_signature_hint():
     """A proxy TypeError keeps source context plus the real parent callable API."""
-    from nooa.errors.formatting import format_error_for_llm
+    from aster.errors.formatting import format_error_for_llm
 
     ex = _executor()
     try:
         code = "self.add_one(value=41)"
         res = await _run(ex, code, 88)
-        from nooa.runtime.sandbox.errors import SandboxExecutionError
+        from aster.runtime.sandbox.errors import SandboxExecutionError
 
         assert isinstance(res.error, SandboxExecutionError)
         assert isinstance(res.error.original_error, TypeError)
@@ -325,7 +325,7 @@ async def test_return_result_signal_crosses_boundary():
 async def test_brokered_tool_raising_signal_flows_as_signal():
     """A brokered tool that raises return_result (ARC submit_actions pattern) must
     surface as ExecutionResult.signal, not crash the executor."""
-    from nooa.strategies.codeact import _ReturnResultSignal
+    from aster.strategies.codeact import _ReturnResultSignal
 
     ex = _executor()
     try:
@@ -375,7 +375,7 @@ async def test_unpicklable_return_is_clear_error():
 
 
 # --- the pipe is not an escape hatch -----------------------------------------
-_ESCAPE_MARKER = "NOOA_SANDBOX_ESCAPE"
+_ESCAPE_MARKER = "ASTER_SANDBOX_ESCAPE"
 _BOMB_CELL = (
     "class Bomb:\n"
     "    def __reduce__(self):\n"
@@ -528,7 +528,7 @@ async def test_cell_error_is_reported_not_raised():
         assert not res.success
         assert "boom" in str(res.error)
         # The typed boundary retains the reconstructed worker exception.
-        from nooa.runtime.sandbox.errors import SandboxExecutionError
+        from aster.runtime.sandbox.errors import SandboxExecutionError
 
         assert isinstance(res.error, SandboxExecutionError)
         assert isinstance(res.error.original_error, ValueError)
@@ -595,13 +595,13 @@ async def test_exception_group_crosses_real_worker():
 
 async def test_syntax_error_preserves_cell_filename_across_process():
     """Parser diagnostics retain the generated-cell identity across IPC."""
-    from nooa.errors.formatting import format_error_for_llm
+    from aster.errors.formatting import format_error_for_llm
 
     ex = _executor()
     try:
         code = "value = (1 + )"
         res = await _run(ex, code, 76)
-        from nooa.runtime.sandbox.errors import SandboxExecutionError
+        from aster.runtime.sandbox.errors import SandboxExecutionError
 
         assert isinstance(res.error, SandboxExecutionError)
         assert isinstance(res.error.original_error, SyntaxError)
@@ -616,7 +616,7 @@ async def test_syntax_error_preserves_cell_filename_across_process():
 
 async def test_cell_error_preserves_source_location_across_process():
     """The sandbox transports its source-aware diagnostic, not a bare exception."""
-    from nooa.errors.formatting import format_error_for_llm
+    from aster.errors.formatting import format_error_for_llm
 
     ex = _executor()
     try:
@@ -794,7 +794,7 @@ def test_executor_invalid_error_budget_uses_default(invalid_limit):
         max_error=invalid_limit,
     )
     try:
-        from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+        from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
 
         assert ex._max_error == DEFAULT_TRUNCATION_CONFIG.capture.max_error
     finally:
@@ -820,13 +820,13 @@ async def test_worker_error_uses_executor_error_budget():
 
 @pytest.mark.parametrize("require", [False, True])
 async def test_missing_sdk_fails_before_cell_execution(monkeypatch, require):
-    from nooa.runtime.sandbox.errors import SandboxUnavailable
+    from aster.runtime.sandbox.errors import SandboxUnavailable
 
     monkeypatch.setitem(sys.modules, "microsandbox", None)
     ex = _executor(SandboxConfig(require=require), cell_timeout=5.0)
     before = list(_side_effects)
     try:
-        with pytest.raises(SandboxUnavailable, match=r"Install nooa\[sandbox\]"):
+        with pytest.raises(SandboxUnavailable, match=r"Install aster\[sandbox\]"):
             await ex.run_cell("_side_effects.append('unsafe host fallback')")
         assert _side_effects == before
     finally:

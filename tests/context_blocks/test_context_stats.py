@@ -9,14 +9,14 @@ back after a successful call; the per-category breakdown is then attributed
 from that total by character share.
 """
 
-from nooa.context_blocks.formatter import OpenAIProviderFormatter, XMLBlockFormatter
-from nooa.context_blocks.models import (
+from aster.context_blocks.formatter import OpenAIProviderFormatter, XMLBlockFormatter
+from aster.context_blocks.models import (
     BlockMetadata,
     ContextWindowStats,
     ResolvedBlock,
     Role,
 )
-from nooa.context_blocks.renderer import RenderResult, render_context
+from aster.context_blocks.renderer import RenderResult, render_context
 
 
 class TestContextWindowStatsBasic:
@@ -302,7 +302,7 @@ class TestContextWindowStatsToolCallEvents:
     """ToolCallEvent blocks have content="" and contribute 0 chars."""
 
     def test_tool_call_event_counted_in_events_count_but_zero_chars(self):
-        from nooa.context_blocks.events import ToolCallEvent, ToolResult
+        from aster.context_blocks.events import ToolCallEvent, ToolResult
 
         event = ToolCallEvent(
             tool_call_id="tc_1",
@@ -342,7 +342,7 @@ class TestContextWindowStatsEdgeCases:
         assert stats.context_blocks_count == 2
 
     def test_render_result_destructuring(self):
-        from nooa.context_blocks.models import RenderedMessage
+        from aster.context_blocks.models import RenderedMessage
 
         output, stats, messages = render_context(
             [ResolvedBlock(key="sys", content="hello")],
@@ -354,14 +354,14 @@ class TestContextWindowStatsEdgeCases:
         assert all(isinstance(m, RenderedMessage) for m in messages)
 
     def test_exports_from_context_blocks_package(self):
-        from nooa.context_blocks import ContextWindowStats as CWS
-        from nooa.context_blocks import RenderResult as RR
+        from aster.context_blocks import ContextWindowStats as CWS
+        from aster.context_blocks import RenderResult as RR
 
         assert CWS is ContextWindowStats
         assert RR is RenderResult
 
-    def test_exports_from_nooa_package(self):
-        from nooa import ContextWindowStats as CWS
+    def test_exports_from_aster_package(self):
+        from aster import ContextWindowStats as CWS
 
         assert CWS is ContextWindowStats
 

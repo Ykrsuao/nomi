@@ -19,10 +19,10 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.unifiedllm import FakeLLMClient
 
 pytestmark = pytest.mark.sandbox
 
@@ -45,7 +45,7 @@ class _Agent(Agent, llm=FakeLLMClient()):
 
 
 def _rr_builtins() -> dict[str, Any]:
-    from nooa.strategies.codeact import _ReturnResultSignal
+    from aster.strategies.codeact import _ReturnResultSignal
 
     def return_result(*a: Any, **k: Any):
         raise _ReturnResultSignal(result={"result": a[0] if a else k})

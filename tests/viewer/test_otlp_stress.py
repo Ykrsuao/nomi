@@ -54,7 +54,9 @@ def _make_payload(n_spans: int = 10) -> dict:
         "resourceSpans": [
             {
                 "resource": {
-                    "attributes": [{"key": "service.name", "value": {"stringValue": "nooa-stress"}}]
+                    "attributes": [
+                        {"key": "service.name", "value": {"stringValue": "aster-stress"}}
+                    ]
                 },
                 "scopeSpans": [{"spans": spans}],
             }
@@ -99,9 +101,9 @@ class TestIngestStress:
         # cross-loop contamination between test runs.
         fresh_queue: asyncio.Queue[dict] = asyncio.Queue()
 
-        with patch("nooa.viewer.main.otlp_store", mock_store):
-            with patch("nooa.viewer.main._ingest_queue", fresh_queue):
-                from nooa.viewer.main import _ingest_worker, app
+        with patch("aster.viewer.main.otlp_store", mock_store):
+            with patch("aster.viewer.main._ingest_queue", fresh_queue):
+                from aster.viewer.main import _ingest_worker, app
 
                 async def agent_session(agent_id: int, client: AsyncClient) -> list[int]:
                     """Post BATCHES_PER_AGENT payloads and return all HTTP status codes."""
@@ -179,9 +181,9 @@ class TestIngestStress:
 
         fresh_queue: asyncio.Queue[dict] = asyncio.Queue()
 
-        with patch("nooa.viewer.main.otlp_store", mock_store):
-            with patch("nooa.viewer.main._ingest_queue", fresh_queue):
-                from nooa.viewer.main import _ingest_worker, app
+        with patch("aster.viewer.main.otlp_store", mock_store):
+            with patch("aster.viewer.main._ingest_queue", fresh_queue):
+                from aster.viewer.main import _ingest_worker, app
 
                 async def agent_session(agent_id: int, client: AsyncClient) -> list[int]:
                     statuses = []

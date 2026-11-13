@@ -27,10 +27,10 @@ from typing import TypedDict
 
 import pytest
 
-from nooa import Agent
-from nooa.prompts import build_prompt_data
-from nooa.strategies.codeact import CodeActStrategy, _iter_agent_attrs
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.prompts import build_prompt_data
+from aster.strategies.codeact import CodeActStrategy, _iter_agent_attrs
+from aster.unifiedllm import FakeLLMClient
 
 _LLM = FakeLLMClient()
 
@@ -65,7 +65,7 @@ class _TestAgent(Agent, llm=_LLM):
 
 _MODULE_SOURCE = """\
 from typing import TypedDict
-from nooa import Agent
+from aster import Agent
 
 class OrderResult(TypedDict):
     ok: bool
@@ -190,8 +190,8 @@ class TestExecutionContextRendering:
 
 _MODULE_WITH_FUNCS = """\
 from typing import Literal
-from nooa import Agent, hidden, strategy
-from nooa.strategies import PredictStrategy
+from aster import Agent, hidden, strategy
+from aster.strategies import PredictStrategy
 
 Label = Literal["a", "b"]
 
@@ -322,7 +322,7 @@ class TestModuleLevelFunctionSignatures:
         # Dependencies render as runnable import statements, not a prose list.
         # The path is the symbol's declared module, so it never depends on
         # which re-exports happen to be loaded.
-        assert re.search(r"^from nooa(\.\w+)* import .*\bAgent\b", ec, re.M)
+        assert re.search(r"^from aster(\.\w+)* import .*\bAgent\b", ec, re.M)
 
     @pytest.mark.asyncio
     async def test_doc_hint_present(self):
@@ -340,7 +340,7 @@ class TestModuleLevelFunctionSignatures:
         def boom(*_a, **_k):
             raise RuntimeError("doc exploded")
 
-        with patch("nooa.agentdoc.doc", side_effect=boom):
+        with patch("aster.agentdoc.doc", side_effect=boom):
             out = CodeActStrategy._render_function_specs(
                 [("beta", lambda: None), ("alpha", lambda: None)]
             )

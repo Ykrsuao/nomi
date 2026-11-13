@@ -13,7 +13,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, RootModel
 
-from nooa.unifiedllm.unifiedllm import _instantiate_output_model
+from aster.unifiedllm.unifiedllm import _instantiate_output_model
 
 
 class TestInstantiateOutputModelWithRegularModels:

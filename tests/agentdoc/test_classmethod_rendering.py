@@ -4,7 +4,7 @@
 
 from enum import Enum
 
-from nooa.agentdoc import doc
+from aster.agentdoc import doc
 
 
 class Color(Enum):

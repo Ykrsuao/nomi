@@ -7,8 +7,8 @@ from copy import deepcopy
 import pytest
 from pydantic import BaseModel, ConfigDict
 
-from nooa.unifiedllm import CompletionClient, RetryConfig
-from nooa.unifiedllm.unifiedllm import Tool
+from aster.unifiedllm import CompletionClient, RetryConfig
+from aster.unifiedllm.unifiedllm import Tool
 from tests.unifiedllm.test_anthropic_native_profile import (
     OriginalResult,
     TypedAgent,
@@ -267,7 +267,7 @@ async def test_gateway_explicit_null_extension_is_preserved(monkeypatch, is_asyn
 async def test_adaptive_real_http_error_is_not_swallowed_or_retried(monkeypatch, is_async):
     import httpx
 
-    from nooa.unifiedllm.unifiedllm import _ClientHttp
+    from aster.unifiedllm.unifiedllm import _ClientHttp
 
     requests = []
 

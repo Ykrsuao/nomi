@@ -56,7 +56,7 @@ class TestConcurrentSpanTracking:
         The bug: With deferred _get_active_spans() initialization, some
         spans might not be properly tracked due to ContextVar timing issues.
         """
-        from nooa.tracing._hooks_impl import (
+        from aster.tracing._hooks_impl import (
             OpenInferenceHooks,
             _context_active_spans,
             _get_active_spans,
@@ -132,7 +132,7 @@ class TestConcurrentSpanTracking:
         When asyncio.gather() creates concurrent tasks, each should have
         an isolated spans dict to prevent cross-contamination.
         """
-        from nooa.tracing._hooks_impl import (
+        from aster.tracing._hooks_impl import (
             _context_active_spans,
             _get_active_spans,
         )
@@ -173,7 +173,7 @@ class TestConcurrentSpanTracking:
         This simulates what happens in eval_pipeline when running multiple
         "runs" (e.g., --runs 10). The bug manifested in "later runs" (run3+).
         """
-        from nooa.tracing._hooks_impl import (
+        from aster.tracing._hooks_impl import (
             OpenInferenceHooks,
             _context_active_spans,
         )
@@ -260,7 +260,7 @@ class TestBeforeGenerationFallback:
 
         This could attach a generation span to a completely unrelated concurrent span.
         """
-        from nooa.tracing._hooks_impl import (
+        from aster.tracing._hooks_impl import (
             OpenInferenceHooks,
             _context_active_spans,
         )

@@ -13,8 +13,8 @@ import litellm
 import pytest
 from litellm.llms.openai.common_utils import OpenAIError
 
-from nooa.unifiedllm import cooldown
-from nooa.unifiedllm.cooldown import retry_after_delay
+from aster.unifiedllm import cooldown
+from aster.unifiedllm.cooldown import retry_after_delay
 
 
 def _error(status: int = 429, headers: object | None = None) -> Exception:

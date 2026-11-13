@@ -165,7 +165,7 @@ def test_real_dispatch_fans_out_to_both_recorders(two_recorders, llm_endpoint):
     """
     import litellm
 
-    from nooa.tracing import enable_tracing, exporters, set_session
+    from aster.tracing import enable_tracing, exporters, set_session
 
     rec_a, rec_b = two_recorders
     base_a = f"http://127.0.0.1:{rec_a.port}"
@@ -196,7 +196,7 @@ def test_real_dispatch_fans_out_to_both_recorders(two_recorders, llm_endpoint):
     # before sending the response, so once the daemon returns we know
     # the recorder has the post.  Add a brief poll for safety against
     # any kernel-level scheduling jitter under heavy pytest output.
-    from nooa.tracing import _provider
+    from aster.tracing import _provider
 
     assert _provider is not None
     _provider.force_flush()
@@ -238,7 +238,7 @@ async def test_real_dispatch_async_fans_out_to_both_recorders(two_recorders, llm
     subtle gotcha that masked async dispatch as "broken" earlier."""
     import litellm
 
-    from nooa.tracing import enable_tracing, exporters, set_session
+    from aster.tracing import enable_tracing, exporters, set_session
 
     rec_a, rec_b = two_recorders
     base_a = f"http://127.0.0.1:{rec_a.port}"
@@ -271,7 +271,7 @@ async def test_real_dispatch_async_fans_out_to_both_recorders(two_recorders, llm
 
     await asyncio.sleep(0.1)
 
-    from nooa.tracing import _provider
+    from aster.tracing import _provider
 
     assert _provider is not None
     _provider.force_flush()

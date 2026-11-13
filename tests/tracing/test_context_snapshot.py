@@ -13,15 +13,15 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from otlp_test_helpers import read_all_otlp_jsonl_spans
 
-from nooa.tracing._hooks_impl import OpenInferenceHooks
-from nooa.tracing._otlp_file_exporter import OtlpJsonFileExporter
+from aster.tracing._hooks_impl import OpenInferenceHooks
+from aster.tracing._otlp_file_exporter import OtlpJsonFileExporter
 
 
 class TestOnMessagesBuiltProtocol:
     """Test that InstrumentationHooks protocol includes on_messages_built."""
 
     def test_protocol_has_on_messages_built(self):
-        from nooa.runtime.hooks import InstrumentationHooks
+        from aster.runtime.hooks import InstrumentationHooks
 
         assert hasattr(InstrumentationHooks, "on_messages_built")
 
@@ -96,9 +96,9 @@ class TestContextSnapshotSpan:
             assert len(snapshot_spans) == 1
 
             attrs = snapshot_spans[0]["attributes"]
-            assert attrs["nooa.system_message"] == "You are a helpful assistant."
-            assert attrs["nooa.system_message.is_diff"] is False
-            assert attrs["nooa.system_message.turn_index"] == 0
+            assert attrs["aster.system_message"] == "You are a helpful assistant."
+            assert attrs["aster.system_message.is_diff"] is False
+            assert attrs["aster.system_message.turn_index"] == 0
 
     def test_unchanged_system_message_skips_span(self):
         """Second call with same system message should not emit a span."""
@@ -201,14 +201,14 @@ class TestContextSnapshotSpan:
             assert len(snapshot_spans) == 2
 
             # First is full snapshot
-            assert snapshot_spans[0]["attributes"]["nooa.system_message.is_diff"] is False
-            assert snapshot_spans[0]["attributes"]["nooa.system_message.turn_index"] == 0
+            assert snapshot_spans[0]["attributes"]["aster.system_message.is_diff"] is False
+            assert snapshot_spans[0]["attributes"]["aster.system_message.turn_index"] == 0
 
             # Second is unified diff
             diff_span = snapshot_spans[1]
-            assert diff_span["attributes"]["nooa.system_message.is_diff"] is True
-            assert diff_span["attributes"]["nooa.system_message.turn_index"] == 1
-            diff_text = diff_span["attributes"]["nooa.system_message"]
+            assert diff_span["attributes"]["aster.system_message.is_diff"] is True
+            assert diff_span["attributes"]["aster.system_message.turn_index"] == 1
+            diff_text = diff_span["attributes"]["aster.system_message"]
             assert "-Be concise." in diff_text
             assert "+Be verbose." in diff_text
 
@@ -276,7 +276,7 @@ class TestContextSnapshotSpan:
             snapshot_spans = [s for s in spans if s["name"] == "context_snapshot"]
             assert len(snapshot_spans) == 2
             assert all(
-                s["attributes"]["nooa.system_message.is_diff"] is False for s in snapshot_spans
+                s["attributes"]["aster.system_message.is_diff"] is False for s in snapshot_spans
             )
 
     def test_no_system_message_skips_span(self):
@@ -326,7 +326,7 @@ class TestActorHookCallSite:
         """Verify call_before_hook('on_messages_built', ...) appears in actor.generate()."""
         import inspect
 
-        from nooa.runtime.actor import ActorRuntime
+        from aster.runtime.actor import ActorRuntime
 
         source = inspect.getsource(ActorRuntime.generate)
         assert "on_messages_built" in source, "actor.generate() must call on_messages_built hook"

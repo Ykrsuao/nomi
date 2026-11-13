@@ -17,7 +17,7 @@ class TestEventBase:
 
     def test_timestamp_has_default(self):
         """EventBase should auto-generate timestamp."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="test")
         assert event.timestamp is not None
@@ -25,14 +25,14 @@ class TestEventBase:
 
     def test_metadata_defaults_to_empty_dict(self):
         """EventBase.metadata should default to empty dict."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="test")
         assert event.metadata == {}
 
     def test_metadata_can_be_updated(self):
         """EventBase.metadata should be mutable after construction."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="test")
         event.metadata["custom_key"] = "value"
@@ -46,14 +46,14 @@ class TestEventBase:
         tag is set by EventManager.add() when the event is
         added to the event manager, not at creation time.
         """
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="test")
         assert event.tag is None  # Unassigned until added to event manager
 
     def test_tag_can_be_set(self):
         """EventBase tag should be settable via property."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="test")
         event.tag = "42"
@@ -61,7 +61,7 @@ class TestEventBase:
 
     def test_tag_on_typed_events(self):
         """All typed events should have tag attribute (defaulting to None)."""
-        from nooa.context_blocks.events import (
+        from aster.context_blocks.events import (
             AssistantEvent,
             ToolCallEvent,
             UserEvent,
@@ -78,8 +78,8 @@ class TestEventBase:
 
     def test_event_type_and_role(self):
         """Events should have event_type field and _role class attribute."""
-        from nooa.context_blocks.events import AssistantEvent, ToolCallEvent, UserEvent
-        from nooa.context_blocks.models import Role
+        from aster.context_blocks.events import AssistantEvent, ToolCallEvent, UserEvent
+        from aster.context_blocks.models import Role
 
         # event_type is auto-derived from the class name
         assert UserEvent(content="test").event_type == "UserEvent"
@@ -96,7 +96,7 @@ class TestEventBase:
 
     def test_tag_property_returns_event_position(self):
         """Events should have tag property returning event position."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         # Unassigned events have tag=None
         event = UserEvent(content="test")
@@ -113,7 +113,7 @@ class TestInstanceValuesEmptySuppression:
     def test_empty_fields_dropped(self):
         from pydantic import Field
 
-        from nooa.context_blocks.events import EventBase
+        from aster.context_blocks.events import EventBase
 
         class Sample(EventBase):
             name: str = Field(default="")
@@ -136,7 +136,7 @@ class TestInstanceValuesEmptySuppression:
         """0 and False are semantically meaningful and must not be suppressed."""
         from pydantic import Field
 
-        from nooa.context_blocks.events import EventBase
+        from aster.context_blocks.events import EventBase
 
         class Sample(EventBase):
             count: int = Field(default=0)
@@ -150,8 +150,8 @@ class TestInstanceValuesEmptySuppression:
         """Suppression is observable through agentdoc.pformat (the LLM render path)."""
         from pydantic import Field
 
-        from nooa.agentdoc import pformat
-        from nooa.context_blocks.events import EventBase
+        from aster.agentdoc import pformat
+        from aster.context_blocks.events import EventBase
 
         class Sample(EventBase):
             stdout: str = Field(default="")
@@ -169,14 +169,14 @@ class TestUserEvent:
 
     def test_user_event_type(self):
         """UserEvent should have event_type='UserEvent' (auto-derived from class name)."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="Hello")
         assert event.event_type == "UserEvent"
 
     def test_user_event_with_content(self):
         """UserEvent should hold content."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="What's the weather?")
         assert event.content == "What's the weather?"
@@ -187,14 +187,14 @@ class TestAssistantEvent:
 
     def test_assistant_event_type(self):
         """AssistantEvent should have event_type='AssistantEvent' (auto-derived from class name)."""
-        from nooa.context_blocks.events import AssistantEvent
+        from aster.context_blocks.events import AssistantEvent
 
         event = AssistantEvent(content="I can help with that.")
         assert event.event_type == "AssistantEvent"
 
     def test_assistant_event_with_content(self):
         """AssistantEvent should hold content."""
-        from nooa.context_blocks.events import AssistantEvent
+        from aster.context_blocks.events import AssistantEvent
 
         event = AssistantEvent(content="The weather is sunny.")
         assert event.content == "The weather is sunny."
@@ -205,14 +205,14 @@ class TestToolCallEvent:
 
     def test_tool_call_event_type(self):
         """ToolCallEvent should have event_type='ToolCallEvent' (auto-derived from class name)."""
-        from nooa.context_blocks.events import ToolCallEvent
+        from aster.context_blocks.events import ToolCallEvent
 
         event = ToolCallEvent(tool_call_id="tc_1", name="search", arguments={})
         assert event.event_type == "ToolCallEvent"
 
     def test_tool_call_event_with_data(self):
         """ToolCallEvent should hold tool call fields."""
-        from nooa.context_blocks.events import ToolCallEvent
+        from aster.context_blocks.events import ToolCallEvent
 
         event = ToolCallEvent(
             tool_call_id="call_123", name="get_weather", arguments={"location": "NYC"}
@@ -227,7 +227,7 @@ class TestToolResult:
 
     def test_tool_result_fields(self):
         """ToolResult should hold result data."""
-        from nooa.context_blocks.events import ToolResult
+        from aster.context_blocks.events import ToolResult
 
         result = ToolResult(tool_call_id="call_123", content="Sunny, 72°F")
         assert result.tool_call_id == "call_123"
@@ -236,7 +236,7 @@ class TestToolResult:
 
     def test_tool_result_error_status(self):
         """ToolResult should support error status."""
-        from nooa.context_blocks.events import ResultStatus, ToolResult
+        from aster.context_blocks.events import ResultStatus, ToolResult
 
         result = ToolResult(
             tool_call_id="call_123", content="Error occurred", result_status=ResultStatus.ERROR
@@ -249,7 +249,7 @@ class TestEventRendering:
 
     def test_private_fields_excluded_from_repr(self):
         """Private fields should not appear in repr/pformat."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="Hello")
         repr_str = repr(event)
@@ -268,7 +268,7 @@ class TestEventRendering:
         """pformat should show class name and public fields."""
         from pprint import pformat
 
-        from nooa.context_blocks.events import ToolCallEvent
+        from aster.context_blocks.events import ToolCallEvent
 
         event = ToolCallEvent(tool_call_id="tc_1", name="search", arguments={"q": "test"})
         formatted = pformat(event)
@@ -284,7 +284,7 @@ class TestEventSerialization:
 
     def test_user_event_to_json_and_back(self):
         """UserEvent should serialize to JSON and deserialize correctly."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="Test message")
         json_str = event.model_dump_json()
@@ -295,7 +295,7 @@ class TestEventSerialization:
 
     def test_tool_call_event_to_json_and_back(self):
         """ToolCallEvent should serialize to JSON and deserialize correctly."""
-        from nooa.context_blocks.events import ToolCallEvent
+        from aster.context_blocks.events import ToolCallEvent
 
         event = ToolCallEvent(tool_call_id="call_abc", name="get_data", arguments={"key": "value"})
         json_str = event.model_dump_json()
@@ -310,7 +310,7 @@ class TestEventSerialization:
         """List of Event should serialize and deserialize correctly."""
         from pydantic import TypeAdapter
 
-        from nooa.context_blocks.events import (
+        from aster.context_blocks.events import (
             AssistantEvent,
             Event,
             UserEvent,
@@ -335,7 +335,7 @@ class TestNestedToolResult:
 
     def test_tool_call_with_nested_result(self):
         """ToolCallEvent should hold nested ToolResult."""
-        from nooa.context_blocks.events import ToolCallEvent, ToolResult
+        from aster.context_blocks.events import ToolCallEvent, ToolResult
 
         call_event = ToolCallEvent(
             tool_call_id="call_weather_123",
@@ -353,7 +353,7 @@ class TestNestedToolResult:
 
     def test_tool_call_without_result(self):
         """ToolCallEvent.result should default to None."""
-        from nooa.context_blocks.events import ToolCallEvent
+        from aster.context_blocks.events import ToolCallEvent
 
         call_event = ToolCallEvent(
             tool_call_id="tc_1",
@@ -365,7 +365,7 @@ class TestNestedToolResult:
 
     def test_access_result_via_event(self):
         """Should access result directly via ToolCallEvent.result."""
-        from nooa.context_blocks.events import (
+        from aster.context_blocks.events import (
             AssistantEvent,
             Event,
             ToolCallEvent,

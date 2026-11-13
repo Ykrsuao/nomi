@@ -16,7 +16,7 @@ from typing import Any
 
 import httpx
 
-from nooa.unifiedllm import (
+from aster.unifiedllm import (
     AdmissionBroker,
     AdmissionCallCapError,
     BrokerAdmissionConfig,

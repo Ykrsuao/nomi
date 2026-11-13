@@ -11,11 +11,11 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 def _resp(content: str, tool_calls: list | None = None) -> LLMResponse:

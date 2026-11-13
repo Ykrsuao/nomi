@@ -59,14 +59,14 @@ GATE_MODELS = [
 GATE_RUNS = 3
 GATE_PARALLEL = 40
 CAPABILITY_CONFIG = Path("tests/capability/config.yaml")
-PACKAGES = ["nooa", "nooa-cli", "nooa-acp", "nooa-memory", "nooa-bench"]
+PACKAGES = ["aster", "aster-cli", "aster-acp", "aster-memory", "aster-bench"]
 QUICKSTART_EXAMPLES = [
     "01_first_generation_method.py",
     "02_structured_outputs.py",
     "03_codeact_tools.py",
 ]
 REPORT_PATH = REPO / "tmp" / "release-check" / "capability-report.md"
-GITHUB_REPO = "NVIDIA-NeMo/labs-OO-Agents"
+GITHUB_REPO = os.environ.get("ASTER_RELEASE_REPOSITORY", "").strip()
 TAG_RE = re.compile(r"^v(?P<version>(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))$")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 PR_REF_RE = re.compile(r"^refs/pull/[1-9]\d*/head$")
@@ -89,7 +89,7 @@ MAX_ERROR_RATE = 0.5
 COLLAPSE_BEFORE = 0.80  # a test that used to pass at least this often...
 COLLAPSE_AFTER = 0.20  # ...and now passes at most this often, has collapsed
 
-# `git describe --tags --abbrev=0` alone resolves to `nooa-cybergym` in this
+# `git describe --tags --abbrev=0` alone resolves to `aster-cybergym` in this
 # repo. Every tag lookup must filter to version tags or the "previous release"
 # silently becomes a random feature tag.
 VERSION_TAG_GLOB = "v[0-9]*"
@@ -207,8 +207,16 @@ def validate_https_url(value: str, label: str) -> str:
     return value
 
 
+def github_repository() -> str:
+    """Require the product owner's explicit release destination."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*", GITHUB_REPO):
+        die("set ASTER_RELEASE_REPOSITORY to the intended owner/repository")
+    return GITHUB_REPO
+
+
 def release_for_tag(tag: str) -> dict[str, Any] | None:
     """Return draft-aware GitHub release metadata, or None when absent."""
+    repository = github_repository()
     proc = run(
         [
             "gh",
@@ -216,7 +224,7 @@ def release_for_tag(tag: str) -> dict[str, Any] | None:
             "view",
             tag,
             "--repo",
-            GITHUB_REPO,
+            repository,
             "--json",
             "apiUrl,isDraft,targetCommitish,url",
         ],
@@ -242,7 +250,7 @@ def release_for_tag(tag: str) -> dict[str, Any] | None:
             or not url
         ):
             raise TypeError
-        api_prefix = f"https://api.github.com/repos/{GITHUB_REPO}/releases/"
+        api_prefix = f"https://api.github.com/repos/{repository}/releases/"
         database_id_match = re.fullmatch(rf"{re.escape(api_prefix)}([1-9]\d*)", api_url)
         if database_id_match is None:
             raise TypeError
@@ -549,7 +557,7 @@ def fresh_wheel_quickstarts(wheel: Path, manifest: ReleaseManifest | None = None
     key = ""
     try:
         key = quickstart_api_key()
-        with tempfile.TemporaryDirectory(prefix="nooa-quickstarts-") as directory:
+        with tempfile.TemporaryDirectory(prefix="aster-quickstarts-") as directory:
             work = Path(directory)
             # Keep transport/tool settings, but no ambient Python paths, uv constraints,
             # provider selection, registry configuration, or release-management tokens.
@@ -626,8 +634,8 @@ def fresh_wheel_quickstarts(wheel: Path, manifest: ReleaseManifest | None = None
                     str(python),
                     "-I",
                     "-c",
-                    "import importlib.metadata as m, json, nooa, sys; from pathlib import Path; "
-                    "Path(sys.argv[1]).write_text(json.dumps({'python': sys.version, 'nooa_path': nooa.__file__, "
+                    "import importlib.metadata as m, json, aster, sys; from pathlib import Path; "
+                    "Path(sys.argv[1]).write_text(json.dumps({'python': sys.version, 'aster_path': aster.__file__, "
                     "'packages': dict(sorted((d.metadata['Name'], d.version) "
                     "for d in m.distributions()))}))",
                     str(metadata),
@@ -704,7 +712,7 @@ def build_and_smoke(
                 die(f"{wheel.name} is a dev version — the tag was not reachable")
         ok(f"all wheels at version {expected}")
 
-        core_wheel = next(wheel for wheel in wheels if wheel.name.startswith("nooa-"))
+        core_wheel = next(wheel for wheel in wheels if wheel.name.startswith("aster-"))
         fresh_wheel_quickstarts(core_wheel, manifest)
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -723,7 +731,7 @@ def build_and_smoke(
                 [
                     str(python),
                     "-c",
-                    "import nooa, nooa_acp, nooa_cli, nooa_memory, nooa_bench; print(nooa.__version__)",
+                    "import aster, aster_acp, aster_cli, aster_memory, aster_bench; print(aster.__version__)",
                 ],
                 text=True,
                 capture_output=True,
@@ -731,7 +739,7 @@ def build_and_smoke(
             if proc.returncode != 0:
                 die(f"smoke import failed:\n{proc.stderr}")
             ok(f"smoke import OK ({proc.stdout.strip()})")
-            cli = run([str(venv / "bin" / "nooa"), "--version"], check=False)
+            cli = run([str(venv / "bin" / "aster"), "--version"], check=False)
             if cli.returncode != 0 or expected not in cli.stdout:
                 die(
                     f"CLI smoke test failed or reported the wrong version: {cli.stdout}{cli.stderr}"
@@ -740,13 +748,13 @@ def build_and_smoke(
             # Mirror publish.yml: a wheel can import cleanly and still ship a
             # broken [project.scripts] entry point.
             entry = subprocess.run(
-                [str(venv / "bin" / "nooa-acp"), "--help"],
+                [str(venv / "bin" / "aster-acp"), "--help"],
                 text=True,
                 capture_output=True,
             )
             if entry.returncode != 0:
-                die(f"nooa-acp entry point failed:\n{entry.stderr}")
-            ok("nooa-acp entry point OK")
+                die(f"aster-acp entry point failed:\n{entry.stderr}")
+            ok("aster-acp entry point OK")
 
     artifacts = [
         {"path": str(path.relative_to(REPO)), "sha256": sha256(path)}
@@ -843,7 +851,7 @@ def env_extras() -> list[str]:
     """Install specs present in this venv but absent from `uv.lock`.
 
     The NVIDIA model aliases the gate resolves through (`claude-haiku`,
-    `nemotron3-nano-30b`, …) ship in `nemo-oo-agents-nvidia`, which is installed
+    `nemotron3-nano-30b`, …) come from an optional model-alias wheel, installed
     from a local path and deliberately not in the lock. A freshly synced
     worktree would not have it, so those models would fail to resolve on the
     baseline arm and the two sides would not be comparable. Mirroring whatever
@@ -873,7 +881,7 @@ def env_extras() -> list[str]:
 
         # CRITICAL: skip anything inside this checkout. `uv pip freeze` lists
         # the workspace packages themselves as local installs pointing at REPO,
-        # and mirroring those would put HEAD's nooa into the baseline worktree —
+        # and mirroring those would put HEAD's aster into the baseline worktree —
         # silently comparing HEAD against itself.
         if location.strip().removeprefix("file://").startswith(str(REPO)):
             continue
@@ -885,13 +893,20 @@ def env_extras() -> list[str]:
 
 
 def newest_eval(out_dir: Path) -> Path | None:
-    """Most recent `.noo-eval.jsonl` under `out_dir`.
+    """Most recent `.aster-eval.jsonl` under `out_dir`.
 
     Recursive on purpose: eval_pipeline writes into a timestamped subdirectory
-    (`capability_<ts>_p40/capability_<ts>.noo-eval.jsonl`), not into the
+    (`capability_<ts>_p40/capability_<ts>.aster-eval.jsonl`), not into the
     `--output-dir` root, so a plain glob finds nothing.
     """
-    found = sorted(out_dir.rglob("*.noo-eval.jsonl"), key=lambda p: p.stat().st_mtime)
+    found = sorted(
+        (
+            path
+            for pattern in ("*.aster-eval.jsonl", "*.noo-eval.jsonl")
+            for path in out_dir.rglob(pattern)
+        ),
+        key=lambda p: p.stat().st_mtime,
+    )
     return found[-1] if found else None
 
 
@@ -958,7 +973,7 @@ def run_capability_arm(
         # Resolve every alias through the entry-point registry. This fails
         # before any paid call and does not print model endpoints or secrets.
         alias_check = (
-            "from nooa.unifiedllm.registry import get_registry_config; "
+            "from aster.unifiedllm.registry import get_registry_config; "
             f"names={models!r}; missing=[n for n in names if not get_registry_config(n)]; "
             "assert not missing, 'missing model aliases: '+','.join(missing)"
         )
@@ -1053,7 +1068,7 @@ def run_capability_arm(
 
     produced = newest_eval(out_dir)
     if not produced:
-        die(f"{label}: eval produced no .noo-eval.jsonl under {out_dir}")
+        die(f"{label}: eval produced no .aster-eval.jsonl under {out_dir}")
     arm = parse_results(produced, label)
     arm.result_path = str(produced)
     lock = tree / "uv.lock"
@@ -1080,13 +1095,13 @@ def run_capability_arm(
 def worktree_at(tag: str):
     """A detached worktree at `tag`, cleaned up afterwards.
 
-    Each arm runs entirely against its own checkout — its own nooa, its own
+    Each arm runs entirely against its own checkout — its own aster, its own
     capability config and agents. That keeps each side self-consistent (HEAD's
-    test agents may use APIs the old nooa lacks), at the cost that a change to
+    test agents may use APIs the old aster lacks), at the cost that a change to
     the harness itself shows up as a capability delta. Tests that exist on only
     one side are reported separately rather than compared.
     """
-    tmp = Path(tempfile.mkdtemp(prefix="nooa-release-"))
+    tmp = Path(tempfile.mkdtemp(prefix="aster-release-"))
     path = tmp / "tree"
     git("worktree", "add", "--detach", str(path), tag)
     try:
@@ -1499,13 +1514,14 @@ def sanitize_public_text(text: str) -> str:
 
 
 def generated_change_notes(tag: str, sha: str, prev_tag: str) -> str:
+    repository = github_repository()
     proc = run(
         [
             "gh",
             "api",
             "--method",
             "POST",
-            f"repos/{GITHUB_REPO}/releases/generate-notes",
+            f"repos/{repository}/releases/generate-notes",
             "-f",
             f"tag_name={tag}",
             "-f",
@@ -1552,6 +1568,7 @@ def create_or_update_draft(
     notes_path: Path,
 ) -> tuple[str, int]:
     """Create exactly one draft, or update the matching unpublished draft."""
+    repository = github_repository()
     # Re-read immediately before mutation. A reviewer may have published a
     # pre-existing draft while this multi-hour gate was running; in that case
     # validate_existing_release fails before `gh release edit` can unpublish it.
@@ -1559,11 +1576,11 @@ def create_or_update_draft(
     step(f"{'Updating' if current else 'Creating'} draft release {tag}")
     common = [
         "--repo",
-        GITHUB_REPO,
+        repository,
         "--target",
         sha,
         "--title",
-        f"NOOA {tag.lstrip('v')}",
+        f"ASTER {tag.lstrip('v')}",
         "--notes-file",
         str(notes_path),
         "--draft",
@@ -1628,7 +1645,7 @@ def _parser() -> argparse.ArgumentParser:
         help="canonical refs/pull/<number>/head ref authenticated by the private controller",
     )
     parser.add_argument("--internal-wheel", type=Path, help="explicit internal model-alias wheel")
-    parser.add_argument("--controller-sha", help="exact nooa-dev commit that built the wheel")
+    parser.add_argument("--controller-sha", help="exact controller commit that built the wheel")
     parser.add_argument("--artifact-dir", type=Path, help="private CI evidence output directory")
     parser.add_argument(
         "--create-draft",
@@ -1669,7 +1686,7 @@ def _write_job_summary(artifact_dir: Path, manifest: ReleaseManifest) -> None:
     data = manifest.data
     cap = data.get("capability", {})
     lines = [
-        "# NOOA release gate summary",
+        "# ASTER release gate summary",
         "",
         f"- Status: **{data.get('status', 'running')}**",
         f"- Version: `{data.get('requested_version', '')}`",
@@ -1694,8 +1711,8 @@ def ci_main(args: argparse.Namespace) -> int:
     if args.internal_wheel is None or not args.internal_wheel.is_file():
         die("--ci requires an existing --internal-wheel")
     internal_wheel = args.internal_wheel.resolve()
-    if internal_wheel.suffix != ".whl" or "nemo_oo_agents_nvidia" not in internal_wheel.name:
-        die("--internal-wheel must be the nemo-oo-agents-nvidia wheel")
+    if internal_wheel.suffix != ".whl":
+        die("--internal-wheel must be a model-alias wheel (.whl)")
     if args.artifact_dir is None:
         die("--ci requires --artifact-dir")
     candidate_ref = validate_candidate_ref(args.candidate_ref) if args.candidate_ref else None
@@ -1743,7 +1760,7 @@ def ci_main(args: argparse.Namespace) -> int:
             "candidate_source": (
                 "canonical_github_pull_ref" if unmerged_candidate else "github_main"
             ),
-            "nooa_dev_sha": controller_sha,
+            "controller_sha": controller_sha,
             "internal_model_wheel": {
                 "filename": internal_wheel.name,
                 "sha256": sha256(internal_wheel),
@@ -1915,7 +1932,7 @@ def local_main(args: argparse.Namespace) -> int:
         step("Dry run — the release steps that would follow")
         print(
             f"  {DIM}$ gh release create {args.tag} --repo {GITHUB_REPO} "
-            f"--target {head_sha} --title 'NOOA {args.tag.lstrip('v')}' "
+            f"--target {head_sha} --title 'ASTER {args.tag.lstrip('v')}' "
             f"--notes-file <review notes> --draft{RESET}"
         )
         ok("dry run complete — nothing was created")

@@ -9,14 +9,14 @@ from copy import deepcopy
 import httpx
 import pytest
 
-from nooa import Agent, no_trace
-from nooa.config import ModelConfig
-from nooa.config.strategy_config import CodeActConfig
-from nooa.decorators import strategy
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.codeact_v2 import CodeActV2
-from nooa.unifiedllm import registry
-from nooa.unifiedllm.connect._session import TOKEN_RESERVATION, session_steps
+from aster import Agent, no_trace
+from aster.config import ModelConfig
+from aster.config.strategy_config import CodeActConfig
+from aster.decorators import strategy
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.unifiedllm import registry
+from aster.unifiedllm.connect._session import TOKEN_RESERVATION, session_steps
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 from tests.unifiedllm.test_anthropic_native_profile import http_fixture
 
@@ -112,7 +112,7 @@ async def test_registry_top_level_matches_level_default_and_overrides(monkeypatc
 )
 async def test_native_registry_session_settings_and_signed_replay(monkeypatch, placement, thought):
     bodies = []
-    import nooa.unifiedllm.connect._session as session
+    import aster.unifiedllm.connect._session as session
 
     monkeypatch.setattr(session, "SESSION_CALL_PACING_SECONDS", 0)
 

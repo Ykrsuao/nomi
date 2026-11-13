@@ -1,16 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""``import nooa`` does not load the strategies or LiteLLM; the names still resolve."""
+"""``import aster`` does not load the strategies or LiteLLM; the names still resolve."""
 
 import subprocess
 import sys
 
 import pytest
 
-_HEAVY = ("litellm", "nooa.strategies", "nooa.unifiedllm")
+_HEAVY = ("litellm", "aster.strategies", "aster.unifiedllm")
 
 
-@pytest.mark.parametrize("statement", ["import nooa", "import nooa.runtime"])
+@pytest.mark.parametrize("statement", ["import aster", "import aster.runtime"])
 def test_package_import_does_not_load_the_llm_stack(statement):
     code = f"{statement}\nimport sys\nprint([m for m in {_HEAVY!r} if m in sys.modules])\n"
     out = subprocess.run(
@@ -22,10 +22,10 @@ def test_package_import_does_not_load_the_llm_stack(statement):
 @pytest.mark.parametrize(
     "statement",
     [
-        "from nooa.unifiedllm import FakeLLMClient, LLMResponse, Tool",
-        "from nooa.strategies import CodeActStrategy, CodeActV2",
-        "from nooa.runtime.sandbox.guest import return_function; return_function(int)",
-        "from nooa.interactive import Done, InteractiveAgent",
+        "from aster.unifiedllm import FakeLLMClient, LLMResponse, Tool",
+        "from aster.strategies import CodeActStrategy, CodeActV2",
+        "from aster.runtime.sandbox.guest import return_function; return_function(int)",
+        "from aster.interactive import Done, InteractiveAgent",
     ],
 )
 def test_execution_imports_do_not_load_model_transport(statement):
@@ -41,7 +41,7 @@ def test_real_clients_initialize_provider_settings_on_first_use(client):
     code = f"""
 import asyncio
 import sys
-from nooa.unifiedllm import {client}
+from aster.unifiedllm import {client}
 assert 'litellm' not in sys.modules
 async def check():
     async with {client}('openai/gpt-4o-mini', api_key='test-key'):
@@ -62,23 +62,23 @@ asyncio.run(check())
 
 
 def test_lazy_names_resolve_to_the_defining_objects():
-    import nooa
-    import nooa.llm_config
-    import nooa.strategies
-    import nooa.unifiedllm
-    from nooa import CodeActStrategy, LLMResponse, llm_config_chain, set_default_strategy
+    import aster
+    import aster.llm_config
+    import aster.strategies
+    import aster.unifiedllm
+    from aster import CodeActStrategy, LLMResponse, llm_config_chain, set_default_strategy
 
-    assert CodeActStrategy is nooa.strategies.CodeActStrategy
-    assert set_default_strategy is nooa.strategies.set_default_strategy
-    assert LLMResponse is nooa.unifiedllm.LLMResponse
-    assert llm_config_chain is nooa.llm_config.llm_config_chain
-    for name in nooa._LAZY:
-        assert name in nooa.__all__
-        assert getattr(nooa, name) is not None
+    assert CodeActStrategy is aster.strategies.CodeActStrategy
+    assert set_default_strategy is aster.strategies.set_default_strategy
+    assert LLMResponse is aster.unifiedllm.LLMResponse
+    assert llm_config_chain is aster.llm_config.llm_config_chain
+    for name in aster._LAZY:
+        assert name in aster.__all__
+        assert getattr(aster, name) is not None
 
 
 def test_unknown_attribute_still_raises():
-    import nooa
+    import aster
 
     with pytest.raises(AttributeError):
-        nooa.does_not_exist  # noqa: B018
+        aster.does_not_exist  # noqa: B018

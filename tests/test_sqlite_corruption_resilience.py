@@ -9,8 +9,8 @@ from unittest.mock import patch
 
 import pytest
 
-from nooa.context_blocks import Metadata
-from nooa.storage.sqlite import SQLiteStorageManager, _is_virtiofs
+from aster.context_blocks import Metadata
+from aster.storage.sqlite import SQLiteStorageManager, _is_virtiofs
 
 
 @pytest.fixture
@@ -183,7 +183,7 @@ class TestCorruptEventResilience:
                     raise sqlite3.DatabaseError("database disk image is malformed")
                 return original_execute(sql, *args, **kwargs)
 
-        from nooa.storage.sqlite import SQLiteEventBackend
+        from aster.storage.sqlite import SQLiteEventBackend
 
         backend = SQLiteEventBackend(CorruptingConnection())
         assert backend._insertion_counter == 0
@@ -242,7 +242,7 @@ class TestVirtiofsDetection:
 
     def test_synchronous_full_on_virtiofs(self, tmp_db):
         """Storage manager sets DELETE + synchronous=FULL when virtiofs detected."""
-        with patch("nooa.storage.sqlite._is_virtiofs", return_value=True):
+        with patch("aster.storage.sqlite._is_virtiofs", return_value=True):
             sm = SQLiteStorageManager(tmp_db)
             try:
                 row = sm._conn.execute("PRAGMA synchronous").fetchone()
@@ -274,7 +274,7 @@ class TestVirtiofsDetection:
             return RecordingConnection(real_connect(*args, **kwargs))
 
         with (
-            patch("nooa.storage.sqlite._is_virtiofs", return_value=True),
+            patch("aster.storage.sqlite._is_virtiofs", return_value=True),
             patch("sqlite3.connect", side_effect=recording_connect),
         ):
             sm = SQLiteStorageManager(tmp_db)
@@ -290,7 +290,7 @@ class TestVirtiofsDetection:
         WAL+NORMAL leaves a disk-full window that can corrupt the file; FULL
         closes it. Regression for the disk-full corruption crash.
         """
-        with patch("nooa.storage.sqlite._is_virtiofs", return_value=False):
+        with patch("aster.storage.sqlite._is_virtiofs", return_value=False):
             sm = SQLiteStorageManager(tmp_db)
             try:
                 row = sm._conn.execute("PRAGMA synchronous").fetchone()
@@ -316,7 +316,7 @@ class TestStoreCorruptionResilience:
 
     def test_store_raises_typed_corruption_error(self, storage):
         """store() converts a corruption DatabaseError into CorruptDatabaseError."""
-        from nooa.storage.sqlite import CorruptDatabaseError
+        from aster.storage.sqlite import CorruptDatabaseError
 
         def boom(*args, **kwargs):
             raise sqlite3.DatabaseError("database disk image is malformed")
@@ -345,7 +345,7 @@ class TestStoreCorruptionResilience:
         Reproduces the double-failure: disk-I/O error on the first _do_store,
         then corruption on the retry after reconnect.
         """
-        from nooa.storage.sqlite import CorruptDatabaseError
+        from aster.storage.sqlite import CorruptDatabaseError
 
         calls = {"n": 0}
 

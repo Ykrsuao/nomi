@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for ScopedContext context manager."""
 
-from nooa.context_blocks.models import DynamicContext
-from nooa.context_blocks.scoped import ScopedContext, _scoped_blocks_var
+from aster.context_blocks.models import DynamicContext
+from aster.context_blocks.scoped import ScopedContext, _scoped_blocks_var
 
 
 class TestScopedBlocks:
@@ -86,6 +86,6 @@ class TestScopedBlocks:
 
     def test_importable_from_package(self):
         """ScopedContext is importable from the top-level package."""
-        from nooa.context_blocks import ScopedContext as SC
+        from aster.context_blocks import ScopedContext as SC
 
         assert SC is ScopedContext

@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from nooa.tools.shell_tools import (
+from aster.tools.shell_tools import (
     ShellTools,
     is_pure_search_command,
 )
@@ -426,17 +426,17 @@ class TestIsPureSearchCommand:
     """Test is_pure_search_command handles real agent grep patterns."""
 
     def test_bare_grep(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -rn "pattern" src/') is True
 
     def test_grep_single_file(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -n "foo" bar.py') is True
 
     def test_cd_prefix_stripped(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert (
             is_pure_search_command('cd /testbed && grep -n "sympy_integers" sympy/printing/str.py')
@@ -444,7 +444,7 @@ class TestIsPureSearchCommand:
         )
 
     def test_cd_prefix_with_rn(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert (
             is_pure_search_command('cd /testbed && grep -rn "max_iter" sklearn/decomposition/')
@@ -452,24 +452,24 @@ class TestIsPureSearchCommand:
         )
 
     def test_pipe_head_allowed(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -rn "pattern" src/ | head -50') is True
 
     def test_pipe_tail_allowed(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -rn "pattern" src/ | tail -5') is True
 
     def test_cd_and_pipe_head(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert (
             is_pure_search_command('cd /testbed && grep -rn "max_iter" sklearn/ | head -50') is True
         )
 
     def test_find_xargs_grep_rejected(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert (
             is_pure_search_command('find /testbed -name "*.py" | xargs grep -l "Foo" | head -30')
@@ -477,31 +477,31 @@ class TestIsPureSearchCommand:
         )
 
     def test_pipe_sort_rejected(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -rn "pattern" src/ | sort') is False
 
     def test_pipe_awk_rejected(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -rn "pattern" src/ | awk "{print $1}"') is False
 
     def test_only_matching_flag_rejected(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -orn "pattern" src/') is False
 
     def test_count_flag_rejected(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -crn "pattern" src/') is False
 
     def test_context_flag_rejected(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('grep -A2 "pattern" src/') is False
 
     def test_echo_pipe_grep_rejected(self):
-        from nooa.tools.shell_tools import is_pure_search_command
+        from aster.tools.shell_tools import is_pure_search_command
 
         assert is_pure_search_command('echo "hello" | grep "h"') is False

@@ -4,11 +4,11 @@
 
 import asyncio
 
-from nooa.agent import Agent
-from nooa.decorators import strategy
-from nooa.runtime.actor import ActorRuntime
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster.agent import Agent
+from aster.decorators import strategy
+from aster.runtime.actor import ActorRuntime
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def _resp(content: str) -> LLMResponse:

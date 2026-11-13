@@ -23,21 +23,21 @@ from dataclasses import dataclass, field
 from typing import Any
 from unittest.mock import MagicMock
 
-from nooa.llm_types import LLMResponse
-from nooa.nemo_relay_middleware import (
+from aster.llm_types import LLMResponse
+from aster.nemo_relay_middleware import (
     install_nemo_relay,
     nemo_relay_agent_call_middleware,
     nemo_relay_llm_middleware,
     nemo_relay_scope,
     nemo_relay_tool_middleware,
 )
-from nooa.runtime.event_manager import EventManager
-from nooa.runtime.middleware import (
+from aster.runtime.event_manager import EventManager
+from aster.runtime.middleware import (
     AgentCallContext,
     ExecutePythonContext,
     LLMCallContext,
 )
-from nooa.unifiedllm import CacheBoundary
+from aster.unifiedllm import CacheBoundary
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -63,7 +63,7 @@ def FakeLLMResponse(content: str = "hello") -> LLMResponse:
 
 
 # ---------------------------------------------------------------------------
-# Fake ExecutionResult (mirrors nooa.events.ExecutionResult)
+# Fake ExecutionResult (mirrors aster.events.ExecutionResult)
 # ---------------------------------------------------------------------------
 
 
@@ -85,7 +85,7 @@ def _make_real_agent(model_name: str = "test-model"):
     """Create a real Agent with a mock LLM for model_name extraction."""
     from unittest.mock import MagicMock
 
-    from nooa.agent import Agent
+    from aster.agent import Agent
 
     mock_llm = MagicMock()
     mock_llm.model = model_name
@@ -135,7 +135,7 @@ class TestLLMRequestIntercepts:
     )
     async def test_noop_relay_roundtrip_preserves_response_identity(self, first):
         """The downstream client receives the original response after relay JSON."""
-        from nooa.llm_types import AssistantReasoning, LLMResponse
+        from aster.llm_types import AssistantReasoning, LLMResponse
 
         turn = LLMResponse(
             parts=(AssistantReasoning(native={"encrypted_content": "opaque"}),),
@@ -884,7 +884,7 @@ class TestToolMiddlewareEdgeCases:
             ctx = _make_exec_ctx(code="return_result(99)")
 
             # Simulate signal-based result (returned_value is _NO_RETURN sentinel)
-            from nooa.events import _NO_RETURN
+            from aster.events import _NO_RETURN
 
             @dataclass
             class FakeSignal:
@@ -928,7 +928,7 @@ class TestToolMiddlewareEdgeCases:
         try:
             ctx = _make_exec_ctx(code="print('hello')")
 
-            from nooa.events import _NO_RETURN
+            from aster.events import _NO_RETURN
 
             fake_result = FakeExecutionResult(
                 returned_value=_NO_RETURN,
@@ -1036,7 +1036,7 @@ class TestAgentCallNoneReturn:
     @pytest.mark.asyncio
     async def test_none_return_is_preserved(self):
         """An agent method that legitimately returns None must not raise RuntimeError."""
-        from nooa.runtime.middleware import _AGENT_RESULT_NOT_SET, AgentCallContext
+        from aster.runtime.middleware import _AGENT_RESULT_NOT_SET, AgentCallContext
 
         ctx = AgentCallContext(
             agent=None,
@@ -1058,7 +1058,7 @@ class TestAgentCallNoneReturn:
     @pytest.mark.asyncio
     async def test_sentinel_detected_when_nxt_not_called(self):
         """If middleware short-circuits without setting result, sentinel remains."""
-        from nooa.runtime.middleware import _AGENT_RESULT_NOT_SET, AgentCallContext
+        from aster.runtime.middleware import _AGENT_RESULT_NOT_SET, AgentCallContext
 
         ctx = AgentCallContext(
             agent=None,
@@ -1203,7 +1203,7 @@ class TestConcurrentAgentCallScopes:
         middleware silently degrades to the old (broken) shared-stack path, so
         fail loudly here instead.
         """
-        import nooa.nemo_relay_middleware as nm
+        import aster.nemo_relay_middleware as nm
 
         assert getattr(nemo_relay, "_scope_stack_var", None) is not None, (
             "nemo_relay._scope_stack_var is gone — nemo_relay_agent_call_middleware "
@@ -1227,7 +1227,7 @@ class TestConcurrentAgentCallScopes:
             await nemo_relay_agent_call_middleware(ctx, body)
 
         with nemo_relay.scope.scope("concurrent-root", nemo_relay.ScopeType.Agent) as root:
-            import nooa.nemo_relay_middleware as nm
+            import aster.nemo_relay_middleware as nm
 
             token = nm._current_relay_scope.set((root, asyncio.current_task()))
             try:
@@ -1251,7 +1251,7 @@ class TestConcurrentAgentCallScopes:
             ctx = AgentCallContext(agent=None, method_name=method_name)
 
             async def body(c):
-                import nooa.nemo_relay_middleware as nm
+                import aster.nemo_relay_middleware as nm
 
                 handles.append(nm._current_relay_scope.get()[0])
                 await asyncio.sleep(delay)
@@ -1261,7 +1261,7 @@ class TestConcurrentAgentCallScopes:
             await nemo_relay_agent_call_middleware(ctx, body)
 
         with nemo_relay.scope.scope("parent-root", nemo_relay.ScopeType.Agent) as root:
-            import nooa.nemo_relay_middleware as nm
+            import aster.nemo_relay_middleware as nm
 
             token = nm._current_relay_scope.set((root, asyncio.current_task()))
             try:

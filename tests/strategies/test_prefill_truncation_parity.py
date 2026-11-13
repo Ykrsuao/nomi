@@ -7,13 +7,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from nooa import Agent, CodeActStrategy, strategy
-from nooa.config.truncation_config import FormatConfig, TruncationConfig
-from nooa.prompts import build_prompt_data
-from nooa.runtime.actor import _current_truncation_config_var
-from nooa.strategies.current_call import CurrentCall
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, CodeActStrategy, strategy
+from aster.config.truncation_config import FormatConfig, TruncationConfig
+from aster.prompts import build_prompt_data
+from aster.runtime.actor import _current_truncation_config_var
+from aster.strategies.current_call import CurrentCall
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 
 @pytest.mark.asyncio

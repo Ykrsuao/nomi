@@ -5,7 +5,7 @@
 Each guardrail gets two tests forked into child processes: one shows the exploit
 succeeding *without* the guard (the leak), the paired one shows the *same*
 exploit refused *with* the guard installed. The guards themselves live in
-``nooa.runtime.sandbox.guards`` and are applied by a child on itself, so these
+``aster.runtime.sandbox.guards`` and are applied by a child on itself, so these
 tests exercise the exact code path the worker uses.
 """
 
@@ -19,9 +19,9 @@ import tempfile
 
 import pytest
 
-from nooa.runtime.sandbox import guards
-from nooa.runtime.sandbox.config import LandlockRule
-from nooa.runtime.sandbox.guards import (
+from aster.runtime.sandbox import guards
+from aster.runtime.sandbox.config import LandlockRule
+from aster.runtime.sandbox.guards import (
     apply_landlock,
     apply_rlimits,
     apply_seccomp_no_inet,

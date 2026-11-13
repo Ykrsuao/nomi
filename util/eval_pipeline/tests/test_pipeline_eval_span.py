@@ -96,7 +96,7 @@ class TestProcessSampleEvalSpan:
         # Mock tracing exports (no-op)
         try:
             monkeypatch.setattr(
-                "openinference_instrumentation_nooa.flush_traces",
+                "openinference_instrumentation_aster.flush_traces",
                 lambda: None,
             )
         except (ImportError, AttributeError):
@@ -115,7 +115,7 @@ class TestProcessSampleEvalSpan:
         trace_files = [
             f
             for f in trace_dir.glob("*.jsonl")
-            if not f.name.endswith((".annotations.jsonl", ".noo-eval.jsonl"))
+            if not f.name.endswith((".annotations.jsonl", ".aster-eval.jsonl"))
         ]
         assert len(trace_files) == 1, f"Expected 1 trace file, found {len(trace_files)}"
         trace_file = trace_files[0]

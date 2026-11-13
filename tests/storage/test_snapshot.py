@@ -9,9 +9,9 @@ the class and are never reattached via a snapshot. Tests for the old
 ``snap.methods`` / ``restore()`` method-warning paths have been removed.
 """
 
-from nooa import Agent
-from nooa.storage.snapshot import AgentSnapshot
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.storage.snapshot import AgentSnapshot
+from aster.unifiedllm import FakeLLMClient
 
 
 class _SimpleAgent(Agent, llm=FakeLLMClient()):
@@ -85,7 +85,7 @@ class TestSnapshotRoundTripWithUnserializableAttr:
 
     def test_vars_survive_when_sibling_attr_is_unserializable(self):
         """Snapshot/restore preserves user vars even if another attr can't serialize."""
-        from nooa.storage.json_snapshot import snapshot_from_dict, snapshot_to_dict
+        from aster.storage.json_snapshot import snapshot_from_dict, snapshot_to_dict
 
         agent = _SimpleAgent()
         agent.value = 7

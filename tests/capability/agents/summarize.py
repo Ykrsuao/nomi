@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Summarization agents."""
 
-from nooa import Agent
+from aster import Agent
 
 
 class SummarizeAgent(Agent):

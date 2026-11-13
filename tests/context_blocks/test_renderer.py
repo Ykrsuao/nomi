@@ -11,13 +11,13 @@ import json
 
 import pytest
 
-from nooa.context_blocks.formatter import (
+from aster.context_blocks.formatter import (
     MarkdownBlockFormatter,
     OpenAIProviderFormatter,
     XMLBlockFormatter,
 )
-from nooa.context_blocks.models import BlockMetadata, RenderedMessage, ResolvedBlock, Role
-from nooa.context_blocks.renderer import _utf8_safe, render_context
+from aster.context_blocks.models import BlockMetadata, RenderedMessage, ResolvedBlock, Role
+from aster.context_blocks.renderer import _utf8_safe, render_context
 
 
 class TestRenderContextBasic:
@@ -197,7 +197,7 @@ class TestRenderContextToolCalls:
 
     def test_tool_call_block(self):
         """render_context() handles ToolCallEvent on block.event correctly."""
-        from nooa.context_blocks.events import ToolCallEvent, ToolResult
+        from aster.context_blocks.events import ToolCallEvent, ToolResult
 
         event = ToolCallEvent(
             tool_call_id="call_123",
@@ -300,7 +300,7 @@ class TestFormatMessageContent:
 
         USER-role events wrap in ``<sys>``; assistant events pass through bare.
         """
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         dynamic = ResolvedBlock(
             key="msg",
@@ -324,7 +324,7 @@ class TestFormatMessageContent:
 
     def test_assistant_events_render_bare(self):
         """Assistant events pass through unwrapped — no ``<agent>`` tag."""
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -337,7 +337,7 @@ class TestFormatMessageContent:
         assert "<agent" not in result
 
     def test_xml_with_expr_and_tag(self):
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -350,7 +350,7 @@ class TestFormatMessageContent:
         assert 'tag="1"' in result
 
     def test_markdown_with_expr(self):
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -364,7 +364,7 @@ class TestFormatMessageContent:
         assert "Hello" in result
 
     def test_markdown_with_tag(self):
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -377,7 +377,7 @@ class TestFormatMessageContent:
         assert '"tag": "42"' in result
 
     def test_no_metadata_produces_no_wrapping(self):
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -397,7 +397,7 @@ class TestFormatMessageContentPlain:
 
     def test_plain_regular_message_with_tag_uses_role_tag(self):
         """Plain format wraps regular messages in <role_message tag="N">."""
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -414,7 +414,7 @@ class TestFormatMessageContentPlain:
 
     def test_plain_assistant_message_with_tag(self):
         """Plain format wraps assistant messages in <assistant_message tag="N">."""
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -430,7 +430,7 @@ class TestFormatMessageContentPlain:
 
     def test_plain_without_tag_or_event_returns_content_unchanged(self):
         """Plain format returns content as-is when no tag and no event."""
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -444,8 +444,8 @@ class TestFormatMessageContentPlain:
 
     def test_plain_event_block_uses_event_type_as_outer_tag(self):
         """Plain format uses snake_case event class name as outer tag for event blocks."""
-        from nooa.context_blocks.events import UserEvent
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.events import UserEvent
+        from aster.context_blocks.renderer import format_message_content
 
         event = UserEvent(content="Hello there", tag="2")
         block = ResolvedBlock(
@@ -464,8 +464,8 @@ class TestFormatMessageContentPlain:
 
     def test_plain_event_block_no_tag(self):
         """Plain format event block without tag: outer tag has no tag attr."""
-        from nooa.context_blocks.events import UserEvent
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.events import UserEvent
+        from aster.context_blocks.renderer import format_message_content
 
         event = UserEvent(content="Hello", tag="x")
         block = ResolvedBlock(
@@ -483,7 +483,7 @@ class TestFormatMessageContentPlain:
 
     def test_plain_ignores_expr_attribute(self):
         """Plain format never includes expr= in output even if block has expr metadata."""
-        from nooa.context_blocks.renderer import format_message_content
+        from aster.context_blocks.renderer import format_message_content
 
         block = ResolvedBlock(
             key="msg",
@@ -502,7 +502,7 @@ class TestRenderContextEventSerialization:
 
     def test_non_tool_event_content_serialized_before_output(self):
         """render_context() must serialize event content via block_formatter.format_event()."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         event = UserEvent(content="Hello world", tag="1")
         block = ResolvedBlock(
@@ -530,7 +530,7 @@ class TestRenderContextEventSerialization:
         cfg.events.* knobs (here the raw string in UserEvent.content gets the
         marker-family treatment via pformat with default max_string=10K, so a
         200-char string remains untouched)."""
-        from nooa.context_blocks.events import UserEvent
+        from aster.context_blocks.events import UserEvent
 
         long_content = "A" * 200
         event = UserEvent(content=long_content, tag="1")
@@ -556,7 +556,7 @@ class TestRenderContextEventSerialization:
 
     def test_tool_call_event_not_passed_to_format_event(self):
         """ToolCallEvent blocks must not be passed through format_event — ProviderFormatter handles them."""
-        from nooa.context_blocks.events import ToolCallEvent, ToolResult
+        from aster.context_blocks.events import ToolCallEvent, ToolResult
 
         event = ToolCallEvent(
             tool_call_id="tc_1",
@@ -664,7 +664,7 @@ class TestRenderContextLoneSurrogates:
 
     def test_tool_result_surrogate_is_escaped(self):
         """Event-derived messages are made safe, not only context blocks."""
-        from nooa.context_blocks.events import ToolCallEvent, ToolResult
+        from aster.context_blocks.events import ToolCallEvent, ToolResult
 
         event = ToolCallEvent(
             tool_call_id="call_1",
@@ -737,7 +737,7 @@ class TestRenderContextLoneSurrogates:
 
     def test_dict_tool_arguments_are_left_to_json_encoding(self):
         """Dict arguments keep their exact keys; json.dumps escapes them for the wire."""
-        from nooa.context_blocks.models import ToolCallInfo
+        from aster.context_blocks.models import ToolCallInfo
 
         arguments = {"\ud800": "lone", "\\ud800": "literal"}
         message = RenderedMessage(

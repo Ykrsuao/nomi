@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Focused tests for deterministic fast_agent help/no-help scoring."""
 
+from aster.trace_explorer import TraceExplorer
+from aster.trace_explorer.explorer import AgentSession, ExecutionTurn, LLMTurn
 from eval_pipeline.models import ScoringContext
 from eval_pipeline.scoring import FastAgentHelpScorer, ModeSelectionScorer, _get_code
-from nooa.trace_explorer import TraceExplorer
-from nooa.trace_explorer.explorer import AgentSession, ExecutionTurn, LLMTurn
 
 
 def _trace(*turns):

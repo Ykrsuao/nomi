@@ -19,6 +19,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from _run_layout import read_workspace
+
 
 def analyze_memory(db_path: Path) -> None:
     con = sqlite3.connect(str(db_path))
@@ -70,14 +72,13 @@ def analyze_run(run_dir: Path) -> None:
             f"turns={r.get('turns')} wall={r.get('wall_time_seconds')}s "
             f"termination={r.get('termination_reason')}"
         )
-    ws = run_dir / "team_nemo" / "shared"
-    db = ws / "memory.sqlite"
+    db = read_workspace(run_dir, "memory.sqlite")
     if db.exists():
         analyze_memory(db)
-    kd = ws / "knowledge"
+    kd = read_workspace(run_dir, "knowledge")
     if kd.is_dir():
         analyze_md(kd)
-    helpers = list((ws / "helpers").glob("*.py")) if (ws / "helpers").is_dir() else []
+    helpers = list(read_workspace(run_dir, "helpers").glob("*.py"))
     print(f"  helper modules: {[h.name for h in helpers]}")
     actions = run_dir / "ipc" / "actions.jsonl"
     if actions.exists():
@@ -122,7 +123,7 @@ def main() -> None:
         targets = sorted(p.parent for p in root.glob("*/*/result.json"))
     for t in targets:
         if dump:
-            db = t / "team_nemo" / "shared" / "memory.sqlite"
+            db = read_workspace(t, "memory.sqlite")
             if db.exists():
                 dump_memories(db)
             else:

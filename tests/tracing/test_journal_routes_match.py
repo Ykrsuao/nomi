@@ -26,7 +26,7 @@ def _exporter_routes() -> set[str]:
     """Inspect ``MessageJournalCallback`` to discover which ``/v1/journal/*``
     paths it actually POSTs to, so adding a new wire route automatically
     pulls it into this contract test."""
-    from nooa.tracing._litellm_journal import MessageJournalCallback
+    from aster.tracing._litellm_journal import MessageJournalCallback
 
     cb = MessageJournalCallback("http://example.invalid")
     paths: set[str] = set()
@@ -50,7 +50,7 @@ def _post_routes_on_app(app) -> set[str]:
 
 
 def test_exporter_journal_paths_are_registered_on_viewer_app():
-    from nooa.viewer.main import app as viewer_app
+    from aster.viewer.main import app as viewer_app
 
     exporter_paths = _exporter_routes()
     assert exporter_paths, (
@@ -109,7 +109,7 @@ def test_receiver_requests_do_not_feed_global_tracing(receiver, monkeypatch):
         collector.clear()
 
         if receiver == "viewer":
-            from nooa.viewer.main import app
+            from aster.viewer.main import app
         else:
             from eval_pipeline.headless_backend import _make_headless_app
 

@@ -1,7 +1,7 @@
 ---
 name: refine-agent-prompt
 description: >-
-  Render and refine the system prompt of a nooa agent. Use when the user wants
+  Render and refine the system prompt of a aster agent. Use when the user wants
   to inspect, debug, or improve an agent's prompt, context blocks, or tool documentation.
 ---
 
@@ -12,12 +12,12 @@ context blocks, and real arguments — then work through diagnostic questions to
 
 ## Step 1: Render the prompt
 
-Use `nooa.print_prompt` with a `FakeLLMClient` to render without making a real LLM call:
+Use `aster.print_prompt` with a `FakeLLMClient` to render without making a real LLM call:
 
 ```python
-import asyncio, nooa
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+import asyncio, aster
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 class DemoAgent(Agent, llm=FakeLLMClient()):
     async def respond(self, message: str) -> str:
@@ -26,7 +26,7 @@ class DemoAgent(Agent, llm=FakeLLMClient()):
 
 async def main():
     agent = DemoAgent()
-    await nooa.print_prompt(agent.respond, "example user message here")
+    await aster.print_prompt(agent.respond, "example user message here")
 
 asyncio.run(main())
 ```
@@ -34,8 +34,8 @@ asyncio.run(main())
 For a custom agent loaded from a file:
 
 ```python
-import asyncio, importlib.util, sys, nooa
-from nooa.unifiedllm import FakeLLMClient
+import asyncio, importlib.util, sys, aster
+from aster.unifiedllm import FakeLLMClient
 
 spec = importlib.util.spec_from_file_location("agent_module", "path/to/my_agent.py")
 mod = importlib.util.module_from_spec(spec)
@@ -44,7 +44,7 @@ spec.loader.exec_module(mod)
 
 async def main():
     agent = mod.MyAgent(llm=FakeLLMClient())
-    await nooa.print_prompt(agent.respond, "example user message here")
+    await aster.print_prompt(agent.respond, "example user message here")
 
 asyncio.run(main())
 ```
@@ -54,14 +54,14 @@ Run with: `uv run python3 << 'EOF' ... EOF`
 To render a specific sub-method (e.g. `answer_question`, `brainstorm`, `implement_step`):
 
 ```python
-await nooa.print_prompt(agent.answer_question, "what is the capital of France?")
-await nooa.print_prompt(agent.implement_step, '{"description": "add logging"}')
+await aster.print_prompt(agent.answer_question, "what is the capital of France?")
+await aster.print_prompt(agent.implement_step, '{"description": "add logging"}')
 ```
 
 To capture the data programmatically instead of printing:
 
 ```python
-data = await nooa.build_prompt_data(agent.respond, "hello")
+data = await aster.build_prompt_data(agent.respond, "hello")
 print(data.system_prompt)   # the full system message
 print(data.task_prompt)     # the task user-message
 print(data.inspect_prefill) # the inspect/prefill code block
@@ -89,11 +89,11 @@ pydantic internals (`BaseModel`, `Field`), private helpers (anything starting wi
 **Fix:** wrap the import in `with hidden:` at module level:
 
 ```python
-from nooa import hidden   # must be outside
+from aster import hidden   # must be outside
 
 with hidden:
-    from nooa.agents import TokenBudgetSummarizer
-    from nooa.config import CodeActConfig
+    from aster.agents import TokenBudgetSummarizer
+    from aster.config import CodeActConfig
 ```
 
 **Tradeoff:** hiding something means the LLM can't use it by name in the REPL.
@@ -120,11 +120,11 @@ Scroll `<self>` for methods the LLM should never call directly:
 `get_summarization_status()`, `_respond_codeact()`, `_phase`, `_workflow_state`,
 `_config`, `install_summarizer()`, etc.
 
-**Fix:** `@hidden` from `nooa`:
+**Fix:** `@hidden` from `aster`:
 
 ```python
-from nooa import hidden
-from nooa import Agent
+from aster import hidden
+from aster import Agent
 
 class MyAgent(Agent, llm=...):
 
@@ -132,12 +132,12 @@ class MyAgent(Agent, llm=...):
     def get_summarization_status(self) -> dict: ...
 ```
 
-Fields can be hidden with the `hidden` marker from `nooa.storage.markers`:
+Fields can be hidden with the `hidden` marker from `aster.storage.markers`:
 
 ```python
 from typing import Annotated
-from nooa import hidden
-from nooa.storage.markers import nosnapshot
+from aster import hidden
+from aster.storage.markers import nosnapshot
 
 class MyAgent(Agent, llm=...):
     _phase: Annotated[str, hidden]
@@ -252,7 +252,7 @@ The task prompt can embed tool docs inline or store them in a persistent context
   docs persist across summarization in the stable prompt prefix.
 
 ```python
-from nooa import Context
+from aster import Context
 
 # Inline (good for short tasks):
 async def respond(self, user_message: str) -> None:
@@ -271,26 +271,26 @@ def __init__(self, **kwargs):
 
 ---
 
-## nooa reference
+## aster reference
 
 ### `@hidden` — hide a method from `<self>` and the execution context
 
 ```python
-from nooa import hidden
+from aster import hidden
 
 @hidden
 def get_summarization_status(self): ...
 
 with hidden:
-    from nooa.agents import TokenBudgetSummarizer
-    from nooa.config import CodeActConfig
+    from aster.agents import TokenBudgetSummarizer
+    from aster.config import CodeActConfig
 ```
 
 ### `Annotated[T, hidden]` — hide a field from `<self>`
 
 ```python
-from nooa import hidden
-from nooa.storage.markers import nosnapshot
+from aster import hidden
+from aster.storage.markers import nosnapshot
 from typing import Annotated
 
 class MyAgent(Agent, llm=...):
@@ -301,22 +301,22 @@ class MyAgent(Agent, llm=...):
 ### `nosnapshot` — exclude a field from session snapshots
 
 ```python
-from nooa.storage.markers import nosnapshot
+from aster.storage.markers import nosnapshot
 from typing import Annotated
 
 bash: Annotated[ShellTools, nosnapshot]   # live tools shouldn't be serialised
 ```
 
-### `nooa.print_prompt` — render without an LLM call
+### `aster.print_prompt` — render without an LLM call
 
 ```python
-await nooa.print_prompt(agent.my_method, arg1, arg2)
+await aster.print_prompt(agent.my_method, arg1, arg2)
 ```
 
-### `nooa.build_prompt_data` — capture prompt sections programmatically
+### `aster.build_prompt_data` — capture prompt sections programmatically
 
 ```python
-data = await nooa.build_prompt_data(agent.my_method, arg1)
+data = await aster.build_prompt_data(agent.my_method, arg1)
 data.system_prompt   # full system message
 data.task_prompt     # task user-message
 data.inspect_prefill # prefill/inspect code

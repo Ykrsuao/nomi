@@ -9,14 +9,14 @@ import httpx
 import pytest
 from litellm.types.utils import Choices, Message, ModelResponse
 
-from nooa.llm_types import LLMResponse
-from nooa.runtime.middleware import LLMCallContext
-from nooa.storage.sqlite import SQLiteStorageManager
-from nooa.unifiedllm import CompletionClient
-from nooa.unifiedllm.chat_parts import capture_chat_parts, project_chat_turn
-from nooa.unifiedllm.replay_state import ReasoningReplayError, prepare_chat_messages, replay_scope
-from nooa.unifiedllm.response_parts import project_turn
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster.llm_types import LLMResponse
+from aster.runtime.middleware import LLMCallContext
+from aster.storage.sqlite import SQLiteStorageManager
+from aster.unifiedllm import CompletionClient
+from aster.unifiedllm.chat_parts import capture_chat_parts, project_chat_turn
+from aster.unifiedllm.replay_state import ReasoningReplayError, prepare_chat_messages, replay_scope
+from aster.unifiedllm.response_parts import project_turn
+from aster.unifiedllm.unifiedllm import _ClientHttp
 
 MODELS = ["anthropic/claude-sonnet-4", "gemini/gemini-2.5-pro", "openai/gateway-gemini"]
 
@@ -412,7 +412,7 @@ def test_litellm_copy_of_readable_reasoning_is_not_an_unknown_field(caplog):
         reasoning_content="I think so.",
         provider_specific_fields={"reasoning": "I think so.", "refusal": None},
     )
-    with caplog.at_level("WARNING", logger="nooa.unifiedllm.replay_state"):
+    with caplog.at_level("WARNING", logger="aster.unifiedllm.replay_state"):
         parts = capture_chat_parts(source, "chat:openai:nvidia/nemotron")
     assert "Ignoring unrecognized provider field" not in caplog.text
     assert [part.text for part in parts if type(part).__name__ == "AssistantReasoning"] == [
@@ -427,6 +427,6 @@ def test_provider_reasoning_field_that_differs_is_still_reported(caplog):
         reasoning_content="I think so.",
         provider_specific_fields={"reasoning": "something else"},
     )
-    with caplog.at_level("WARNING", logger="nooa.unifiedllm.replay_state"):
+    with caplog.at_level("WARNING", logger="aster.unifiedllm.replay_state"):
         capture_chat_parts(source, "chat:openai:nvidia/nemotron")
     assert "Ignoring unrecognized provider field(s) reasoning" in caplog.text

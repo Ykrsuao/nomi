@@ -112,7 +112,7 @@ strategy.
 ## Compared with supervisors and graph nodes
 
 You can implement supervisors, routers, debate patterns, and worker pools in
-NOOA. The supervisor is usually a Python orchestrator or a focused routing
+Aster. The supervisor is usually a Python orchestrator or a focused routing
 method, and workers are ordinary agent instances. This keeps state ownership
 and handoffs visible in Python instead of hiding them in framework-managed
 graph state.

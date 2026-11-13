@@ -10,9 +10,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from nooa.library_manager import LibraryManager
-from nooa.skill import Skill
-from nooa.tools.library_writing_lib import LintReport, SkillWriting
+from aster.library_manager import LibraryManager
+from aster.skill import Skill
+from aster.tools.library_writing_lib import LintReport, SkillWriting
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -25,7 +25,7 @@ class _FakeShell:
     async def edit(self, path, old_str, new_str):
         from pathlib import Path
 
-        from nooa.tools._results import EditResult
+        from aster.tools._results import EditResult
 
         p = Path(path)
         content = p.read_text()
@@ -37,7 +37,7 @@ class _FakeShell:
     async def grep(self, pattern, path=".", **kwargs):
         import subprocess
 
-        from nooa.tools._results import SearchResult
+        from aster.tools._results import SearchResult
 
         r = subprocess.run(
             ["grep", "-rn", pattern, path],
@@ -51,7 +51,7 @@ class _FakeShell:
     async def find(self, pattern, path=".", **kwargs):
         import subprocess
 
-        from nooa.tools._results import SearchResult
+        from aster.tools._results import SearchResult
 
         r = subprocess.run(
             ["find", path, "-name", pattern, "-not", "-path", "*/.*"],
@@ -65,7 +65,7 @@ class _FakeShell:
     async def run(self, command, timeout=120.0):
         import subprocess
 
-        from nooa.tools._results import RunResult
+        from aster.tools._results import RunResult
 
         r = subprocess.run(
             command,
@@ -285,7 +285,7 @@ async def test_create_writes_pyproject_and_init(tmp_path: Path):
 
     init_py = (tmp_path / "mylib" / "__init__.py").read_text()
     assert DESCRIPTION in init_py
-    assert "from nooa.skill import Skill" in init_py
+    assert "from aster.skill import Skill" in init_py
     assert "class Mylib(Skill):" in init_py
 
 
@@ -355,7 +355,7 @@ async def test_run_tests_passes_when_pythonpath_is_unset_and_shell_uses_nounset(
             import os
             import subprocess
 
-            from nooa.tools._results import RunResult
+            from aster.tools._results import RunResult
 
             env = os.environ.copy()
             env.pop("PYTHONPATH", None)

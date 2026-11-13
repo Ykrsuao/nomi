@@ -9,16 +9,16 @@ import httpx
 import pytest
 import yaml
 
-from nooa import Agent, no_trace
-from nooa.config.model_config import ModelConfig
-from nooa.config.strategy_config import PredictConfig
-from nooa.decorators import strategy
-from nooa.media import Audio, File, Image, Media, Video
-from nooa.media_policy import entry_input_interface, implemented_input_kinds
-from nooa.strategies.predict import PredictStrategy
-from nooa.unifiedllm import CompletionClient, ResponsesClient, RetryConfig, registry
-from nooa.unifiedllm.registry import client_from_config, get_llm_client, reload_registry
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster import Agent, no_trace
+from aster.config.model_config import ModelConfig
+from aster.config.strategy_config import PredictConfig
+from aster.decorators import strategy
+from aster.media import Audio, File, Image, Media, Video
+from aster.media_policy import entry_input_interface, implemented_input_kinds
+from aster.strategies.predict import PredictStrategy
+from aster.unifiedllm import CompletionClient, ResponsesClient, RetryConfig, registry
+from aster.unifiedllm.registry import client_from_config, get_llm_client, reload_registry
+from aster.unifiedllm.unifiedllm import _ClientHttp
 
 ALL = ["image", "audio", "video", "pdf"]
 
@@ -230,7 +230,7 @@ async def test_async_requests_reject_enabled_unsupported_blocks_before_http(
 @pytest.mark.parametrize("style", ["anthropic", "responses", "chat"])
 @pytest.mark.parametrize("is_async", [False, True])
 async def test_media_support_is_checked_once_per_request(monkeypatch, style, is_async):
-    import nooa.media_policy as media_policy
+    import aster.media_policy as media_policy
 
     bodies = mock_http(monkeypatch, style)
     calls = []
@@ -386,9 +386,9 @@ def test_no_recursive_media_guess_and_no_input_file_workaround(monkeypatch):
 @pytest.mark.parametrize("style", ["anthropic", "responses"])
 @pytest.mark.parametrize("enabled", [False, True])
 def test_compatible_opaque_native_media_guard_before_reconstruction(monkeypatch, style, enabled):
-    from nooa.llm_types import AssistantText, LLMResponse
-    from nooa.unifiedllm.errors import ReasoningReplayError
-    from nooa.unifiedllm.replay_state import replay_scope
+    from aster.llm_types import AssistantText, LLMResponse
+    from aster.unifiedllm.errors import ReasoningReplayError
+    from aster.unifiedllm.replay_state import replay_scope
 
     bodies = mock_http(monkeypatch, style)
     scope = replay_scope(
@@ -416,19 +416,19 @@ def test_compatible_opaque_native_media_guard_before_reconstruction(monkeypatch,
 
 
 def test_interface_resolution_lives_outside_media_policy_and_stays_importable():
-    import nooa.media_policy as media_policy
-    import nooa.request_interface as request_interface
+    import aster.media_policy as media_policy
+    import aster.request_interface as request_interface
 
     for name in ("interface_for_provider", "resolved_input_interface", "entry_input_interface"):
         assert getattr(media_policy, name) is getattr(request_interface, name)
-        assert getattr(request_interface, name).__module__ == "nooa.request_interface"
+        assert getattr(request_interface, name).__module__ == "aster.request_interface"
 
 
 @pytest.mark.parametrize("interface", ["anthropic", "responses"])
 def test_native_media_check_without_permissions_keeps_direct_contract(interface):
     """``enabled=None`` (direct projection helpers) skips both checks, as on main."""
-    from nooa.unifiedllm.errors import ReasoningReplayError
-    from nooa.unifiedllm.media_inputs import check_replayed_native_media
+    from aster.unifiedllm.errors import ReasoningReplayError
+    from aster.unifiedllm.media_inputs import check_replayed_native_media
 
     native = {"type": "message", "content": [{"type": "input_audio", "input_audio": {}}]}
     check_replayed_native_media(native, None, interface=interface)
@@ -523,8 +523,8 @@ async def test_disabled_agent_media_is_notice_not_unsupported_error(
 )
 def test_disabled_top_level_attachment_items_become_notices(item):
     """A message that is itself a disabled attachment is replaced, whatever its kind."""
-    from nooa.media_inputs import attachment_kind
-    from nooa.unifiedllm.media_inputs import filter_media_messages, removed_media_notice
+    from aster.media_inputs import attachment_kind
+    from aster.unifiedllm.media_inputs import filter_media_messages, removed_media_notice
 
     kind = attachment_kind(item)
     assert filter_media_messages([item], ()) == [
@@ -538,6 +538,6 @@ def test_disabled_top_level_attachment_items_become_notices(item):
     [("anthropic", "anthropic"), ("openai", "chat"), ("bedrock", "chat"), (None, "chat")],
 )
 def test_completion_interface_follows_litellm_provider(provider, interface):
-    from nooa.media_policy import interface_for_provider
+    from aster.media_policy import interface_for_provider
 
     assert interface_for_provider(provider) == interface

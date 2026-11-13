@@ -4,8 +4,8 @@
 
 import pytest
 
-from nooa.agentdoc import doc
-from nooa.tools.shell_tools import ShellResult, ShellTools
+from aster.agentdoc import doc
+from aster.tools.shell_tools import ShellResult, ShellTools
 
 
 def test_timeout_default_and_instance_documentation():

@@ -8,9 +8,9 @@ uv run python examples/quickstart/04_strategies.py
 
 from typing import Annotated, Literal
 
-from nooa.config import CodeActConfig
-from nooa.tools import ShellTools
-from nooa.util.quickstart import *
+from aster.config import CodeActConfig
+from aster.tools import ShellTools
+from aster.util.quickstart import *
 
 
 class AnalysisAgent(Agent, llm=llm):

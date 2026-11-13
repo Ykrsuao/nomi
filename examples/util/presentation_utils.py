@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Presentation utilities for NVIDIA OO Agents Jupyter slides.
+"""Presentation utilities for Aster Jupyter slides.
 
 Usage in notebook:
     from presentation_utils import setup, trace, agent_pprint, list_traces
     setup()
 
-    from nooa.unifiedllm import get_llm_client
+    from aster.unifiedllm import get_llm_client
     llm = get_llm_client("claude-sonnet-4-5-20250514")
 """
 
@@ -26,7 +26,7 @@ def setup():
 
     load_dotenv(override=True)
 
-    from nooa.tracing import enable_tracing, exporters
+    from aster.tracing import enable_tracing, exporters
 
     enable_tracing(exporters=[exporters.jsonl(TRACE_DIR)])
     print(f"Tracing enabled: {TRACE_DIR}")
@@ -34,7 +34,7 @@ def setup():
 
 def trace(name: str):
     """Point tracing to a new session for this demo."""
-    from nooa.tracing import set_session
+    from aster.tracing import set_session
 
     uid = uuid4().hex[:8]
     set_session(f"{name}_{uid}")
@@ -46,7 +46,7 @@ def list_traces():
     for trace_file in sorted(
         f
         for f in TRACE_DIR.glob("*.jsonl")
-        if not f.name.endswith(".annotations.jsonl") and not f.name.endswith(".noo-eval.jsonl")
+        if not f.name.endswith((".annotations.jsonl", ".aster-eval.jsonl", ".noo-eval.jsonl"))
     ):
         with open(trace_file) as f:
             span_count = sum(1 for _ in f)

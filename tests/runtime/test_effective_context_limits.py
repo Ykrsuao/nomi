@@ -6,14 +6,14 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from nooa import Agent, Context
-from nooa.agents.summarization import context_budget
-from nooa.events import Message
-from nooa.interactive import SummarizationConfig, apply_model_limits, install_summarizer
-from nooa.runtime.actor import _compute_reduced_max_tokens, _current_llm_var
-from nooa.runtime.middleware import LLMCallContext
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, LLMUsage
-from nooa.unifiedllm.reasoning import ReasoningConfig
+from aster import Agent, Context
+from aster.agents.summarization import context_budget
+from aster.events import Message
+from aster.interactive import SummarizationConfig, apply_model_limits, install_summarizer
+from aster.runtime.actor import _compute_reduced_max_tokens, _current_llm_var
+from aster.runtime.middleware import LLMCallContext
+from aster.unifiedllm import FakeLLMClient, LLMResponse, LLMUsage
+from aster.unifiedllm.reasoning import ReasoningConfig
 
 
 def client():
@@ -103,7 +103,7 @@ def test_large_valid_reply_cap_is_not_replaced_by_a_fallback(cap):
 def test_reply_cap_guard_also_covers_custom_clients_but_not_unknown_limits():
     from types import SimpleNamespace
 
-    from nooa.unifiedllm.limits import context_limits_for
+    from aster.unifiedllm.limits import context_limits_for
 
     custom = SimpleNamespace(context_window=32_768)
     with pytest.raises(ValueError, match="reply cap.*leaves no room for input"):
@@ -222,7 +222,7 @@ def test_overflow_recovery_never_increases_reply_limit():
     "params", [{}, {"reasoning_level": "high"}, {"max_completion_tokens": 48_000}]
 )
 async def test_recovery_uses_effective_cap_and_keeps_reasoning(middleware, params):
-    from nooa.runtime.actor import _current_method_var
+    from aster.runtime.actor import _current_method_var
 
     class ContextWindowExceededError(Exception):
         pass
@@ -264,7 +264,7 @@ async def test_recovery_uses_effective_cap_and_keeps_reasoning(middleware, param
 
 
 def test_model_override_does_not_reuse_original_window_and_fallback_is_labelled():
-    from nooa.context_blocks.models import ContextWindowStats
+    from aster.context_blocks.models import ContextWindowStats
 
     assert client().get_context_limits({"model": "unknown-other-model"}).context_window is None
     llm = FakeLLMClient()
@@ -283,7 +283,7 @@ def test_model_override_does_not_reuse_original_window_and_fallback_is_labelled(
 
 @pytest.mark.parametrize("override_client", [True, False])
 async def test_selected_client_and_final_middleware_settings_drive_stats(override_client):
-    from nooa.runtime.actor import _current_method_var
+    from aster.runtime.actor import _current_method_var
 
     original = client()
     replacement = client()

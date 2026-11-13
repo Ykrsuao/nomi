@@ -6,10 +6,10 @@ import asyncio
 
 import pytest
 
-from nooa import strategy
-from nooa.agent import Agent
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import strategy
+from aster.agent import Agent
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def _resp(content: str) -> LLMResponse:

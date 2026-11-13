@@ -3,11 +3,11 @@
 """Targeted unit tests for previously uncovered modules.
 
 Covers:
-- nooa.experimental (factory functions with FutureWarning)
-- nooa.strategies.experimental (backward-compat re-export)
-- nooa._visible (_Visible context manager)
-- nooa_cli.commands._template (Click command)
-- nooa.nemo_relay_middleware (install_nemo_relay, nemo_relay_scope, middleware)
+- aster.experimental (factory functions with FutureWarning)
+- aster.strategies.experimental (backward-compat re-export)
+- aster._visible (_Visible context manager)
+- aster_cli.commands._template (Click command)
+- aster.nemo_relay_middleware (install_nemo_relay, nemo_relay_scope, middleware)
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import pytest
 from click.testing import CliRunner
 
 # ---------------------------------------------------------------------------
-# nooa.experimental (canonical path)
+# aster.experimental (canonical path)
 # ---------------------------------------------------------------------------
 
 
@@ -29,37 +29,37 @@ class TestExperimentalStrategies:
     """Factory functions for experimental strategies emit FutureWarning."""
 
     def test_pure_python_strategy_warns(self):
-        from nooa.experimental import PurePythonStrategy
+        from aster.experimental import PurePythonStrategy
 
         with pytest.warns(FutureWarning, match="experimental"):
             strategy = PurePythonStrategy()
 
-        from nooa.strategies.pure_python import (
+        from aster.strategies.pure_python import (
             PurePythonStrategy as _Real,
         )
 
         assert isinstance(strategy, _Real)
 
     def test_reflexion_strategy_warns(self):
-        from nooa.experimental import ReflexionStrategy
+        from aster.experimental import ReflexionStrategy
 
         with pytest.warns(FutureWarning, match="experimental"):
             strategy = ReflexionStrategy()
 
-        from nooa.strategies.reflexion import (
+        from aster.strategies.reflexion import (
             ReflexionStrategy as _Real,
         )
 
         assert isinstance(strategy, _Real)
 
     def test_warning_message_contains_alternatives(self):
-        from nooa.experimental import PurePythonStrategy
+        from aster.experimental import PurePythonStrategy
 
         with pytest.warns(FutureWarning, match="CodeActStrategy"):
             PurePythonStrategy()
 
     def test_pure_python_strategy_kwargs_forwarded(self):
-        from nooa.experimental import PurePythonStrategy
+        from aster.experimental import PurePythonStrategy
 
         with pytest.warns(FutureWarning):
             strategy = PurePythonStrategy(max_iterations=5)
@@ -67,25 +67,25 @@ class TestExperimentalStrategies:
         assert strategy.max_iterations == 5
 
     def test_all_exports(self):
-        import nooa.experimental as exp
+        import aster.experimental as exp
 
         assert "PurePythonStrategy" in exp.__all__
         assert "ReflexionStrategy" in exp.__all__
 
     def test_strategies_experimental_still_works(self):
-        """nooa.strategies.experimental is a backward-compat re-export."""
-        from nooa.strategies.experimental import PurePythonStrategy
+        """aster.strategies.experimental is a backward-compat re-export."""
+        from aster.strategies.experimental import PurePythonStrategy
 
         with pytest.warns(FutureWarning, match="experimental"):
             strategy = PurePythonStrategy()
 
-        from nooa.strategies.pure_python import PurePythonStrategy as _Real
+        from aster.strategies.pure_python import PurePythonStrategy as _Real
 
         assert isinstance(strategy, _Real)
 
 
 # ---------------------------------------------------------------------------
-# nooa._visible
+# aster._visible
 # ---------------------------------------------------------------------------
 
 
@@ -93,30 +93,30 @@ class TestVisible:
     """_Visible is a no-op context manager."""
 
     def test_visible_is_singleton(self):
-        from nooa._visible import visible
+        from aster._visible import visible
 
         assert visible is not None
 
     def test_context_manager_enter_returns_self(self):
-        from nooa._visible import visible
+        from aster._visible import visible
 
         with visible as v:
             assert v is visible
 
     def test_context_manager_exit_returns_false(self):
-        from nooa._visible import _Visible
+        from aster._visible import _Visible
 
         instance = _Visible()
         result = instance.__exit__(None, None, None)
         assert result is False
 
     def test_repr(self):
-        from nooa._visible import visible
+        from aster._visible import visible
 
         assert repr(visible) == "visible"
 
     def test_no_op_nested(self):
-        from nooa._visible import visible
+        from aster._visible import visible
 
         # Nested use is fine — should not raise
         with visible:
@@ -124,7 +124,7 @@ class TestVisible:
                 pass
 
     def test_exit_with_exception_does_not_suppress(self):
-        from nooa._visible import _Visible
+        from aster._visible import _Visible
 
         instance = _Visible()
         # __exit__ returning False means exceptions propagate
@@ -132,7 +132,7 @@ class TestVisible:
 
 
 # ---------------------------------------------------------------------------
-# nooa_cli.commands._template
+# aster_cli.commands._template
 # ---------------------------------------------------------------------------
 
 
@@ -140,7 +140,7 @@ class TestTemplateCommand:
     """Click _template command exercises basic hello-world logic."""
 
     def _get_command(self):
-        from nooa_cli.commands._template import command
+        from aster_cli.commands._template import command
 
         return command
 
@@ -183,7 +183,7 @@ class TestTemplateCommand:
 
 
 # ---------------------------------------------------------------------------
-# nooa.nemo_relay_middleware
+# aster.nemo_relay_middleware
 # ---------------------------------------------------------------------------
 
 
@@ -206,7 +206,7 @@ def _nemo_relay_patched():
     fake_llm_request = MagicMock()
 
     # Ensure the module is imported before patching (KeyError if not in sys.modules)
-    import nooa.nemo_relay_middleware as _nm_ensure  # noqa: F811, F401
+    import aster.nemo_relay_middleware as _nm_ensure  # noqa: F811, F401
 
     with patch.dict(
         sys.modules,
@@ -215,7 +215,7 @@ def _nemo_relay_patched():
             "nemo_relay.LLMRequest": fake_llm_request,
         },
     ):
-        nm = sys.modules["nooa.nemo_relay_middleware"]
+        nm = sys.modules["aster.nemo_relay_middleware"]
         importlib.reload(nm)
         try:
             yield nm, fake_nemo_relay
@@ -230,14 +230,14 @@ class TestNemoRelayMiddlewareWithoutNemoRelay:
     """When nemo_relay is not installed, install_nemo_relay and nemo_relay_scope raise ImportError."""
 
     def test_install_nemo_relay_raises_import_error(self, monkeypatch):
-        import nooa.nemo_relay_middleware as nm
+        import aster.nemo_relay_middleware as nm
 
         monkeypatch.setattr(nm, "_HAS_NEMO_RELAY", False)
         with pytest.raises(ImportError, match="nemo_relay"):
             nm.install_nemo_relay(MagicMock())
 
     async def test_nemo_relay_scope_raises_import_error(self, monkeypatch):
-        import nooa.nemo_relay_middleware as nm
+        import aster.nemo_relay_middleware as nm
 
         monkeypatch.setattr(nm, "_HAS_NEMO_RELAY", False)
         with pytest.raises(ImportError, match="nemo_relay"):
@@ -294,14 +294,14 @@ class TestNemoRelayMiddlewareWithFakeNemoRelay:
             assert unsub.call_count == 3
 
     def test_sensitive_keys_constant(self):
-        import nooa.nemo_relay_middleware as nm
+        import aster.nemo_relay_middleware as nm
 
         assert "api_key" in nm._SENSITIVE_KEYS
         assert "api_base" in nm._SENSITIVE_KEYS
         assert "base_url" in nm._SENSITIVE_KEYS
 
     def test_non_serializable_keys_constant(self):
-        import nooa.nemo_relay_middleware as nm
+        import aster.nemo_relay_middleware as nm
 
         assert "tools" in nm._NON_SERIALIZABLE_KEYS
         assert "output_model" in nm._NON_SERIALIZABLE_KEYS

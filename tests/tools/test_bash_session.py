@@ -4,7 +4,7 @@
 
 import pytest
 
-from nooa.tools._bash_session import BashSession
+from aster.tools._bash_session import BashSession
 
 
 @pytest.fixture
@@ -88,8 +88,8 @@ class TestBashSession:
 
     def test_bounded_matches_one_write_and_keeps_both_ends(self):
         """Chunked feeding gives the same text as one write, for every size around the limit."""
-        from nooa.agentdoc import TruncatingStringIO
-        from nooa.tools._bash_session import MAX_OUTPUT_CHARS, _bounded
+        from aster.agentdoc import TruncatingStringIO
+        from aster.tools._bash_session import MAX_OUTPUT_CHARS, _bounded
 
         for size in (MAX_OUTPUT_CHARS, MAX_OUTPUT_CHARS + 1, 65_536, 65_537, 300_000):
             text = "".join(chr(ord("a") + i % 26) for i in range(size))

@@ -14,10 +14,10 @@ from typing import Annotated, Literal, Union
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.strategies.generated_code import ReturnValueValidator
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, strategy
+from aster.strategies.generated_code import ReturnValueValidator
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 
 class TestIsInstanceOf:

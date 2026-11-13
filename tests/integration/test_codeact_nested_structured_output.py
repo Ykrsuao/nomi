@@ -20,11 +20,11 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.context_blocks import ScopedContext
-from nooa.strategies import CodeActStrategy, PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.context_blocks import ScopedContext
+from aster.strategies import CodeActStrategy, PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # --- Helpers ---
 

@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from nooa.skill import Skill
-from nooa.skill_registry import SkillRegistry
+from aster.skill import Skill
+from aster.skill_registry import SkillRegistry
 
 
 class FakeSkill(Skill):
@@ -22,7 +22,7 @@ class FakeSkill(Skill):
 class DepSkill(Skill):
     """Skill that declares a dependency."""
 
-    requires = ("nemo.base",)
+    requires = ("aster.base",)
 
 
 class _FakeAgent:
@@ -36,7 +36,7 @@ def agent():
 
 @pytest.fixture
 def registry(agent):
-    with patch("nooa.skill_registry.entry_points", return_value=[]):
+    with patch("aster.skill_registry.entry_points", return_value=[]):
         value = SkillRegistry(agent)
         yield value
         value.close()
@@ -53,11 +53,11 @@ class TestDiscoverSkillsDirs:
         lib_dir.mkdir()
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "workflow-lib"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"nvzurich.workflow" = "workflow_lib:WorkflowSkill"\n'
         )
         (lib_dir / "__init__.py").write_text(
-            "from nooa.skill import Skill\n\nclass WorkflowSkill(Skill):\n    pass\n"
+            "from aster.skill import Skill\n\nclass WorkflowSkill(Skill):\n    pass\n"
         )
         text_dir = tmp_path / "root-cause"
         text_dir.mkdir()
@@ -75,7 +75,7 @@ class TestDiscoverSkillsDirs:
         skill_file = tmp_path / "my_tool.py"
         skill_file.write_text(
             textwrap.dedent("""
-            from nooa.skill import Skill
+            from aster.skill import Skill
 
             class MyTool(Skill):
                 \"\"\"A custom tool.\"\"\"
@@ -92,7 +92,7 @@ class TestDiscoverSkillsDirs:
         skill_file = tmp_path / "resource.py"
         skill_file.write_text(
             "from pathlib import Path\n"
-            "from nooa.skill import Skill\n\n"
+            "from aster.skill import Skill\n\n"
             "class ResourceSkill(Skill):\n"
             "    def detach(self):\n"
             f"        Path({str(marker)!r}).write_text('yes')\n"
@@ -115,7 +115,7 @@ class TestDiscoverSkillsDirs:
     ):
         skill_file = tmp_path / "isolated.py"
         skill_file.write_text(
-            "from nooa.skill import Skill\n\nclass IsolatedSkill(Skill):\n    value = 'live'\n"
+            "from aster.skill import Skill\n\nclass IsolatedSkill(Skill):\n    value = 'live'\n"
         )
         registries = [SkillRegistry(_FakeAgent()), SkillRegistry(_FakeAgent())]
         for value in registries:
@@ -137,7 +137,7 @@ class TestDiscoverSkillsDirs:
         skill_file = tmp_path / "_private.py"
         skill_file.write_text(
             textwrap.dedent("""
-            from nooa.skill import Skill
+            from aster.skill import Skill
             class Priv(Skill): pass
         """)
         )
@@ -180,11 +180,11 @@ class TestDiscoverLibs:
             package.mkdir(parents=True)
             (lib_dir / "pyproject.toml").write_text(
                 '[project]\nname = "workflow-distribution"\n\n'
-                '[project.entry-points."nooa.skills"]\n'
+                '[project.entry-points."aster.skills"]\n'
                 '"test.workflow" = "shared_workflow:WorkflowSkill"\n'
             )
             (package / "__init__.py").write_text(
-                "from nooa.skill import Skill\n\n"
+                "from aster.skill import Skill\n\n"
                 "class WorkflowSkill(Skill):\n"
                 f"    value = {value!r}\n"
             )
@@ -211,11 +211,11 @@ class TestDiscoverLibs:
         package.mkdir(parents=True)
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "workflow"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"test.workflow" = "reference_workflow:WorkflowSkill"\n'
         )
         (package / "__init__.py").write_text(
-            "from nooa.skill import Skill\n\nclass WorkflowSkill(Skill):\n    value = 'shared'\n"
+            "from aster.skill import Skill\n\nclass WorkflowSkill(Skill):\n    value = 'shared'\n"
         )
         first = SkillRegistry(_FakeAgent())
         second = SkillRegistry(_FakeAgent())
@@ -237,11 +237,11 @@ class TestDiscoverLibs:
         package.mkdir(parents=True)
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "shared-reload"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"test.shared" = "shared_reload_workflow:SharedSkill"\n'
         )
         (package / "__init__.py").write_text(
-            "from nooa.skill import Skill\nclass SharedSkill(Skill):\n    value = 'old'\n"
+            "from aster.skill import Skill\nclass SharedSkill(Skill):\n    value = 'old'\n"
         )
         first = SkillRegistry(_FakeAgent())
         second = SkillRegistry(_FakeAgent())
@@ -253,7 +253,7 @@ class TestDiscoverLibs:
 
             module = package / "__init__.py"
             module.write_text(
-                "from nooa.skill import Skill\n"
+                "from aster.skill import Skill\n"
                 "class SharedSkill(Skill):\n    value = 'new-version'\n"
             )
             stat = module.stat()
@@ -278,11 +278,11 @@ class TestDiscoverLibs:
         lib_dir.mkdir()
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "direct-workflow"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"test.direct" = "direct_workflow:DirectSkill"\n'
         )
         (lib_dir / "direct_workflow.py").write_text(
-            "from nooa.skill import Skill\nclass DirectSkill(Skill):\n    value = 'direct'\n"
+            "from aster.skill import Skill\nclass DirectSkill(Skill):\n    value = 'direct'\n"
         )
 
         registry.discover_libs(tmp_path)
@@ -294,12 +294,12 @@ class TestDiscoverLibs:
         lib_dir.mkdir()
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "worktrees"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"test.worktrees" = "worktrees.worktrees:Worktrees"\n'
         )
         (lib_dir / "__init__.py").write_text("")
         (lib_dir / "worktrees.py").write_text(
-            "from nooa.skill import Skill\nclass Worktrees(Skill):\n    value = 'package'\n"
+            "from aster.skill import Skill\nclass Worktrees(Skill):\n    value = 'package'\n"
         )
 
         registry.discover_libs(tmp_path)
@@ -314,12 +314,12 @@ class TestDiscoverLibs:
         package.mkdir(parents=True)
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "workflow-distribution"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"nvzurich.workflow" = "actual_workflow.commands:WorkflowSkill"\n'
         )
         (package.parent / "__init__.py").write_text("")
         (package / "__init__.py").write_text(
-            "from nooa.skill import Skill\n\nclass WorkflowSkill(Skill):\n    pass\n"
+            "from aster.skill import Skill\n\nclass WorkflowSkill(Skill):\n    pass\n"
         )
 
         registry.discover_libs(tmp_path)
@@ -334,11 +334,11 @@ class TestDiscoverLibs:
         lib_dir.mkdir()
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "my-lib"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"local.my_lib" = "my_lib:MyLibSkill"\n'
         )
         (lib_dir / "__init__.py").write_text(
-            'from nooa.skill import Skill\n\nclass MyLibSkill(Skill):\n    """A library skill."""\n'
+            'from aster.skill import Skill\n\nclass MyLibSkill(Skill):\n    """A library skill."""\n'
         )
         registry.discover_libs(tmp_path)
         assert "local.my_lib" in registry.loaded()
@@ -368,7 +368,7 @@ class TestDiscoverLibs:
         )
         (lib_dir / "__init__.py").write_text(
             textwrap.dedent("""
-            from nooa.skill import Skill
+            from aster.skill import Skill
             class DupSkill(Skill): pass
         """)
         )
@@ -386,40 +386,40 @@ class TestDiscoverLibs:
 
 class TestResolveDeps:
     def test_resolves_single_dependency(self, agent):
-        """A skill with requires=('nemo.base',) triggers loading of its dep."""
+        """A skill with requires=('aster.base',) triggers loading of its dep."""
         ep_base = MagicMock()
-        ep_base.name = "nemo.base"
+        ep_base.name = "aster.base"
         ep_base.load.return_value = FakeSkill
 
-        with patch("nooa.skill_registry.entry_points", return_value=[ep_base]):
+        with patch("aster.skill_registry.entry_points", return_value=[ep_base]):
             reg = SkillRegistry(agent)
 
         dep_skill = DepSkill()
-        reg.register("nemo.dep", dep_skill)
-        reg._resolve_deps("nemo.dep")
-        assert "nemo.base" in reg.loaded()
+        reg.register("aster.dep", dep_skill)
+        reg._resolve_deps("aster.dep")
+        assert "aster.base" in reg.loaded()
 
     def test_cycle_detection(self, registry, agent):
         """Circular dependencies don't infinite-loop."""
 
         class CycleA(Skill):
-            requires = ("nemo.cycle_b",)
+            requires = ("aster.cycle_b",)
 
         class CycleB(Skill):
-            requires = ("nemo.cycle_a",)
+            requires = ("aster.cycle_a",)
 
-        registry.register("nemo.cycle_a", CycleA())
-        registry.register("nemo.cycle_b", CycleB())
+        registry.register("aster.cycle_a", CycleA())
+        registry.register("aster.cycle_b", CycleB())
         # Should not raise or loop forever
-        registry._resolve_deps("nemo.cycle_a")
+        registry._resolve_deps("aster.cycle_a")
 
     def test_missing_dep_warns(self, registry, agent):
         """Missing dependency logs a warning but doesn't crash."""
-        skill = DepSkill()  # requires ('nemo.base',)
-        registry.register("nemo.needy", skill)
-        # nemo.base is not discovered — should warn, not crash
-        registry._resolve_deps("nemo.needy")
-        assert "nemo.base" not in registry.loaded()
+        skill = DepSkill()  # requires ('aster.base',)
+        registry.register("aster.needy", skill)
+        # aster.base is not discovered — should warn, not crash
+        registry._resolve_deps("aster.needy")
+        assert "aster.base" not in registry.loaded()
 
 
 class TestDeterministicLoadOrder:
@@ -438,7 +438,7 @@ class TestDeterministicLoadOrder:
             RecordingEntryPoint("test.zulu"),
             RecordingEntryPoint("test.alpha"),
         ]
-        with patch("nooa.skill_registry.entry_points", return_value=entries):
+        with patch("aster.skill_registry.entry_points", return_value=entries):
             value = SkillRegistry(_FakeAgent())
         try:
             value.load(["test.*"])
@@ -483,7 +483,7 @@ class TestReload:
 
         skill_file = tmp_path / "demo.py"
         skill_file.write_text(
-            "from nooa.skill import Skill\nclass Demo(Skill):\n    value = 'old'\n"
+            "from aster.skill import Skill\nclass Demo(Skill):\n    value = 'old'\n"
         )
         first = SkillRegistry(_FakeAgent())
         second = SkillRegistry(_FakeAgent())
@@ -493,7 +493,7 @@ class TestReload:
         second_module = type(second["ext.demo"]).__module__
         try:
             skill_file.write_text(
-                "from nooa.skill import Skill\nclass Demo(Skill):\n    value = 'new'\n"
+                "from aster.skill import Skill\nclass Demo(Skill):\n    value = 'new'\n"
             )
             stat = skill_file.stat()
             os.utime(skill_file, (stat.st_atime + 2, stat.st_mtime + 2))
@@ -519,18 +519,18 @@ class TestReload:
         package.mkdir(parents=True)
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "nested-reload"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"test.nested" = "nested_reload_workflow.commands:NestedSkill"\n'
         )
         (package / "__init__.py").write_text("")
         commands = package / "commands.py"
         commands.write_text(
-            "from nooa.skill import Skill\nclass NestedSkill(Skill):\n    value = 'old'\n"
+            "from aster.skill import Skill\nclass NestedSkill(Skill):\n    value = 'old'\n"
         )
         registry.discover_libs(tmp_path)
         assert registry["test.nested"].value == "old"
         commands.write_text(
-            "from nooa.skill import Skill\nclass NestedSkill(Skill):\n    value = 'new-version'\n"
+            "from aster.skill import Skill\nclass NestedSkill(Skill):\n    value = 'new-version'\n"
         )
         stat = commands.stat()
         commands.touch()
@@ -588,7 +588,7 @@ class TestReload:
         requirement_ep.name = "test.requirement"
         requirement_ep.load.return_value = Requirement
         agent = _FakeAgent()
-        with patch("nooa.skill_registry.entry_points", return_value=[requirement_ep]):
+        with patch("aster.skill_registry.entry_points", return_value=[requirement_ep]):
             value = SkillRegistry(agent)
         value.register("test.dependent", Dependent())
         value.activate(["test.dependent"])
@@ -605,12 +605,12 @@ class TestReload:
         package.mkdir(parents=True)
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "lazy-reload"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"test.lazy" = "lazy_reload_workflow:LazySkill"\n'
         )
         init = package / "__init__.py"
         init.write_text(
-            "from nooa.skill import Skill\n\n"
+            "from aster.skill import Skill\n\n"
             "class LazySkill(Skill):\n"
             "    def value(self):\n"
             "        from lazy_reload_workflow.helper import VALUE\n"
@@ -637,12 +637,12 @@ class TestReload:
         package.mkdir(parents=True)
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "swap-reload"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"test.swap" = "swap_reload_workflow:SwapSkill"\n'
         )
         init = package / "__init__.py"
         init.write_text(
-            "from nooa.skill import Skill\n\n"
+            "from aster.skill import Skill\n\n"
             "class SwapSkill(Skill):\n"
             "    def value(self):\n"
             "        from swap_reload_workflow.helper import VALUE\n"
@@ -665,7 +665,7 @@ class TestReload:
                 "    def __init__(self, required):\n        self.required = required\n"
             )
         init.write_text(
-            "from nooa.skill import Skill\n\nclass SwapSkill(Skill):\n" + failed_constructor
+            "from aster.skill import Skill\n\nclass SwapSkill(Skill):\n" + failed_constructor
         )
 
         result = await registry.reload("test.swap")
@@ -677,7 +677,7 @@ class TestReload:
         assert old_skill.value() == "old-code"
 
         init.write_text(
-            "from nooa.skill import Skill\n\n"
+            "from aster.skill import Skill\n\n"
             "class SwapSkill(Skill):\n"
             "    def value(self):\n"
             "        return 'recovered'\n"
@@ -698,18 +698,18 @@ class TestReload:
         package.mkdir(parents=True)
         (lib_dir / "pyproject.toml").write_text(
             '[project]\nname = "attach-reload"\n\n'
-            '[project.entry-points."nooa.skills"]\n'
+            '[project.entry-points."aster.skills"]\n'
             '"test.attach" = "attach_reload_workflow:AttachSkill"\n'
         )
         init = package / "__init__.py"
         init.write_text(
-            "from nooa.skill import Skill\nclass AttachSkill(Skill):\n    value = 'old'\n"
+            "from aster.skill import Skill\nclass AttachSkill(Skill):\n    value = 'old'\n"
         )
         registry.discover_libs(tmp_path)
         old_skill = registry["test.attach"]
         old_package = sys.modules["attach_reload_workflow"]
         init.write_text(
-            "from nooa.skill import Skill\n"
+            "from aster.skill import Skill\n"
             "class AttachSkill(Skill):\n"
             "    value = 'new'\n"
             "    def attach(self, agent):\n"
@@ -727,13 +727,13 @@ class TestReload:
     async def test_reload_not_loaded_raises(self, registry):
         """Reloading an unknown skill raises loudly instead of silently no-op'ing (issue 250)."""
         with pytest.raises(KeyError):
-            await registry.reload("nemo.nonexistent")
+            await registry.reload("aster.nonexistent")
 
     @pytest.mark.asyncio
     async def test_reload_all_loaded(self, registry, agent):
         """reload() without args reloads all loaded skills."""
-        registry.register("nemo.a", FakeSkill())
-        registry.register("nemo.b", FakeSkill())
+        registry.register("aster.a", FakeSkill())
+        registry.register("aster.b", FakeSkill())
         result = await registry.reload()
         # Should attempt to reload both — result is a string summary
         assert isinstance(result, str)
@@ -771,7 +771,7 @@ class TestReload:
     async def test_reload_ambiguous_leaf_raises(self, registry):
         """A leaf that matches more than one loaded skill fails loudly."""
         registry.register("nvzurich.shell", FakeSkill())
-        registry.register("nemo.shell", FakeSkill())
+        registry.register("aster.shell", FakeSkill())
         with pytest.raises(ValueError):
             await registry.reload("shell")
 
@@ -801,7 +801,7 @@ class TestReload:
     async def test_reload_exact_fq_name_takes_precedence(self, registry):
         """An exact FQ name reloads that skill even when a leaf would be ambiguous."""
         registry.register("nvzurich.shell", FakeSkill())
-        registry.register("nemo.shell", FakeSkill())
+        registry.register("aster.shell", FakeSkill())
         called = {}
 
         async def fake(name):
@@ -809,5 +809,5 @@ class TestReload:
             return "ok"
 
         registry._reload_one = fake
-        await registry.reload("nemo.shell")
-        assert called["name"] == "nemo.shell"
+        await registry.reload("aster.shell")
+        assert called["name"] == "aster.shell"

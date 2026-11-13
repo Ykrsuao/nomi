@@ -71,7 +71,7 @@ def _make_multi_agent_otlp_spans():
 def app():
     from fastapi import FastAPI
 
-    from nooa.viewer.explorer_routes import clear_explorer_cache, router
+    from aster.viewer.explorer_routes import clear_explorer_cache, router
 
     clear_explorer_cache()
     test_app = FastAPI()
@@ -81,7 +81,7 @@ def app():
 
 @pytest.fixture
 def mock_store():
-    with patch("nooa.viewer.explorer_routes.otlp_store") as m:
+    with patch("aster.viewer.explorer_routes.otlp_store") as m:
         m.session_exists.return_value = True
         m.get_session_spans.return_value = _make_multi_agent_otlp_spans()
         # For the fast path: get_agent_spans returns just AGENT spans

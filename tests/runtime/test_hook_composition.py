@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nooa.runtime.hooks import (
+from aster.runtime.hooks import (
     CompositeInstrumentationHooks,
     call_after_hook,
     call_before_hook,

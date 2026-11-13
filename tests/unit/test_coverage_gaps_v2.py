@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Targeted unit tests for uncovered lines across nooa.
+"""Targeted unit tests for uncovered lines across aster.
 
 Each test class covers a specific module and targets specific uncovered lines.
 """
@@ -16,7 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from nooa.unifiedllm import FakeLLMClient
+from aster.unifiedllm import FakeLLMClient
 
 # =============================================================================
 # runtime/actor.py
@@ -27,7 +27,7 @@ class TestPopGenerationId:
     """_pop_generation_id() returns None when stack is empty (line 165)."""
 
     def test_empty_stack_returns_none(self):
-        from nooa.runtime.actor import _pop_generation_id
+        from aster.runtime.actor import _pop_generation_id
 
         # Reset stack to empty state via a fresh context
         result = _pop_generation_id()
@@ -37,7 +37,7 @@ class TestPopGenerationId:
 
     def test_empty_stack_none_path(self):
         """Directly test the empty stack path."""
-        from nooa.runtime.actor import (
+        from aster.runtime.actor import (
             _generation_id_stack_var,
             _pop_generation_id,
         )
@@ -55,7 +55,7 @@ class TestExtractCapturedLocals:
     """_extract_captured_locals() skips bound methods (line 188)."""
 
     def test_bound_method_skipped(self):
-        from nooa.runtime.actor import _extract_captured_locals
+        from aster.runtime.actor import _extract_captured_locals
 
         class _MyClass:
             def method(self) -> None:
@@ -76,8 +76,8 @@ class TestActorGetCode:
     """RuntimeActor.get_code() returns None for nonexistent methods (line 1193)."""
 
     def test_get_code_nonexistent_method(self):
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -95,8 +95,8 @@ class TestActorListMethods:
     """list_methods() skips properties (line 1429) and handles bad signatures (line 1452)."""
 
     def test_property_skipped_in_list_methods(self):
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -120,8 +120,8 @@ class TestActorEvaluateExpression:
     """evaluate_expression covers CompletedProcess with no output (line 1299)."""
 
     async def test_completed_process_no_output(self):
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -143,8 +143,8 @@ class TestActorEvaluateExpression:
         assert result == "[command completed]"
 
     async def test_completed_process_returncode_only(self):
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -166,8 +166,8 @@ class TestActorEvaluateExpression:
 
     async def test_repl_exception_is_swallowed(self):
         """Lines 1269-1270: exception when extracting REPL locals."""
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -199,8 +199,8 @@ class TestActorExpandVariables:
     """expand_variables() silent mode with None value (line 1358) and format error (lines 1380-1384)."""
 
     async def test_silent_mode_none_value_keeps_placeholder(self):
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -218,8 +218,8 @@ class TestActorExpandVariables:
 
     async def test_silent_mode_format_spec_error(self):
         """Lines 1380-1384: format spec fails in silent mode."""
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -242,8 +242,8 @@ class TestActorExpandVariables:
 
     async def test_silent_mode_format_spec_error_with_conversion(self):
         """Lines 1380-1384: conversion + format spec error in silent mode keeps placeholder."""
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -270,7 +270,7 @@ class TestActorIndentCode:
     """_indent_code() with multi-line strings (lines 2000-2001, 2008) and tokenization error (2014-2016)."""
 
     def _make_runtime(self):
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         llm = FakeLLMClient()
 
@@ -307,8 +307,8 @@ class TestActorGenerate:
 
     async def test_generate_without_method_context(self):
         """Line 380: RuntimeError when _current_method is None."""
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -327,9 +327,9 @@ class TestActorGenerate:
 
     async def test_generate_without_llm_context(self):
         """Line 392: RuntimeError when no LLM client in context."""
-        from nooa.agent import Agent
-        from nooa.runtime.actor import _current_llm_var, _current_method_var
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.runtime.actor import _current_llm_var, _current_method_var
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -362,8 +362,8 @@ class TestEventManagerSummaryWithTag:
     """add() Summary with existing summary_tag validates the tag (lines 148-149)."""
 
     def test_add_summary_with_existing_tag(self):
-        from nooa.events import Summary
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Summary
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         summary = Summary(
@@ -378,7 +378,7 @@ class TestEventManagerSummaryWithTag:
 
     def test_add_summary_with_invalid_tag_raises(self):
         """Test that _validate_tag raises for invalid range tags."""
-        from nooa.runtime.event_manager import EventManager
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         # Directly test _validate_tag with invalid range
@@ -390,7 +390,7 @@ class TestEventManagerRegisterEventType:
     """register_event_type() validates the class (lines 178-184)."""
 
     def test_register_non_eventbase_raises_type_error(self):
-        from nooa.runtime.event_manager import EventManager
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         with pytest.raises(TypeError, match="Expected an EventBase subclass"):
@@ -400,8 +400,8 @@ class TestEventManagerRegisterEventType:
         """Empty event_type default is normal — model_post_init derives the value at instance time."""
         from pydantic import Field
 
-        from nooa.events import EventBase
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import EventBase
+        from aster.runtime.event_manager import EventManager
 
         class _EmptyTypeEvent(EventBase):
             event_type: str = Field(default="", repr=False)  # type: ignore[assignment]
@@ -417,7 +417,7 @@ class TestEventManagerSetEventQuery:
     """set_event_query() stores the query (line 227)."""
 
     def test_set_event_query_stores_value(self):
-        from nooa.runtime.event_manager import EventManager
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         mock_query = MagicMock()
@@ -425,7 +425,7 @@ class TestEventManagerSetEventQuery:
         assert em.get_event_query() is mock_query
 
     def test_set_event_query_none(self):
-        from nooa.runtime.event_manager import EventManager
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         em.set_event_query(None)
@@ -436,8 +436,8 @@ class TestEventManagerWildcardHandlerException:
     """Wildcard handler that raises is logged and swallowed (lines 256-257)."""
 
     def test_failing_wildcard_handler_does_not_propagate(self):
-        from nooa.events import Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
 
@@ -454,8 +454,8 @@ class TestEventManagerRegexFilter:
     """filter() with regex=True (lines 381-382)."""
 
     def test_regex_filter_matches(self):
-        from nooa.events import Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         em.add(Task(prompt="Analyze data from UNIQUE_MARKER_XYZ"))
@@ -467,8 +467,8 @@ class TestEventManagerRegexFilter:
         assert "UNIQUE_MARKER_XYZ" in results[0].prompt  # type: ignore[union-attr]
 
     def test_regex_filter_no_match(self):
-        from nooa.events import Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         em.add(Task(prompt="Hello world"))
@@ -477,8 +477,8 @@ class TestEventManagerRegexFilter:
         assert len(results) == 0
 
     def test_regex_filter_case_insensitive(self):
-        from nooa.events import Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         em.add(Task(prompt="Hello World TESTPATTERN"))
@@ -491,8 +491,8 @@ class TestEventManagerGetItemByUUID:
     """__getitem__() falls back to UUID lookup (line 609)."""
 
     def test_getitem_by_uuid(self):
-        from nooa.events import Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         event = Task(prompt="Test UUID lookup")
@@ -503,8 +503,8 @@ class TestEventManagerGetItemByUUID:
         assert retrieved.id == event.id
 
     def test_getitem_by_tag(self):
-        from nooa.events import Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         tag = em.add(Task(prompt="Test tag lookup"))
@@ -518,8 +518,8 @@ class TestEventManagerAllOriginals:
     """_all_originals() with nested Summary (lines 646-648)."""
 
     def test_nested_summary_expansion(self):
-        from nooa.events import Summary, Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Summary, Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
 
@@ -556,8 +556,8 @@ class TestEventManagerAllOriginals:
 
     def test_all_originals_missing_child_skipped(self):
         """Children that are None are skipped."""
-        from nooa.events import Summary, Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Summary, Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
 
@@ -577,8 +577,8 @@ class TestEventManagerAllOriginals:
 
     def test_all_originals_non_summary_returns_itself(self):
         """Non-summary events return themselves."""
-        from nooa.events import Task
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import Task
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         t1 = Task(prompt="Task 1")
@@ -593,7 +593,7 @@ class TestEventManagerValidateTag:
     """_validate_tag() with multiple '..' separators (line 696)."""
 
     def test_multiple_separator_raises(self):
-        from nooa.runtime.event_manager import EventManager
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         with pytest.raises(ValueError, match="exactly one"):
@@ -609,8 +609,8 @@ class TestStrategyDecoratorSyncFunction:
     """@strategy decorator on a sync function raises TypeError (line 87)."""
 
     def test_strategy_on_sync_raises_type_error(self):
-        from nooa.decorators import strategy
-        from nooa.strategies.codeact import CodeActStrategy
+        from aster.decorators import strategy
+        from aster.strategies.codeact import CodeActStrategy
 
         with pytest.raises(TypeError, match="must be async"):
 
@@ -633,14 +633,14 @@ class TestMetaclassExtractSourceCode:
         # math.sqrt is a builtin with no inspectable source
         import math
 
-        from nooa.metaclass import AgentMeta
+        from aster.metaclass import AgentMeta
 
         result = AgentMeta._extract_source_code(math.sqrt)
         assert result is None
 
     def test_extract_source_lambda(self):
         """Lambda defined in a way that might not have inspectable source."""
-        from nooa.metaclass import AgentMeta
+        from aster.metaclass import AgentMeta
 
         # A regular function should work
         def my_func() -> None:
@@ -651,7 +651,7 @@ class TestMetaclassExtractSourceCode:
 
     def test_extract_source_oserror(self):
         """OSError path."""
-        from nooa.metaclass import AgentMeta
+        from aster.metaclass import AgentMeta
 
         # Mock inspect.getsource to raise OSError
         with patch("inspect.getsource", side_effect=OSError("source not found")):
@@ -668,8 +668,8 @@ class TestPlainFormatterNoOutput:
     """format_event() returns '(no output)' when all fields are empty (line 50)."""
 
     def test_empty_event_returns_no_output(self):
-        from nooa.events import LLMResponse
-        from nooa.plain_formatter import PlainBlockFormatter
+        from aster.events import LLMResponse
+        from aster.plain_formatter import PlainBlockFormatter
 
         # LLMResponse with empty content and no reasoning → all repr fields are empty/None
         event = LLMResponse(content="", reasoning=None)
@@ -688,7 +688,7 @@ class TestErrorFormattingNoUserFrames:
 
     def test_error_without_traceback_returns_type_and_message(self):
         """Line 172: error with no __traceback__ → simple format."""
-        from nooa.errors.formatting import IPythonErrorFormatter
+        from aster.errors.formatting import IPythonErrorFormatter
 
         formatter = IPythonErrorFormatter()
         error = ValueError("something went wrong")
@@ -699,7 +699,7 @@ class TestErrorFormattingNoUserFrames:
 
     def test_error_with_non_user_frames_returns_type_and_message(self):
         """Line 182: error with traceback but no user-code frames → simple format."""
-        from nooa.errors.formatting import IPythonErrorFormatter
+        from aster.errors.formatting import IPythonErrorFormatter
 
         formatter = IPythonErrorFormatter()
 
@@ -726,8 +726,8 @@ class TestLibraryManagerFailures:
     """LibraryManager._scan() and .reload() swallow exceptions (lines 62-63, 80-81)."""
 
     def test_scan_with_failing_library_swallows_exception(self, tmp_path: Path):
-        from nooa.agent import Agent
-        from nooa.library_manager import LibraryManager
+        from aster.agent import Agent
+        from aster.library_manager import LibraryManager
 
         llm = FakeLLMClient()
 
@@ -748,8 +748,8 @@ class TestLibraryManagerFailures:
         manager._scan()
 
     def test_reload_with_failing_library_swallows_exception(self, tmp_path: Path):
-        from nooa.agent import Agent
-        from nooa.library_manager import LibraryManager
+        from aster.agent import Agent
+        from aster.library_manager import LibraryManager
 
         llm = FakeLLMClient()
 
@@ -776,8 +776,8 @@ class TestInMemoryBackend:
     """remove_active_tag() returns True (line 293), find_tag() returns None (line 302)."""
 
     def test_remove_active_tag_returns_true(self):
-        from nooa.events import Task
-        from nooa.runtime.event_backend import InMemoryBackend
+        from aster.events import Task
+        from aster.runtime.event_backend import InMemoryBackend
 
         backend = InMemoryBackend()
         task = Task(prompt="test")
@@ -788,15 +788,15 @@ class TestInMemoryBackend:
         assert result is True
 
     def test_remove_active_tag_returns_false_when_absent(self):
-        from nooa.runtime.event_backend import InMemoryBackend
+        from aster.runtime.event_backend import InMemoryBackend
 
         backend = InMemoryBackend()
         result = backend.remove_active_tag("nonexistent")
         assert result is False
 
     def test_find_tag_returns_none_for_unknown_event(self):
-        from nooa.events import Task
-        from nooa.runtime.event_backend import InMemoryBackend
+        from aster.events import Task
+        from aster.runtime.event_backend import InMemoryBackend
 
         backend = InMemoryBackend()
         # Don't store anything
@@ -814,7 +814,7 @@ class TestCallAfterHookFailure:
     """call_after_hook() logs when hook method raises (lines 394-395)."""
 
     def test_failing_after_hook_is_logged_not_raised(self):
-        from nooa.runtime.hooks import call_after_hook, set_hooks
+        from aster.runtime.hooks import call_after_hook, set_hooks
 
         class _FailingHooks:
             def after_generation(self, context: Any, **kwargs: Any) -> None:
@@ -847,7 +847,7 @@ class TestMediaCaptureMatplotlib:
         pytest.importorskip("matplotlib")
         from matplotlib.figure import Figure
 
-        from nooa.runtime.media_capture import _try_matplotlib_to_content_block
+        from aster.runtime.media_capture import _try_matplotlib_to_content_block
 
         fig = Figure()
         result = _try_matplotlib_to_content_block(fig)
@@ -856,7 +856,7 @@ class TestMediaCaptureMatplotlib:
         assert "data:image/png;base64," in result["image_url"]["url"]
 
     def test_non_figure_returns_none(self):
-        from nooa.runtime.media_capture import _try_matplotlib_to_content_block
+        from aster.runtime.media_capture import _try_matplotlib_to_content_block
 
         result = _try_matplotlib_to_content_block("not a figure")
         assert result is None
@@ -865,7 +865,7 @@ class TestMediaCaptureMatplotlib:
         pytest.importorskip("PIL")
         from PIL import Image as PILImage
 
-        from nooa.runtime.media_capture import _try_auto_convert
+        from aster.runtime.media_capture import _try_auto_convert
 
         img = PILImage.new("RGB", (10, 10), color=(255, 0, 0))
         result = _try_auto_convert(img)
@@ -882,7 +882,7 @@ class TestOutAccessorNoEventManager:
     """_get_output_events() returns [] when event_manager is None (line 56)."""
 
     def test_none_event_manager_returns_empty(self):
-        from nooa.runtime.out_accessor import OutAccessor
+        from aster.runtime.out_accessor import OutAccessor
 
         accessor = OutAccessor(event_manager=None)
         result = accessor._get_output_events()
@@ -898,7 +898,7 @@ class TestSkillFrontmatter:
     """_parse_frontmatter() raises when frontmatter is not a dict (line 43)."""
 
     def test_non_dict_frontmatter_raises(self):
-        from nooa.skill import _parse_frontmatter
+        from aster.skill import _parse_frontmatter
 
         # YAML that parses to a list, not a dict
         content = "---\n- item1\n- item2\n---\nBody text"
@@ -917,7 +917,7 @@ class TestCurrentCallFormatParameters:
     def _make_call(self, **kwargs) -> Any:
         from uuid import uuid4
 
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         defaults = {
             "id": str(uuid4()),
@@ -981,13 +981,13 @@ class TestAgentAutoTracing:
         """When openinference is not installed, ImportError is swallowed."""
         import sys
 
-        import nooa.agent as _agent_mod
+        import aster.agent as _agent_mod
 
         # Reset the guard so the function actually runs
         original = _agent_mod._auto_tracing_attempted
         _agent_mod._auto_tracing_attempted = False
         try:
-            with patch.dict(sys.modules, {"nooa.tracing": None}):
+            with patch.dict(sys.modules, {"aster.tracing": None}):
                 # Should not raise — ImportError is swallowed
                 _agent_mod._try_auto_enable_tracing()
         finally:
@@ -998,8 +998,8 @@ class TestAgentInstanceValues:
     """__instance_values__() skips attributes that raise unexpected exceptions (line 550)."""
 
     def test_property_that_raises_unexpected_exception(self):
-        from nooa.agent import Agent
-        from nooa.unifiedllm import FakeLLMClient
+        from aster.agent import Agent
+        from aster.unifiedllm import FakeLLMClient
 
         llm = FakeLLMClient()
 
@@ -1028,7 +1028,7 @@ class TestAsyncSafety:
 
     def test_safe_future_result_passes_through_outside_agent(self):
         """Line 84 / 96 — safe wrappers call through when not in agent context."""
-        from nooa.runtime.async_safety import _in_agent_context
+        from aster.runtime.async_safety import _in_agent_context
 
         # Make sure we're NOT in agent context
         assert not _in_agent_context.get()
@@ -1042,7 +1042,7 @@ class TestAsyncSafety:
 
     def test_safe_as_completed_passes_through_outside_agent(self):
         """Line 96 — _safe_as_completed passes through."""
-        from nooa.runtime.async_safety import _in_agent_context
+        from aster.runtime.async_safety import _in_agent_context
 
         assert not _in_agent_context.get()
 
@@ -1055,7 +1055,7 @@ class TestAsyncSafety:
 
     async def test_is_event_loop_thread_without_thread_id(self):
         """Line 46 — loop has no _thread_id → return True."""
-        from nooa.runtime.async_safety import _is_event_loop_thread
+        from aster.runtime.async_safety import _is_event_loop_thread
 
         loop = asyncio.get_running_loop()
         # Remove _thread_id to hit line 46 (assume yes if can't check)
@@ -1082,8 +1082,8 @@ class TestContextBuilderNoneValue:
     """cm[key] = None suppresses the block (disabled_keys mechanism)."""
 
     async def test_none_value_suppresses_block(self):
-        from nooa.runtime.context_builder import _phase_persistent_blocks
-        from nooa.runtime.context_manager import ContextManager
+        from aster.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_manager import ContextManager
 
         cm = ContextManager()
         cm["my_key"] = "visible"
@@ -1112,7 +1112,7 @@ class TestDebugHandlerTraceback:
 
     def test_debug_signal_handler_imports(self):
         """Just importing the module covers the module-level code."""
-        import nooa.runtime.debug_handler as dh
+        import aster.runtime.debug_handler as dh
 
         assert hasattr(dh, "_dump_cell_code")
 
@@ -1120,7 +1120,7 @@ class TestDebugHandlerTraceback:
         """_dump_pending_llm_calls should not crash."""
         import io
 
-        from nooa.runtime.debug_handler import _dump_pending_llm_calls
+        from aster.runtime.debug_handler import _dump_pending_llm_calls
 
         buf = io.StringIO()
         _dump_pending_llm_calls(buf)  # Should not raise
@@ -1141,7 +1141,7 @@ class TestNemoRelayMiddlewareLLMModelName:
     def test_llm_model_name_extracted_from_agent(self):
         """Lines 99-101: model_name comes from agent._llm.model."""
         try:
-            from nooa.nemo_relay_middleware import _extract_model_name
+            from aster.nemo_relay_middleware import _extract_model_name
         except (ImportError, AttributeError):
             # If the helper isn't exposed, test via the agent attribute path
             agent = MagicMock()
@@ -1180,9 +1180,9 @@ class TestReflexionNoResult:
         exhausting iterations raises GenerationError with 'no result'."""
         from unittest.mock import AsyncMock
 
-        from nooa.config.strategy_config import ReflexionConfig
-        from nooa.errors import GenerationError
-        from nooa.strategies.reflexion import ReflectionOutput, ReflexionStrategy
+        from aster.config.strategy_config import ReflexionConfig
+        from aster.errors import GenerationError
+        from aster.strategies.reflexion import ReflectionOutput, ReflexionStrategy
 
         # Base strategy that always returns None (no result)
         mock_base = AsyncMock()
@@ -1226,8 +1226,8 @@ class TestEventManagerRegisterEventTypeSuccess:
 
         from pydantic import Field
 
-        from nooa.events import EventBase
-        from nooa.runtime.event_manager import EventManager
+        from aster.events import EventBase
+        from aster.runtime.event_manager import EventManager
 
         class _CustomEvent(EventBase):
             event_type: Literal["custom_test"] = Field(default="custom_test", repr=False)  # type: ignore[assignment]
@@ -1241,7 +1241,7 @@ class TestEventManagerAllOriginalsEmptyTag:
     """_all_originals() returns [] when tag doesn't exist (line 636)."""
 
     def test_nonexistent_tag_returns_empty(self):
-        from nooa.runtime.event_manager import EventManager
+        from aster.runtime.event_manager import EventManager
 
         em = EventManager()
         # Tag "999" doesn't exist in the backend
@@ -1253,8 +1253,8 @@ class TestMetaclassResolveStrategy:
     """_resolve_strategy() returns the strategy override (line 132)."""
 
     def test_resolve_strategy_with_override(self):
-        from nooa.metaclass import AgentMeta
-        from nooa.strategies.codeact import CodeActStrategy
+        from aster.metaclass import AgentMeta
+        from aster.strategies.codeact import CodeActStrategy
 
         strategy_instance = CodeActStrategy()
 
@@ -1269,7 +1269,7 @@ class TestMetaclassResolveStrategy:
         assert result is strategy_instance
 
     def test_resolve_strategy_no_override(self):
-        from nooa.metaclass import AgentMeta
+        from aster.metaclass import AgentMeta
 
         def my_method(self) -> str:
             """A method."""
@@ -1283,8 +1283,8 @@ class TestLibraryManagerScanSkipInvalidDir:
     """_scan() skips non-pyproject directories (line 50)."""
 
     def test_scan_skips_non_library_dir(self, tmp_path: Path):
-        from nooa.agent import Agent
-        from nooa.library_manager import LibraryManager
+        from aster.agent import Agent
+        from aster.library_manager import LibraryManager
 
         llm = FakeLLMClient()
 
@@ -1312,7 +1312,7 @@ class TestActorExpandVariablesConversion:
     """expand_variables() with conversion in silent None mode (line 1358)."""
 
     async def test_silent_mode_with_conversion_keeps_placeholder(self):
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         llm = FakeLLMClient()
 
@@ -1338,7 +1338,7 @@ class TestErrorFormattingIsValidationErrorImportFallback:
         import sys
         from unittest.mock import patch
 
-        from nooa.errors.formatting import _is_validation_error
+        from aster.errors.formatting import _is_validation_error
 
         # Create an error whose class name matches "ValidationError"
         class ValidationError(Exception):
@@ -1346,8 +1346,8 @@ class TestErrorFormattingIsValidationErrorImportFallback:
 
         error = ValidationError("test")
 
-        # Patch sys.modules to make nooa.errors unavailable
-        with patch.dict(sys.modules, {"nooa.errors": None}):
+        # Patch sys.modules to make aster.errors unavailable
+        with patch.dict(sys.modules, {"aster.errors": None}):
             # Now _is_validation_error should use the name-based fallback
             result = _is_validation_error(error)
             assert result is True
@@ -1356,11 +1356,11 @@ class TestErrorFormattingIsValidationErrorImportFallback:
         import sys
         from unittest.mock import patch
 
-        from nooa.errors.formatting import _is_validation_error
+        from aster.errors.formatting import _is_validation_error
 
         error = ValueError("not a validation error")
 
-        with patch.dict(sys.modules, {"nooa.errors": None}):
+        with patch.dict(sys.modules, {"aster.errors": None}):
             result = _is_validation_error(error)
             assert result is False
 
@@ -1369,13 +1369,13 @@ class TestErrorFormattingNoUserFramesSimple:
     """format_runtime_error() returns simple format when all frames are framework (line 182)."""
 
     def test_all_framework_frames_returns_simple_format(self):
-        from nooa.errors.formatting import IPythonErrorFormatter
+        from aster.errors.formatting import IPythonErrorFormatter
 
         formatter = IPythonErrorFormatter()
 
         # Patch _is_user_code_frame to return False (all frames are "framework")
         with patch(
-            "nooa.errors.formatting._is_user_code_frame",
+            "aster.errors.formatting._is_user_code_frame",
             return_value=False,
         ):
             try:
@@ -1391,7 +1391,7 @@ class TestContextBuilderResolveNoneContent:
 
     async def test_resolve_fn_none_produces_string_none(self):
         """Line 85: content = 'None' when resolve_fn returns None for non-None value."""
-        from nooa.runtime.context_builder import _apply_overrides
+        from aster.runtime.context_builder import _apply_overrides
 
         async def _resolve(key: str, value: Any) -> str | None:
             # Returns None — content should become "None"
@@ -1409,8 +1409,8 @@ class TestContextBuilderResolveNoneContent:
 
     async def test_protected_block_static_meta(self):
         """Protected static block gets expr=f'self.context["{key}"]' meta and user_block=False."""
-        from nooa.runtime.context_builder import _phase_persistent_blocks
-        from nooa.runtime.context_manager import ContextManager
+        from aster.runtime.context_builder import _phase_persistent_blocks
+        from aster.runtime.context_manager import ContextManager
 
         async def _resolve(key: str, value: Any) -> str | None:
             return "some content"
@@ -1442,7 +1442,7 @@ class TestCodeValidatorSetAttrFewArgs:
     def test_setattr_single_arg_no_issue(self):
         import ast
 
-        from nooa.runtime.code_validator import SecurityValidator, ValidationContext
+        from aster.runtime.code_validator import SecurityValidator, ValidationContext
 
         ctx = ValidationContext()
         v = SecurityValidator()
@@ -1460,7 +1460,7 @@ class TestCodeValidatorInfiniteLoopDetection:
         """Line 417: while 1: ... is treated as infinite loop."""
         import ast
 
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
 
         ctx = ValidationContext()
         v = REPLPolicyValidator()
@@ -1473,7 +1473,7 @@ class TestCodeValidatorInfiniteLoopDetection:
         """Lines 420-421: while not False: ... is treated as infinite loop."""
         import ast
 
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
 
         ctx = ValidationContext()
         v = REPLPolicyValidator()
@@ -1486,7 +1486,7 @@ class TestCodeValidatorInfiniteLoopDetection:
         """Lines 461-464: nested for with raise in orelse counts as exit."""
         import ast
 
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
 
         ctx = ValidationContext()
         v = REPLPolicyValidator()
@@ -1503,7 +1503,7 @@ class TestCodeValidatorInfiniteLoopDetection:
         """Lines 463-464: return in for loop's orelse counts as exit for outer while."""
         import ast
 
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
 
         ctx = ValidationContext()
         v = REPLPolicyValidator()
@@ -1521,9 +1521,9 @@ class TestCodeValidatorVisitCallPaths:
         """Line 482-483: Direct function call (not attr) is skipped."""
         import ast
 
-        from nooa import Agent
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
-        from nooa.unifiedllm import FakeLLMClient
+        from aster import Agent
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.unifiedllm import FakeLLMClient
 
         class _A(Agent, llm=FakeLLMClient()):
             async def my_async(self): ...
@@ -1539,9 +1539,9 @@ class TestCodeValidatorVisitCallPaths:
         """Line 486-487: self[0].method() - value is Subscript, not Name."""
         import ast
 
-        from nooa import Agent
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
-        from nooa.unifiedllm import FakeLLMClient
+        from aster import Agent
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.unifiedllm import FakeLLMClient
 
         class _A(Agent, llm=FakeLLMClient()):
             async def my_async(self): ...
@@ -1556,9 +1556,9 @@ class TestCodeValidatorVisitCallPaths:
         """Line 490 path: other.method() where id != 'self' is skipped."""
         import ast
 
-        from nooa import Agent
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
-        from nooa.unifiedllm import FakeLLMClient
+        from aster import Agent
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.unifiedllm import FakeLLMClient
 
         class _A(Agent, llm=FakeLLMClient()):
             async def my_async(self): ...
@@ -1573,9 +1573,9 @@ class TestCodeValidatorVisitCallPaths:
         """Lines 495-496: self.sync_method() where method is not async is skipped."""
         import ast
 
-        from nooa import Agent
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
-        from nooa.unifiedllm import FakeLLMClient
+        from aster import Agent
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.unifiedllm import FakeLLMClient
 
         class _A(Agent, llm=FakeLLMClient()):
             async def my_async(self): ...
@@ -1594,7 +1594,7 @@ class TestCodeValidatorCollectAsyncMethodsExceptions:
         """Lines 529-530, 541-542: Exception from getattr is caught and skipped."""
         import ast
 
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
 
         class _EvilDescriptor:
             def __get__(self, obj, objtype=None):
@@ -1621,7 +1621,7 @@ class TestCodeValidatorClassAssignment:
         """Line 628-629: getattr exception on class attribute is caught and skipped."""
         import ast
 
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             ClassAssignmentValidator,
             ValidationContext,
         )
@@ -1643,7 +1643,7 @@ class TestCodeValidatorClassAssignment:
         """Line 647: type() with != 1 arg returns False in _is_type_self_call."""
         import ast
 
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             ClassAssignmentValidator,
             ValidationContext,
         )
@@ -1662,7 +1662,7 @@ class TestCodeValidatorClassAssignment:
         """Line 650: type(self.attr) - arg is Attribute, not Name."""
         import ast
 
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             ClassAssignmentValidator,
             ValidationContext,
         )
@@ -1681,7 +1681,7 @@ class TestCodeValidatorClassAssignment:
         """Lines 687-688: AnnAssign with value=self tracks in self_ref_vars."""
         import ast
 
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             ClassAssignmentValidator,
             ValidationContext,
         )
@@ -1700,7 +1700,7 @@ class TestCodeValidatorClassAssignment:
         """Lines 692-693: AnnAssign with value=type(self) tracks in class_ref_vars."""
         import ast
 
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             ClassAssignmentValidator,
             ValidationContext,
         )
@@ -1721,7 +1721,7 @@ class TestCodeValidatorCustomValidators:
 
     def test_custom_validators_list(self):
         """Line 1012: When validators= is passed, it overrides default list."""
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             SecurityValidator,
             UnifiedCodeValidator,
         )
@@ -1735,7 +1735,7 @@ class TestCodeValidatorCustomValidators:
         """Line 1071: Warning-severity issues are logged, not raised."""
         import logging
 
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             UnifiedCodeValidator,
             ValidationContext,
             ValidationIssue,
@@ -1757,7 +1757,7 @@ class TestCodeValidatorCustomValidators:
 
     def test_doc_link_in_error_message(self):
         """Line 1093: ValidationIssue with doc_link includes 'See:' in error."""
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             UnifiedCodeValidator,
             ValidationContext,
             ValidationError,
@@ -1797,7 +1797,7 @@ class TestFormatExpectedSchema:
         """Line 121: Type with no __name__ attribute falls back to get_type_hint_str."""
         from typing import ForwardRef
 
-        from nooa.strategies.codeact_errors import _format_expected_schema
+        from aster.strategies.codeact_errors import _format_expected_schema
 
         # ForwardRef instances have no __name__ attribute → getattr returns None → line 121
         fr = ForwardRef("MyClass")
@@ -1810,7 +1810,7 @@ class TestFormatExpectedSchema:
         """Lines 133-139: Pydantic model fields are formatted as schema (no class-level __annotations__)."""
         from pydantic.fields import FieldInfo
 
-        from nooa.strategies.codeact_errors import _format_expected_schema
+        from aster.strategies.codeact_errors import _format_expected_schema
 
         # Create a class with model_fields but empty __annotations__ (not caught by TypedDict branch)
         class _FakeModel:
@@ -1834,7 +1834,7 @@ class TestGetTypeHintStrUnparameterized:
         """Line 333: list origin without __args__ returns 'list'."""
         import typing
 
-        from nooa.strategies.codeact_errors import get_type_hint_str
+        from aster.strategies.codeact_errors import get_type_hint_str
 
         # typing.List without parameters has __origin__=list but no args
         result = get_type_hint_str(typing.List)  # noqa: UP006
@@ -1844,7 +1844,7 @@ class TestGetTypeHintStrUnparameterized:
         """Line 337: dict origin without __args__ returns 'dict'."""
         import typing
 
-        from nooa.strategies.codeact_errors import get_type_hint_str
+        from aster.strategies.codeact_errors import get_type_hint_str
 
         result = get_type_hint_str(typing.Dict)  # noqa: UP006
         assert result == "dict"
@@ -1853,7 +1853,7 @@ class TestGetTypeHintStrUnparameterized:
         """Line 342: tuple origin without __args__ returns 'tuple'."""
         import typing
 
-        from nooa.strategies.codeact_errors import get_type_hint_str
+        from aster.strategies.codeact_errors import get_type_hint_str
 
         result = get_type_hint_str(typing.Tuple)  # noqa: UP006
         assert result == "tuple"
@@ -1869,7 +1869,7 @@ class TestHelperFunctionManagerNonCallable:
 
     def test_non_callable_func_is_skipped(self):
         """Line 327: If compiled func is not callable, skip it."""
-        from nooa.strategies.generated_code import HelperFunctionManager
+        from aster.strategies.generated_code import HelperFunctionManager
 
         class _FakeAgent:
             pass
@@ -1899,7 +1899,7 @@ class TestHelperFunctionManagerNonCallable:
 
     def test_type_error_on_class_input(self):
         """Guard: passing a class instead of instance raises TypeError."""
-        from nooa.strategies.generated_code import HelperFunctionManager
+        from aster.strategies.generated_code import HelperFunctionManager
 
         manager = HelperFunctionManager()
         with pytest.raises(TypeError, match="instance"):
@@ -1911,7 +1911,7 @@ class TestReturnValueValidatorPaths:
 
     def test_is_pydantic_model_type_error_returns_false(self):
         """Line 465-466: TypeError in issubclass is caught, returns False."""
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
         # _is_pydantic_model with something that causes TypeError in issubclass
@@ -1922,7 +1922,7 @@ class TestReturnValueValidatorPaths:
         """Line 490: Passing non-dict, non-instance to Pydantic validator raises TypeError."""
         from pydantic import BaseModel
 
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         class _M(BaseModel):
             x: int
@@ -1934,7 +1934,7 @@ class TestReturnValueValidatorPaths:
 
     def test_validate_basic_type_str_coercion(self):
         """Lines 507-510: str type coerces non-string values via str()."""
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
         # int is not str, but str coercion should work
@@ -1945,7 +1945,7 @@ class TestReturnValueValidatorPaths:
         """Line 599: typing.Any matches any value."""
         from typing import Any
 
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
         # Any matches everything - hits line 599
@@ -1957,7 +1957,7 @@ class TestReturnValueValidatorPaths:
         """Lines 608-609: Literal types check if value is in allowed literals."""
         from typing import Literal
 
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
         assert v._is_instance_of("red", Literal["red", "green", "blue"]) is True
@@ -1967,7 +1967,7 @@ class TestReturnValueValidatorPaths:
         """Line 614: Annotated types unwrap and check the base type."""
         from typing import Annotated
 
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
         assert v._is_instance_of(42, Annotated[int, "some_metadata"]) is True
@@ -1975,7 +1975,7 @@ class TestReturnValueValidatorPaths:
 
     def test_is_instance_of_generic_origin_check(self):
         """Line 617: Generic types (list, dict) checked via isinstance(value, origin)."""
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
         # list[int] has origin=list - checked via isinstance(value, list)
@@ -1984,7 +1984,7 @@ class TestReturnValueValidatorPaths:
 
     def test_is_instance_of_type_error_returns_true(self):
         """Lines 622-624: TypeError in isinstance returns True (permissive fallback)."""
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
         # Pass a non-type as expected_type to trigger TypeError in isinstance
@@ -1997,21 +1997,21 @@ class TestReturnValueValidatorPaths:
         # typing.List has __origin__=list but no __args__
         import typing
 
-        from nooa.strategies.generated_code import _type_name
+        from aster.strategies.generated_code import _type_name
 
         result = _type_name(typing.List)  # noqa: UP006
         assert result == "list"
 
     def test_type_name_with_str_type(self):
         """Line 354: _type_name for plain type uses __name__."""
-        from nooa.strategies.generated_code import _type_name
+        from aster.strategies.generated_code import _type_name
 
         assert _type_name(str) == "str"
         assert _type_name(int) == "int"
 
     def test_validate_returns_value_when_method_not_found(self):
         """Line 367: validate() returns value unchanged when method not found on agent."""
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
 
@@ -2024,7 +2024,7 @@ class TestReturnValueValidatorPaths:
 
     def test_validate_returns_value_when_signature_fails(self):
         """Lines 376-377: validate() returns value when both get_type_hints and inspect.signature fail."""
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
 
@@ -2040,7 +2040,7 @@ class TestReturnValueValidatorPaths:
 
     def test_collect_async_method_names_handles_exceptions(self):
         """Lines 143-144, 155-156: Exception from getattr is caught and skipped."""
-        from nooa.strategies.generated_code import GeneratedCodeValidator
+        from aster.strategies.generated_code import GeneratedCodeValidator
 
         class _EvilDescriptor:
             def __get__(self, obj, objtype=None):
@@ -2060,7 +2060,7 @@ class TestReturnValueValidatorPaths:
         """Line 250: _exec_with_source_tracking returns None when method_name not in namespace."""
         import ast
 
-        from nooa.strategies.generated_code import _exec_with_source_tracking
+        from aster.strategies.generated_code import _exec_with_source_tracking
 
         # Decorated function with wrong method_name passed — bare exec creates 'actual_func'
         # but namespace.get('wrong_name') returns None → line 250
@@ -2075,7 +2075,7 @@ class TestReturnValueValidatorPaths:
 
     def test_validate_generic_elements_dict_wrong_key_type(self):
         """Line 575: dict with wrong key type raises TypeError."""
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         v = ReturnValueValidator()
         with pytest.raises(TypeError, match="key type"):
@@ -2083,7 +2083,7 @@ class TestReturnValueValidatorPaths:
 
     def test_validate_basic_type_str_coercion_fails_raises_type_error(self):
         """Lines 509-510: str() coercion fails → exception swallowed → TypeError raised."""
-        from nooa.strategies.generated_code import ReturnValueValidator
+        from aster.strategies.generated_code import ReturnValueValidator
 
         class _BrokenStr:
             def __str__(self):
@@ -2095,7 +2095,7 @@ class TestReturnValueValidatorPaths:
 
     def test_helper_method_manager_non_callable_decorator_skipped(self):
         """Line 327: Decorator that returns None makes func non-callable → skipped."""
-        from nooa.strategies.generated_code import HelperFunctionManager
+        from aster.strategies.generated_code import HelperFunctionManager
 
         class _FakeAgent:
             pass
@@ -2122,7 +2122,7 @@ class TestCodeValidatorNestedLoopExitDetection:
         """Line 461: return inside nested for body exits the while True loop."""
         import ast
 
-        from nooa.runtime.code_validator import REPLPolicyValidator, ValidationContext
+        from aster.runtime.code_validator import REPLPolicyValidator, ValidationContext
 
         ctx = ValidationContext()
         v = REPLPolicyValidator()
@@ -2141,7 +2141,7 @@ class TestCodeValidatorClassNamesExceptionHandling:
         """Lines 628-629: RuntimeError (not AttributeError) from descriptor is caught."""
         import ast
 
-        from nooa.runtime.code_validator import (
+        from aster.runtime.code_validator import (
             ClassAssignmentValidator,
             ValidationContext,
         )
@@ -2175,9 +2175,9 @@ class TestInspectInputsPrefillMedia:
 
     def test_media_parameter_uses_show(self):
         """Line 163: When a kwarg is a Media object, prefill uses show() instead of pprint()."""
-        from nooa.media import Image
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.prefill import InspectInputsPrefill
+        from aster.media import Image
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.prefill import InspectInputsPrefill
 
         img = Image(data_url="data:image/png;base64,abc123", media_type="image/png")
         call = CurrentCall(
@@ -2206,7 +2206,7 @@ class TestSkillWritingLintAndDeps:
     def _make_lw(self, tmp_path):
         from unittest.mock import MagicMock
 
-        from nooa.tools.library_writing_lib import SkillWriting
+        from aster.tools.library_writing_lib import SkillWriting
 
         lw = SkillWriting.__new__(SkillWriting)
         lw._agent = MagicMock()
@@ -2249,7 +2249,7 @@ class TestCurrentCallFormatParametersException:
 
     def test_bad_repr_in_positional_arg_uses_kwarg_fallback(self):
         """Lines 129-134: ValueError from repr() on positional arg → fallback to kwargs only."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         class _BadRepr:
             def __repr__(self):
@@ -2271,7 +2271,7 @@ class TestCurrentCallFormatParametersException:
 
     def test_bad_repr_no_kwargs_returns_empty(self):
         """Lines 131-132: ValueError from repr() with empty kwargs → empty string."""
-        from nooa.strategies.current_call import CurrentCall
+        from aster.strategies.current_call import CurrentCall
 
         class _BadRepr:
             def __repr__(self):
@@ -2300,7 +2300,7 @@ class TestMethodWrapperNonGenerationDirect:
 
     async def test_non_generation_no_runtime_calls_original(self):
         """Line 271: Non-generation method on obj without 'runtime' calls original directly."""
-        from nooa.runtime.method_wrapper import create_agent_method_wrapper
+        from aster.runtime.method_wrapper import create_agent_method_wrapper
 
         async def my_regular(self, x: int) -> int:
             return x * 3
@@ -2321,7 +2321,7 @@ class TestMethodWrapperNonGenerationDirect:
 
     async def test_agent_runtime_path_flushes_litellm_journal_callbacks(self):
         """Agent runtime path drains LiteLLM journal callbacks before returning."""
-        from nooa.runtime.method_wrapper import create_agent_method_wrapper
+        from aster.runtime.method_wrapper import create_agent_method_wrapper
 
         async def my_regular(self) -> str:
             return "ok"
@@ -2355,9 +2355,9 @@ class TestMethodWrapperNonGenerationDirect:
         sleep = AsyncMock()
         to_thread = AsyncMock()
         with (
-            patch("nooa.runtime.method_wrapper.asyncio.sleep", sleep),
-            patch("nooa.runtime.method_wrapper.asyncio.to_thread", to_thread),
-            patch("nooa.tracing._litellm_journal.flush_pending") as flush_pending,
+            patch("aster.runtime.method_wrapper.asyncio.sleep", sleep),
+            patch("aster.runtime.method_wrapper.asyncio.to_thread", to_thread),
+            patch("aster.tracing._litellm_journal.flush_pending") as flush_pending,
         ):
             result = await wrapper(agent)
 
@@ -2369,8 +2369,8 @@ class TestMethodWrapperNonGenerationDirect:
 
     async def test_agent_runtime_middleware_path_flushes_litellm_journal_callbacks(self):
         """Agent middleware runtime path drains LiteLLM journal callbacks before returning."""
-        from nooa.agent import Agent
-        from nooa.runtime.method_wrapper import create_agent_method_wrapper
+        from aster.agent import Agent
+        from aster.runtime.method_wrapper import create_agent_method_wrapper
 
         async def my_regular(self) -> str:
             return "ok"
@@ -2390,7 +2390,7 @@ class TestMethodWrapperNonGenerationDirect:
         agent.event_manager.intercept("agent_call", passthrough)
         flush_journal = AsyncMock()
         with patch(
-            "nooa.runtime.method_wrapper._flush_litellm_journal",
+            "aster.runtime.method_wrapper._flush_litellm_journal",
             flush_journal,
         ):
             result = await wrapper(agent)
@@ -2417,13 +2417,13 @@ class TestNemoRelayMiddlewareAgentLlmPath:
         fake_nemo_relay = MagicMock()
         fake_llm_request = MagicMock()
 
-        import nooa.nemo_relay_middleware  # noqa: F401 (ensure loaded)
+        import aster.nemo_relay_middleware  # noqa: F401 (ensure loaded)
 
         with patch.dict(
             sys.modules,
             {"nemo_relay": fake_nemo_relay, "nemo_relay.LLMRequest": fake_llm_request},
         ):
-            nm = sys.modules["nooa.nemo_relay_middleware"]
+            nm = sys.modules["aster.nemo_relay_middleware"]
             importlib.reload(nm)
 
             # We need to extract and test the inner serialize_response logic
@@ -2489,10 +2489,10 @@ class TestReflexionStrategyNoResult:
     @pytest.mark.asyncio
     async def test_generate_no_iterations_raises_with_no_result_message(self):
         """Line 216: When max_iterations=0, loop never runs → result=None, last_error=None."""
-        from nooa.config.strategy_config import ReflexionConfig
-        from nooa.errors import GenerationError
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.reflexion import ReflexionStrategy
+        from aster.config.strategy_config import ReflexionConfig
+        from aster.errors import GenerationError
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.reflexion import ReflexionStrategy
 
         strategy = ReflexionStrategy(config=ReflexionConfig.model_construct(max_iterations=0))
         call = CurrentCall(id="c1", method_name="run", decorator="plan")
@@ -2512,7 +2512,7 @@ class TestIterAgentAttrsException:
 
     def test_bad_descriptor_exception_is_silently_swallowed(self):
         """Lines 214-215: Exception from descriptor access is caught and skipped."""
-        from nooa.strategies.codeact import _iter_agent_attrs
+        from aster.strategies.codeact import _iter_agent_attrs
 
         class _BadDescriptor:
             """Non-data descriptor that raises ValueError when accessed on the class."""
@@ -2540,7 +2540,7 @@ class TestPredictExtractRawFromResponse:
 
     def test_non_serializable_dict_content_triggers_exception_handler(self):
         """Lines 368-370: json.dumps failure in content-is-dict path."""
-        from nooa.strategies.predict import PredictStrategy
+        from aster.strategies.predict import PredictStrategy
 
         ps = PredictStrategy()
 
@@ -2560,7 +2560,7 @@ class TestPredictAddSpanImportError:
         import sys
         from unittest.mock import patch
 
-        from nooa.strategies.predict import PredictStrategy
+        from aster.strategies.predict import PredictStrategy
 
         ps = PredictStrategy()
         attempts = [
@@ -2575,7 +2575,7 @@ class TestPredictAddSpanImportError:
         """Lines 425-426: Exception from span.set_attribute is suppressed."""
         from unittest.mock import MagicMock, patch
 
-        from nooa.strategies.predict import PredictStrategy
+        from aster.strategies.predict import PredictStrategy
 
         ps = PredictStrategy()
         attempts = [
@@ -2608,8 +2608,8 @@ class TestPredictCreateResponseModelHiddenFieldDefault:
         # doesn't turn annotations into strings (which breaks get_type_hints for local hidden).
         from pydantic import create_model
 
-        from nooa import hidden
-        from nooa.strategies.predict import PredictStrategy
+        from aster import hidden
+        from aster.strategies.predict import PredictStrategy
 
         # Use create_model to avoid annotation stringification from __future__
         _ModelWithHiddenDefault = create_model(
@@ -2638,7 +2638,7 @@ class TestPurePythonStripXmlWrapper:
 
     def test_less_than_without_tag_returns_original_code(self):
         """Line 1000: Code starting with < but no <tag> pattern returns original."""
-        from nooa.strategies.pure_python import PurePythonStrategy
+        from aster.strategies.pure_python import PurePythonStrategy
 
         pp = PurePythonStrategy()
         code = "<3 is a fine number\nx = 1"
@@ -2661,7 +2661,7 @@ class TestMediaCaptureContentBlocks:
         pytest.importorskip("PIL", reason="PIL not installed")
         from PIL import Image
 
-        from nooa.runtime.media_capture import _to_content_block
+        from aster.runtime.media_capture import _to_content_block
 
         img = Image.new("RGB", (10, 10), color="red")
         result = _to_content_block(img)
@@ -2673,7 +2673,7 @@ class TestMediaCaptureContentBlocks:
         pytest.importorskip("matplotlib", reason="matplotlib not installed")
         from matplotlib.figure import Figure
 
-        from nooa.runtime.media_capture import _to_content_block
+        from aster.runtime.media_capture import _to_content_block
 
         fig = Figure()
         result = _to_content_block(fig)

@@ -10,9 +10,9 @@ import json
 
 import pytest
 
-from nooa.context_blocks.formatter import OpenAIProviderFormatter
-from nooa.context_blocks.models import RenderedMessage, Role, ToolCallInfo
-from nooa.unifiedllm import ResponsesClient
+from aster.context_blocks.formatter import OpenAIProviderFormatter
+from aster.context_blocks.models import RenderedMessage, Role, ToolCallInfo
+from aster.unifiedllm import ResponsesClient
 
 
 def _project_rendered(messages):
@@ -164,7 +164,7 @@ class TestResponsesClientTransformMessages:
 
     @pytest.fixture
     def client(self):
-        from nooa.unifiedllm import ResponsesClient
+        from aster.unifiedllm import ResponsesClient
 
         return ResponsesClient(model="test-model", api_key="fake")
 

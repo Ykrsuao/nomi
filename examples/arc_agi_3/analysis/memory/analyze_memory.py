@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Per-game memory-store analysis for a run.
 
-For every game with a persisted ``team_nemo/shared/memory.sqlite`` (the memory
+For every game with a persisted ``team_aster/shared/memory.sqlite`` (the memory
 variant), reports what the agent actually curated: total memories, breakdown by
 type (episode/reflection/info/todo/...) and importance, reinforcement/recall
 activity, and the top tags. A fleet summary and a per-game table are written.
@@ -21,7 +21,11 @@ import argparse
 import collections
 import json
 import sqlite3
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from _run_layout import read_workspace  # noqa: E402
 
 SKIP = {"red_team", "analysis", "world_model", "memory"}
 
@@ -86,11 +90,11 @@ def analyze_store(path: Path) -> dict | None:
 
 
 def _find_store(game_dir: Path) -> Path | None:
-    direct = game_dir / "team_nemo" / "shared" / "memory.sqlite"
+    direct = read_workspace(game_dir, "memory.sqlite")
     if direct.exists():
         return direct
     for run in sorted((game_dir / "memory").glob("2*")) if (game_dir / "memory").is_dir() else []:
-        cand = run / "team_nemo" / "shared" / "memory.sqlite"
+        cand = read_workspace(run, "memory.sqlite")
         if cand.exists():
             return cand
     return None
@@ -113,7 +117,7 @@ def main() -> int:
         if store:
             games.append((d.name, store))
     if not games:  # single-run dir
-        store = run / "team_nemo" / "shared" / "memory.sqlite"
+        store = read_workspace(run, "memory.sqlite")
         if store.exists():
             games.append((run.name, store))
 

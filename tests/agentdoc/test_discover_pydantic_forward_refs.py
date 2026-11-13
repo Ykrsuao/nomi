@@ -6,8 +6,8 @@ from typing import NewType
 
 from pydantic import BaseModel
 
-from nooa.agentdoc import doc
-from nooa.agentdoc._discover import discover_referenced_types
+from aster.agentdoc import doc
+from aster.agentdoc._discover import discover_referenced_types
 
 # ---------------------------------------------------------------------------
 # Bug 1: Forward-ref Pydantic fields not discovered
@@ -96,7 +96,7 @@ class ModelWithNewType(BaseModel):
 
 def test_newtype_field_format_shows_name():
     """NewType fields should render with their alias name, not the base type."""
-    from nooa.agentdoc._structured import extract_type_info
+    from aster.agentdoc._structured import extract_type_info
 
     info = extract_type_info(ModelWithNewType)
     field = next(f for f in info.fields if f.name == "user_id")

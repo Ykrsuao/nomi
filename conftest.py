@@ -6,7 +6,7 @@ import sqlite3
 
 import pytest
 
-from nooa.storage.sqlite import _ensure_schema
+from aster.storage.sqlite import _ensure_schema
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def _no_connect_session_call_pacing(monkeypatch):
     disable it everywhere rather than paying the wall-clock cost per test.
     """
     try:
-        from nooa.unifiedllm.connect import _session
+        from aster.unifiedllm.connect import _session
     except ImportError:
         return
     monkeypatch.setattr(_session, "SESSION_CALL_PACING_SECONDS", 0)

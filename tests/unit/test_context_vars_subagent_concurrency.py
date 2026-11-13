@@ -31,10 +31,10 @@ import asyncio
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.agent import _parent_agent_var
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent, strategy
+from aster.agent import _parent_agent_var
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -510,7 +510,7 @@ class TestExceptionPathContextCleanup:
         after max_retries attempts. We just verify the context var is cleaned up
         regardless of the exception type.
         """
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class ExplodingParent(Agent):
             @strategy(PurePythonStrategy())
@@ -647,8 +647,8 @@ class TestScopedBlocksIsolation:
         the parent's strategy context blocks, causing incorrect prompting.
         """
         # Use CodeActStrategy for the outer parent so _scoped_blocks_var is set
-        from nooa.strategies import CodeActStrategy
-        from nooa.unifiedllm import ToolCall
+        from aster.strategies import CodeActStrategy
+        from aster.unifiedllm import ToolCall
 
         def _tool_call(code: str) -> ToolCall:
             import json
@@ -724,7 +724,7 @@ class TestScopedBlocksIsolation:
         _parent_agent_var without clearing _scoped_blocks_var/_scoped_events_var
         on cross-agent calls (async wrapper clears them at lines 178-180).
         """
-        from nooa.context_blocks.scoped import ScopedContext, _scoped_blocks_var
+        from aster.context_blocks.scoped import ScopedContext, _scoped_blocks_var
 
         class _SyncChild(Agent):
             def peek(self):
@@ -745,7 +745,7 @@ class TestScopedBlocksIsolation:
     async def test_sync_method_keeps_scoped_blocks_within_same_agent(self):
         """Scoped blocks still propagate to the SAME agent's sync methods —
         clearing happens only when crossing an agent boundary."""
-        from nooa.context_blocks.scoped import ScopedContext, _scoped_blocks_var
+        from aster.context_blocks.scoped import ScopedContext, _scoped_blocks_var
 
         class _SameAgent(Agent):
             async def run(self) -> object:
@@ -761,9 +761,9 @@ class TestScopedBlocksIsolation:
 
     async def test_async_generator_preserves_scope_only_within_the_same_agent(self):
         """A subagent generator must not hide the cross-agent boundary from nested calls."""
-        from nooa.context_blocks import ScopedContext
-        from nooa.context_blocks.scoped import _scoped_blocks_var, _scoped_events_var
-        from nooa.runtime.event_query import EventQuery
+        from aster.context_blocks import ScopedContext
+        from aster.context_blocks.scoped import _scoped_blocks_var, _scoped_events_var
+        from aster.runtime.event_query import EventQuery
 
         llm = FakeLLMClient()
 

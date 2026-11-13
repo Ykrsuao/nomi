@@ -15,12 +15,12 @@ import litellm
 import pytest
 from litellm.types.utils import ChatCompletionMessageToolCall, Function
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.errors import GenerationError
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import CompletionClient, ResponsesClient, create_tool_from_callable
-from nooa.unifiedllm.unifiedllm import (
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.errors import GenerationError
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import CompletionClient, ResponsesClient, create_tool_from_callable
+from aster.unifiedllm.unifiedllm import (
     _map_completion_finish_reason,
     _map_responses_finish_reason,
 )
@@ -397,8 +397,8 @@ class TestCodeActAbortOnRealLengthPath:
             assert await agent_instance.my_task() == "done"
 
         events = agent_instance.event_manager.values()
-        from nooa.context_blocks.events import ToolCallEvent
-        from nooa.unifiedllm import LLMResponse
+        from aster.context_blocks.events import ToolCallEvent
+        from aster.unifiedllm import LLMResponse
 
         first_output = next(event for event in events if isinstance(event, LLMResponse))
         execution = next(

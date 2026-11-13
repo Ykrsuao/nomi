@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Self-contained live TUI for the ARC-AGI-3 nemo-oo solver multi-run.
+"""Self-contained live TUI for the ARC-AGI-3 aster solver multi-run.
 
 This viewer reads ONLY a run container's on-disk files -- it has no dependency
 on the solver's internal Python package or any reference-dashboard tree, so it
@@ -11,7 +11,7 @@ Data sources (polled ~every 1.5s):
 * ``<container>/status.json`` -- top-level ``total/running/completed/failed``
   counts plus a ``runs`` map with per-game ``status``, ``_run_dir``, ``levels``,
   ``steps``, ``outcome``, ``wall_time`` and ``rhae``.
-* ``<run_dir>/agent_logs/nemo/<role>/events.jsonl`` -- one JSON object per line,
+* ``<run_dir>/agent_logs/aster/<role>/events.jsonl`` -- one JSON object per line,
   written live by the harness recorder and the trace->event exporter. The
   handled event types are ``solver_start`` / ``env_step`` / ``llm_call`` /
   ``repl_execute`` / ``round_complete`` / ``step_complete`` / ``level_score``.
@@ -42,6 +42,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from _run_layout import read_log
 from rich.console import Console, Group
 from rich.live import Live
 from rich.panel import Panel
@@ -362,7 +363,7 @@ class GameTracker:
             return self.path
         if not self.run_dir or not self.run_dir.exists():
             return None
-        direct = self.run_dir / "agent_logs" / "nemo" / self.watch / "events.jsonl"
+        direct = read_log(self.run_dir, "events.jsonl", role=self.watch)
         if direct.exists():
             self.path = direct
             return direct

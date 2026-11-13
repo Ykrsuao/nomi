@@ -23,10 +23,10 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from nooa import EventQuery, strategy
-from nooa.context_blocks import ScopedContext
-from nooa.strategies import CodeActStrategy, PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import EventQuery, strategy
+from aster.context_blocks import ScopedContext
+from aster.strategies import CodeActStrategy, PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # ---------------------------------------------------------------------------
 # Module-level symbols — accessible to generated code via exec_globals
@@ -450,7 +450,7 @@ class TestStandaloneLLMCascade:
     @pytest.mark.asyncio
     async def test_parent_agent_llm_inherited(self) -> None:
         """When llm= is absent, LLM is inherited from _parent_agent_var."""
-        from nooa.runtime.context_vars import _parent_agent_var
+        from aster.runtime.context_vars import _parent_agent_var
 
         parent_llm = FakeLLMClient(scripted_responses=[_resp('{"value": "from_parent"}')])
 
@@ -474,7 +474,7 @@ class TestStandaloneLLMCascade:
     @pytest.mark.asyncio
     async def test_explicit_llm_overrides_parent(self) -> None:
         """Explicit llm= takes priority over the parent-agent cascade."""
-        from nooa.runtime.context_vars import _parent_agent_var
+        from aster.runtime.context_vars import _parent_agent_var
 
         explicit_llm = FakeLLMClient(scripted_responses=[_resp('{"value": "explicit"}')])
         parent_llm = FakeLLMClient(scripted_responses=[_resp('{"value": "parent"}')])
@@ -809,7 +809,7 @@ class TestStandaloneAgentIdSharding:
         import time, so two trials of ``benchmark.py`` calling ``summarise``
         end up on different shards.
         """
-        from nooa import standalone as standalone_mod
+        from aster import standalone as standalone_mod
 
         fake_llm = _CaptureKwargsLLM(scripted_responses=[_resp('{"value": "x"}')])
 

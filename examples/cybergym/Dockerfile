@@ -22,29 +22,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xxd \
     && rm -rf /var/lib/apt/lists/*
 
-FROM base AS nooa-lock
+FROM base AS aster-build
 
-ARG NOOA_COMMIT=8229922d7274628c9be83f745589b40852680d60
-RUN git clone --filter=blob:none https://github.com/NVIDIA-NeMo/labs-OO-Agents.git /opt/nooa \
-    && git -C /opt/nooa checkout --detach "$NOOA_COMMIT"
-WORKDIR /opt/nooa
-RUN uv export --frozen --no-dev --extra tracing --package nooa \
+# Build from the repository root. Dockerfile.dockerignore selects only the
+# framework, workspace manifests, and this example; local data stays outside.
+COPY . /opt/aster
+WORKDIR /opt/aster
+ARG ASTER_VERSION=0.0.0+checkout
+RUN uv export --frozen --no-dev --extra tracing --package aster \
         --no-emit-project --no-emit-workspace \
-        --output-file /tmp/nooa-requirements.txt
+        --output-file /tmp/aster-requirements.txt \
+    && UV_DYNAMIC_VERSIONING_BYPASS="$ASTER_VERSION" \
+        uv build --no-sources --wheel --package aster --out-dir /tmp/aster-wheels
 
 FROM base
 
-ARG NOOA_COMMIT=8229922d7274628c9be83f745589b40852680d60
-COPY --from=nooa-lock /tmp/nooa-requirements.txt /tmp/nooa-requirements.txt
-RUN uv pip install --system --require-hashes -r /tmp/nooa-requirements.txt \
-    && uv pip install --system --no-deps \
-        "nooa[tracing] @ git+https://github.com/NVIDIA-NeMo/labs-OO-Agents.git@${NOOA_COMMIT}" \
-    && rm /tmp/nooa-requirements.txt \
-    && rm -rf /tmp/uv-cache
+COPY --from=aster-build /tmp/aster-requirements.txt /tmp/aster-requirements.txt
+COPY --from=aster-build /tmp/aster-wheels /tmp/aster-wheels
+RUN uv pip install --system --require-hashes -r /tmp/aster-requirements.txt \
+    && uv pip install --system --no-deps /tmp/aster-wheels/*.whl \
+    && rm /tmp/aster-requirements.txt \
+    && rm -rf /tmp/uv-cache /tmp/aster-wheels
 
 WORKDIR /app
 RUN mkdir -p /logs/artifacts && ln -s /logs/artifacts /app/artifacts
-COPY nooa_cybergym ./nooa_cybergym
-COPY nooa_cybergym/llm_config.yaml ./.nooa/llm_config.yaml
+COPY examples/cybergym/aster_cybergym ./aster_cybergym
+COPY examples/cybergym/aster_cybergym/llm_config.yaml ./.aster/llm_config.yaml
 
-CMD ["python", "-m", "nooa_cybergym.main", "--help"]
+CMD ["python", "-m", "aster_cybergym.main", "--help"]

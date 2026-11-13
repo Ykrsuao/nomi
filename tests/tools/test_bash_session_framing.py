@@ -17,7 +17,7 @@ import asyncio
 
 import pytest
 
-from nooa.tools._bash_session import BashSession
+from aster.tools._bash_session import BashSession
 
 # Unbalanced double quote. Parsed as shell text this swallows every following
 # line, including the protocol, so the sentinel never arrives.
@@ -109,8 +109,8 @@ class TestStatePersistence:
         assert session.cwd == sub
 
     async def test_exported_variables_persist(self, session):
-        await session.run("export NOOA_TEST_VAR=persisted")
-        stdout, _stderr, _code = await session.run("echo $NOOA_TEST_VAR")
+        await session.run("export ASTER_TEST_VAR=persisted")
+        stdout, _stderr, _code = await session.run("echo $ASTER_TEST_VAR")
         assert stdout == "persisted"
 
     async def test_shell_functions_persist(self, session):
@@ -183,11 +183,11 @@ class TestInitCommandUsesTheSameFraming:
     async def test_benign_init_still_applies_env_and_cwd(self, tmp_path):
         sub = tmp_path / "initdir"
         sub.mkdir()
-        s = BashSession(cwd=tmp_path, init_command=f"export NOOA_INIT_VAR=applied && cd {sub}")
+        s = BashSession(cwd=tmp_path, init_command=f"export ASTER_INIT_VAR=applied && cd {sub}")
         try:
             await asyncio.wait_for(s.start(), timeout=10.0)
             assert s.cwd == sub
-            stdout, _stderr, _code = await s.run("echo $NOOA_INIT_VAR")
+            stdout, _stderr, _code = await s.run("echo $ASTER_INIT_VAR")
             assert stdout == "applied"
         finally:
             await s.close()
@@ -195,7 +195,7 @@ class TestInitCommandUsesTheSameFraming:
     async def test_failed_init_logs_a_warning(self, tmp_path, caplog):
         s = BashSession(cwd=tmp_path, init_command="false")
         try:
-            with caplog.at_level("WARNING", logger="nooa.tools._bash_session"):
+            with caplog.at_level("WARNING", logger="aster.tools._bash_session"):
                 await asyncio.wait_for(s.start(), timeout=10.0)
             messages = [r.getMessage() for r in caplog.records]
             assert any("init_command" in m and "exited 1" in m for m in messages)

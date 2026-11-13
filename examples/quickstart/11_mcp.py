@@ -19,11 +19,11 @@ Usage:
 from pathlib import Path
 
 try:
-    from nooa.mcp import MCPManager, MCPTool
+    from aster.mcp import MCPManager, MCPTool
 except ImportError as e:
-    raise ImportError("nooa[mcp] not installed. Run: uv sync --extra mcp") from e
+    raise ImportError("aster[mcp] not installed. Run: uv sync --extra mcp") from e
 
-from nooa.util.quickstart import *
+from aster.util.quickstart import *
 
 # .mcp.json lives next to this script — tells MCPManager how to launch "wiki"
 MCP_CONFIG = Path(__file__).parent / ".mcp.json"

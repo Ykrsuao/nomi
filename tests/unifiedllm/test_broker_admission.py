@@ -18,7 +18,7 @@ from typing import Any
 
 import pytest
 
-from nooa.unifiedllm import (
+from aster.unifiedllm import (
     AdmissionBroker,
     AdmissionCallCapError,
     AdmissionTimeoutError,
@@ -477,7 +477,9 @@ async def test_broker_shutdown_fails_active_and_queued_clients_without_hanging()
 @pytest.mark.asyncio
 async def test_stale_connection_fails_closed_after_broker_shutdown():
     broker = AdmissionBroker(max_in_flight=1, group="stale-config").start()
-    stale = broker.controller_config(queue_timeout=0.5)
+    # Windows may take about two seconds to report a refused loopback connection.
+    # Keep the admission deadline long enough to test the unavailable outcome.
+    stale = broker.controller_config(queue_timeout=5)
     broker.close()
     observations: list[dict[str, Any]] = []
 

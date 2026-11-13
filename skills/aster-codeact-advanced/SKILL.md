@@ -1,0 +1,219 @@
+---
+name: aster-codeact-advanced
+description: Advanced tuning of Aster strategies — CodeAct prefill, loop guards, text-only recovery callbacks, truncation, code restrictions, execution internals, and PredictStrategy tuning. Use when configuring CodeActConfig or PredictConfig beyond defaults, handling models that return prose instead of tool calls, writing a custom prefill, restricting generated code, or debugging truncation and eviction.
+compatibility: aster package
+---
+
+# Advanced CodeAct (and Predict) Tuning
+
+The authoring basics are in `aster-agent-authoring`. This skill covers the deep configuration surface, verified against `strategies/codeact.py`, `strategies/prefill.py`, `strategies/predict.py`, and `config/`.
+
+## Config plumbing rules (read first)
+
+- Configuration fields go through **`config=`**: `CodeActStrategy(config=CodeActConfig(...))`, `PredictStrategy(PredictConfig(...))`. Flat config kwargs (`CodeActStrategy(max_iterations=10)`, `CodeActStrategy(prefill=...)`) do not exist. Strategy-level extension points such as `CodeActStrategy(on_text_only=...)` and `CodeActStrategy(error_formatter=...)` are separate keyword arguments.
+- All config objects are frozen Pydantic models with `merge_with(other)`: only fields explicitly set on `other` override. **Configs must be freshly constructed** — anything round-tripped through `model_dump()`/`model_validate()` has an empty `model_fields_set` and `merge_with` raises.
+- Truncation layers: framework default → `Agent` class kwarg `truncation=` → instance kwarg → `@strategy(..., truncation=...)` per method. `TruncationConfig.merge_with` deep-merges sub-configs field-by-field; the strategy configs merge flat.
+
+## Prefill
+
+Before the first LLM turn, CodeAct runs up to two **synthetic `execute_python` cells** (tool-call id prefixed `prefill_`, `execution_count=0`). They cost no loop iterations, their failures are non-fatal (logged as an `Error` event), and any variables they define persist as live REPL locals for the model's first real turn.
+
+1. **The prefill plugin** (default `InspectInputsPrefill()`): generates code that prints the call signature, `pprint()`s each parameter under `truncation.prefill_format` limits (defaults `max_string=2000, max_length=25, max_depth=4`), auto-`show()`s `Media` parameters for multimodal perception, and prints `doc()` of a complex return type. Per-parameter limits come from `Annotated[T, spec(max_string=..., max_length=...)]` on the signature.
+2. **Pre-ellipsis code**: statements between the docstring and the `...` are extracted from the AST and run verbatim as the second prefill cell — with or without the plugin.
+
+```python
+class Notifier(Agent, llm=llm):
+    async def notify_stale(self) -> str:
+        """Notify owners of stale tasks. Decide who needs pinging."""
+        overdue = [t for t in self.all_tasks() if t.overdue]      # pre-ellipsis: runs first,
+        print(f"{len(overdue)} overdue")                          # LLM sees output + variables
+        ...
+```
+
+- **Disable** the plugin: `CodeActConfig(prefill=None)` (pre-ellipsis code still runs). The `CodeActStrategy.__init__` docstring claiming "prefill is always enabled" is outdated — the config is honored.
+- **Custom prefill**: any object implementing `get_code(self, call: CurrentCall, config=None) -> str | None` (return `None` to skip; `config` is the agent's `TruncationConfig`). Pass it via `CodeActConfig(prefill=MyPrefill())`.
+- CodeAct and PurePython use the active runtime truncation config, including method overrides, for prefill. `print_prompt()` previews the same settings.
+- Inside prefill cells only, the builtin `_call` (the `CurrentCall`) is available — that's how `InspectInputsPrefill` prints `doc(_call.return_type)`.
+- Pre-ellipsis code runs through the full validator/restriction pipeline; `await` is allowed (cells are wrapped in an async function), and async `self.method()` calls must be awaited or the whole cell is rejected.
+
+## Loop guards and knobs (`CodeActConfig`)
+
+| Knob | Default | Verified semantics |
+|---|---|---|
+| `max_iterations` | `None` | **Unlimited.** The loop then stops only on completion, the error budget, or a hard abort. |
+| `max_retries` | `3` | Error budget with two counters. **LLM API errors count only while consecutive**: any model response (including a malformed one) resets them. **Other errors are cumulative** across the call (never reset): bad tool JSON, unknown tools, empty code, empty replies, and `return_result` validation failures. Either counter reaching `max_retries` fails the call. |
+| `max_consecutive_text_only` | `3` | Consecutive no-tool-call text replies before hard abort; `0` disables. Any real tool call resets the counter. |
+| `cell_timeout` | `None` | Per-cell `asyncio.wait_for` limit in seconds; `None` = unlimited. Cannot interrupt a truly blocking sync syscall — that's what the blocking-call AST validation is for. |
+| `max_tokens` / `temperature` / `top_p` | `None` | Passed to every generation call when set (model defaults otherwise). On empty responses with `finish_reason="length"` CodeAct aborts and tells you to raise `max_tokens` (16384+ for reasoning models). |
+| `translate_tool_calls` | `False` | When a weak model calls an agent method directly as a tool (instead of via `execute_python`), rewrite it into equivalent code and run it — teaching the right pattern. Off = an error naming the valid tools and showing the rejected name as Python-cell code: the equivalent call for a public callable on `self`, `doc(self.name)` for an attribute object, or `doc(self)` when the name does not resolve. |
+| `restrictions` | `RestrictionsConfig()` | See Restrictions below. |
+| `prefill` | `InspectInputsPrefill()` | See Prefill above. |
+| `max_tool_calls` | `None` | **Dead — declared but never read.** Setting it does nothing. |
+| `loop_guard` | `None` | Opt-in `LoopGuardConfig()` (defaults `repeat_threshold=7`, `window=15`, `max_outcome_chars=500`). A call (tool name + normalized arguments; comments and formatting ignored) whose last `repeat_threshold - 1` runs in the window failed identically is not run again; one that produced identical output `repeat_threshold` times runs with a warning. Repeating either within the window after the warning raises `LoopDetectedError`. Messages are fixed templates; a `LoopGuardTriggered` event records each warning or stop. |
+
+`tool_choice` is hardcoded `"auto"`.
+
+## Text-only recovery callback
+
+CodeAct expects each model turn to call `execute_python` or `return_result`.
+When a model emits only prose, Aster preserves that exact assistant turn and
+then invokes the strategy's `on_text_only` callback.
+
+Do not pass `TextOnlyResponseAction` to `@strategy`. The objects have distinct
+roles:
+
+```text
+@strategy attaches CodeActStrategy to a method
+    -> CodeActStrategy(on_text_only=handler) registers the callback
+        -> handler(TextOnlyResponseContext) returns TextOnlyResponseAction
+```
+
+The callback may be synchronous or asynchronous. Its context contains the
+untouched `LLMResponse`, normalized text, current method call, and declared
+return type. Its action chooses one of three append-only recovery paths:
+
+| Action constructor | Effect |
+|---|---|
+| `TextOnlyResponseAction.return_result(value)` | Validate `value` through CodeAct's normal result path. Invalid values produce model-visible correction feedback. |
+| `TextOnlyResponseAction.retry(*events)` | Append feedback events, then ask the model again. |
+| `TextOnlyResponseAction.tool_calls(*calls)` | Run synthetic calls while retaining the original assistant turn. Use `execute_python`, not TUI-only tools. |
+
+The safe default is `retry_text_only_response`: it appends an `Error` asking
+the model to call `return_result(value)` or `execute_python(code)`, then retries.
+Opt into accepting prose only when that is appropriate for the method contract:
+
+```python
+from aster import Agent, CodeActStrategy, return_text_as_result, strategy
+
+
+class Summarizer(Agent, llm=llm):
+    @strategy(CodeActStrategy(on_text_only=return_text_as_result))
+    async def summarize(self, text: str) -> str:
+        """Summarize the text."""
+        ...
+```
+
+For custom policy, return an action from the callback:
+
+```python
+from aster import TextOnlyResponseAction, TextOnlyResponseContext
+from aster.events import Error
+
+
+def require_tool(context: TextOnlyResponseContext) -> TextOnlyResponseAction:
+    return TextOnlyResponseAction.retry(
+        Error(content=f"Plain text cannot finish {context.call.method_name}; call a tool.")
+    )
+
+
+@strategy(CodeActStrategy(on_text_only=require_tool))
+async def investigate(self, question: str) -> str: ...
+```
+
+## `return_result` mechanics
+
+The LLM finishes via the `return_result` tool, or `return_result(value)` inside a cell (raises a control-flow signal — not an error — stopping the cell immediately), or an explicit `return X` statement whose value validates against the return type. All three route through the same validation, and inline completions emit a synthetic `return_result` ToolCallEvent so trajectories always show the final answer.
+
+Coercion before validation, in order: bare values wrapped to the schema; string results resolved as REPL variable names; JSON / `ast.literal_eval` parsing; `ClassName(...)` constructor strings evaluated in an empty-builtins sandbox. Validation failures are fed back to the model (with a tip to call `return_result(variable)` from inside code) and count against `max_retries`. Non-JSON-schemable return types (DataFrames, arbitrary classes) degrade to an `Any` schema plus `doc(<type>)` in the tool description and an `isinstance` check at the end.
+
+## Execution environment
+
+- **exec_globals** = the agent module's namespace across the full MRO (minus `hidden` names) + method parameters as variables + auto-injected symbols: `self`, `asyncio`, `typing` (+`Annotated/Any/Literal/Optional/Union`), `doc`, `pprint`, `show`, media classes, `strategy` + all strategy classes, `reasoning`, `return_result`. `help` is shadowed to `doc` so nothing blocks on stdin.
+- **REPL state persists** across cells (globals-declared wrapper); helper functions defined in cells persist as REPL locals — they are never attached to the agent, and attaching callables to `self` is validator-rejected. Return-type names are re-injected if the model clobbers them. `Out[n]` gives Jupyter-style access to prior cell values.
+- **Media**: `show(obj)` attaches images, audio, video, PDFs, PIL images, or matplotlib figures while a cell runs. The normal runtime keeps the first 5 attachments per cell; adjust `truncation.media_capture.max_attachments_per_execution`. Configure the model's `media_inputs` with accepted formats. See [aster-media](../aster-media/SKILL.md) for examples and size limits.
+- **Custom error formatting**: `CodeActStrategy(config=..., error_formatter=obj)` where `obj.format(error, code=None, *, line_offset=0) -> str`. Default is the IPython-style formatter (cell/line references, framework frames filtered, signature hint on call-shape TypeErrors).
+
+## Truncation tuning (`TruncationConfig`)
+
+Two independent mechanisms — set them separately:
+
+1. **Capture time** (`capture: CaptureConfig`) — per-cell stream caps with head/tail truncation: `max_stdout=50_000`, `max_stderr=2_000`, `max_error=10_000` chars; `tail=None` (half the budget); `file_backed=True` (default `False`) streams the *full* output to a temp file and puts its path in the truncation notice so the LLM can grep it.
+2. **Render time** (`FormatConfig` triplet = `pformat` bounds `max_string/max_length/max_depth`): `event_format` (event fields, every turn; defaults 10_000/200/5), `prefill_format` (parameter inspection; 2_000/25/4), `context_block_format` (non-string context values; unlimited — overflow handled by block eviction).
+
+When input inspection actually omits values, Aster emits a developer-facing
+`PrefillTruncationWarning` naming the method and the limits responsible. It is
+not injected into the model's stderr. Full arguments remain live REPL variables;
+the initial printed inspection can omit their middle or nested values.
+
+For a parameter the model must read completely, override only the relevant
+formatting limits; `None` disables that limit:
+
+```python
+from typing import Annotated
+
+from aster import spec
+
+async def analyze(self, document: Annotated[str, spec(max_string=None)]) -> str:
+    """Analyze the complete document."""
+    ...
+```
+
+Precedence is defaults → agent class → instance → method
+`@strategy(..., truncation=...)` → per-parameter `spec()` metadata. For lists or
+nested data, adjust `max_length` or `max_depth` as needed. Use
+`TruncationConfig(prefill_format=FormatConfig(max_string=90_000))` to raise a
+method's default, or chunk inputs and let the agent inspect the relevant slices.
+Disabling formatting limits does **not** disable the separate
+`capture.max_stdout` cap (50,000 characters by default): raise it explicitly if
+the complete printed input can exceed that budget. A warning naming
+`capture.max_stdout` points to this second limit. `print_prompt()` displays
+generated prefill code; use an execution trace to verify captured output and
+the actual LLM request. Applications that deliberately accept truncated
+previews can filter `aster.strategies.prefill.PrefillTruncationWarning` through
+Python's standard warnings filters.
+
+Context budget: `max_context_tokens` — or, when unset and the model exposes a context window, half the *usable* window (`(context_window - reserved_output) // 2`, where `reserved_output` is the call's `max_tokens`, else `TruncationConfig.response_reserve_tokens`, default 4096; setting `response_reserve_tokens=0` disables the auto-derived budget). Over-budget triggers **whole-block eviction** of SYSTEM context blocks — newest non-`static` user blocks first, marked `EVICTED: over context budget` in place. Static framework blocks (`system_prompt`, `self`) are never evicted. No token counter is required: eviction sizes blocks as `chars × ratio`, where the ratio is calibrated from each provider response's reported prompt tokens (cold-start ~4 chars/token before the first response). Inspect usage via `agent.context_stats` — token figures are provider-reported (`prompt_tokens`); the context-vs-events breakdown is attributed by character share and `ctx N%` is measured against the usable window.
+
+**Dead/stale knobs**: `max_event_tokens` and `min_preserved_events` are read by nothing — events are never evicted by the renderer. Older notes may mention removed flat fields such as `max_block_chars` or `max_stdout_chars`; trust `config/truncation_config.py`.
+
+## Restricting generated code (`RestrictionsConfig`)
+
+```python
+from aster.runtime.restrictions import RestrictionsConfig
+CodeActConfig(restrictions=RestrictionsConfig(
+    blocked_modules=frozenset({"subprocess", "socket", "requests"}),  # hard: stripped + import-denied
+    restricted_imports=frozenset({"os", "shutil"}),                    # soft: import statements denied
+    blocked_calls={"time": frozenset({"sleep"})},                      # per-module call denylist
+))
+```
+
+- Defaults: 12 event-loop-hazard modules hard-blocked (subprocess, socket, smtplib, ...); blocking calls denied (`time.sleep`, `os.system`, `Thread.join`, `asyncio.run`, ...); `restricted_imports` **empty** — any other installed module is importable.
+- Always blocked regardless of config: `exec`/`eval`/`compile`/`__import__`/`input`/`breakpoint`/`globals`/`locals`/`vars`, `from x import *`, dangerous dunder access (`__class__`, `__globals__`, ...), process-exit calls, self-recursion into the currently-executing method, and infinite `while True` without break.
+- Process-global default: `set_restricted_imports(frozenset({...}))` / `get_restricted_imports()` (from `aster.runtime.restrictions`) — applies to every subsequently-constructed `RestrictionsConfig` that doesn't set the field explicitly. Generated code cannot call these (they're in the forbidden-builtins list).
+- Violations are **not fatal**: the validator error comes back as the cell's error output with a fix hint, and the model retries (within the `max_retries` budget).
+- Agent-in-agent recursion depth is a separate class-level guard: `class MyAgent(Agent, execution=ExecutionConfig(max_nesting_depth=5))` (default 10; class kwarg only).
+
+## Overriding the strategy prompt
+
+Not a config field — use the decorator's scoped-context:
+
+```python
+from aster.context_blocks import ScopedContext
+
+@strategy(CodeActStrategy(), ScopedContext(context={"strategy_prompt": "My leaner instructions..."}))
+async def solve(self, q: str) -> str: ...
+```
+
+Block order is `[system_prompt, strategy_prompt, execution_context, self]`; both strategy blocks are dynamic expressions you can replace per method.
+
+## Advanced PredictStrategy (`PredictConfig`)
+
+Single LLM turn, no tools, no code. The prompt is the docstring plus each parameter serialized as a Python assignment (bounded by `truncation.prefill_format` + per-param `spec()` overrides); the output schema is enforced via the provider's structured-output `response_format`, not prompt text.
+
+| Knob | Default | Semantics |
+|---|---|---|
+| `max_retries` | `10` | Validation retries. Each failure adds an `Error` event with the formatted validation error plus the raw output truncated to `max_error_chars` (1000). Exhaustion raises `GenerationError` (not ValidationError). |
+| `max_param_chars` | `200_000` | **Hard pre-flight guard, not a truncator**: any parameter whose `repr` exceeds it raises `ValueError` — Predict is single-shot, so a silently-truncated input would mean silently-wrong output. Chunk the input or raise/disable (`None`) the limit. |
+| `max_tokens` / `temperature` / `top_p` | `None` | Forwarded to the LLM call when set. |
+| `output_serialization` | `"event"` | How the result is recorded in history: `"event"` keeps the LLMResponse (replayed as a plain assistant message); `"tool_call"` also appends a synthetic `return_result` ToolCallEvent — prefer it when a downstream tool-using model reads this history. |
+
+- Return-type handling: `Optional[X]` unwraps; `dict[K,V]` uses a root-object schema; bare `list`/scalars are wrapped in a hidden `{"value": ...}` schema (Responses-API rejects array-rooted schemas) and unwrapped after validation; models with hidden fields get a public-subset schema and are rehydrated. Non-JSON-serializable **return types** (DataFrame, ndarray) are rejected up front with a pointer to CodeAct (parameters are only size-checked via `max_param_chars`).
+- Reasoning models: the JSON must land in `content`; `reasoning` is only used as a fallback when content is empty. Prose-in-content + JSON-in-reasoning fails and retries.
+- Predict sees **all prior conversation events** by default. Isolate it with `@strategy(PredictStrategy(), ScopedContext(events=EventQuery.current_call()))`.
+- `PredictStrategy(max_retries=3)` (from an old docstring) constructs a broken strategy — always wrap in `PredictConfig`.
+
+## Related skills
+
+- `aster-agent-authoring` — the basics this builds on (strategy selection, contracts, visibility).
+- `aster-context-and-state` — the context blocks that truncation/eviction act on.
+- `aster-capturing-traces` / `aster-trace-explorer` — see every prefill cell, tool call, and validation retry in the trace.

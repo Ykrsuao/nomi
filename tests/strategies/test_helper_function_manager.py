@@ -10,11 +10,11 @@ contract.
 
 import pytest
 
-from nooa.strategies.generated_code import (
+from aster.strategies.generated_code import (
     ExecutionNamespaceBuilder,
     HelperFunctionManager,
 )
-from nooa.unifiedllm import FakeLLMClient
+from aster.unifiedllm import FakeLLMClient
 
 
 class TestHelperFunctionManagerGuard:
@@ -22,7 +22,7 @@ class TestHelperFunctionManagerGuard:
 
     def test_rejects_class_instead_of_instance(self):
         """HelperFunctionManager should raise TypeError if passed a class."""
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         class FakeAgent(Agent, llm=FakeLLMClient()):
             async def process(self) -> dict:
@@ -42,7 +42,7 @@ class TestHelperFunctionManagerGuard:
 
     def test_accepts_instance(self):
         """HelperFunctionManager should accept agent instances and install helpers as plain callables."""
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         class FakeAgent(Agent, llm=FakeLLMClient()):
             async def process(self) -> dict:
@@ -70,7 +70,7 @@ class TestHelperFunctionManagerGuard:
 
     def test_method_does_not_leak_to_class(self):
         """Helpers are plain callables in session_locals, never attached to any instance."""
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         class FakeAgent(Agent, llm=FakeLLMClient()):
             async def process(self) -> dict:
@@ -95,7 +95,7 @@ class TestHelperFunctionManagerGuard:
 
     def test_method_does_not_leak_to_class_definition(self):
         """Helper methods must not appear in the agent class __dict__."""
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         class FakeAgent(Agent, llm=FakeLLMClient()):
             async def process(self) -> dict:
@@ -117,7 +117,7 @@ class TestHelperFunctionManagerGuard:
 
     def test_async_helper_method_binding(self):
         """Async helper methods should be installed as plain callables in session_locals."""
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         class FakeAgent(Agent, llm=FakeLLMClient()):
             async def process(self) -> dict:
@@ -146,7 +146,7 @@ class TestHelperFunctionManagerSessionLocals:
 
     def test_helper_added_to_session_locals(self):
         """Helper methods should be added to session_locals for reuse."""
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         class FakeAgent(Agent, llm=FakeLLMClient()):
             async def process(self) -> dict:
@@ -175,7 +175,7 @@ class TestHelperFunctionManagerErrors:
 
     def test_records_decorator_validation_errors(self):
         """Errors from decorator validation should be recorded."""
-        from nooa.agent import Agent
+        from aster.agent import Agent
 
         class FakeAgent(Agent, llm=FakeLLMClient()):
             async def process(self) -> dict:

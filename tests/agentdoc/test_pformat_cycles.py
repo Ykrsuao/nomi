@@ -15,7 +15,7 @@ recursion stack emits ``<cycle>`` and returns without recursing.
 
 from __future__ import annotations
 
-from nooa.agentdoc import pformat
+from aster.agentdoc import pformat
 
 
 class TestSelfReferentialContainers:

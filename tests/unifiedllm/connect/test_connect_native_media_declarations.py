@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import pytest
 
-from nooa.unifiedllm.connect import configure_entry, plan, write
+from aster.unifiedllm.connect import configure_entry, plan, write
 
 
 @pytest.mark.parametrize("style", ["anthropic", "responses"])

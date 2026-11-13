@@ -25,9 +25,9 @@ from urllib.request import Request, urlopen
 import pytest
 from pydantic import BaseModel
 
-from nooa import Agent, strategy
-from nooa.strategies import PredictStrategy
-from nooa.unifiedllm import get_llm_client
+from aster import Agent, strategy
+from aster.strategies import PredictStrategy
+from aster.unifiedllm import get_llm_client
 
 
 class ArithmeticReport(BaseModel):
@@ -68,8 +68,8 @@ def _openai_compat_health(base_url: str) -> str:
 
 OLLAMA = ProviderSpec(
     id="ollama",
-    base_url_env="NOOA_TEST_OLLAMA_BASE_URL",
-    model_env="NOOA_TEST_OLLAMA_MODEL",
+    base_url_env="ASTER_TEST_OLLAMA_BASE_URL",
+    model_env="ASTER_TEST_OLLAMA_MODEL",
     api_key_env=None,
     default_base_url="http://localhost:11434",
     default_model="ollama_chat/qwen3:1.7b",
@@ -80,9 +80,9 @@ OLLAMA = ProviderSpec(
 
 VLLM = ProviderSpec(
     id="vllm",
-    base_url_env="NOOA_TEST_VLLM_BASE_URL",
-    model_env="NOOA_TEST_VLLM_MODEL",
-    api_key_env="NOOA_TEST_VLLM_API_KEY",
+    base_url_env="ASTER_TEST_VLLM_BASE_URL",
+    model_env="ASTER_TEST_VLLM_MODEL",
+    api_key_env="ASTER_TEST_VLLM_API_KEY",
     default_base_url="http://localhost:8000/v1",
     default_model="hosted_vllm/Qwen/Qwen3-1.7B",
     model_prefixes=("hosted_vllm/", "openai/"),
@@ -127,8 +127,8 @@ def _build_llm(spec: ProviderSpec) -> tuple[object, float]:
     model = os.getenv(spec.model_env, spec.default_model)
     base_url = os.getenv(spec.base_url_env, spec.default_base_url)
     api_key = os.getenv(spec.api_key_env) if spec.api_key_env else None
-    max_tokens = int(os.getenv(f"NOOA_TEST_{spec.id.upper()}_MAX_TOKENS", "4096"))
-    timeout_seconds = float(os.getenv(f"NOOA_TEST_{spec.id.upper()}_TIMEOUT_SECONDS", "180"))
+    max_tokens = int(os.getenv(f"ASTER_TEST_{spec.id.upper()}_MAX_TOKENS", "4096"))
+    timeout_seconds = float(os.getenv(f"ASTER_TEST_{spec.id.upper()}_TIMEOUT_SECONDS", "180"))
 
     _require_model(spec, base_url, model, api_key)
 

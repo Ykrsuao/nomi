@@ -6,15 +6,15 @@ import json
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig, LoopGuardConfig
-from nooa.context_blocks import ToolCallEvent
-from nooa.errors import GenerationError, LoopDetectedError
-from nooa.events import LoopGuardTriggered
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.codeact_v2 import CodeActV2
-from nooa.strategies.loop_guard import action_fingerprint, normalize_code
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig, LoopGuardConfig
+from aster.context_blocks import ToolCallEvent
+from aster.errors import GenerationError, LoopDetectedError
+from aster.events import LoopGuardTriggered
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.strategies.loop_guard import action_fingerprint, normalize_code
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 def _call(name: str, arguments: str, call_id: str) -> LLMResponse:
@@ -245,7 +245,7 @@ def test_missing_outcome_never_matches_another_call():
     """If a call's events were summarized away, its outcome is unique, not empty."""
     from types import SimpleNamespace
 
-    from nooa.runtime.event_manager import EventManager
+    from aster.runtime.event_manager import EventManager
 
     runtime = SimpleNamespace(event_manager=EventManager())
     first = CodeActStrategy._tool_call_outcome(runtime, "a", 0)

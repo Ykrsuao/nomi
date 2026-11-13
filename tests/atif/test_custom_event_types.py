@@ -15,11 +15,11 @@ from typing import Annotated, ClassVar
 import pytest
 from pydantic import Field
 
-from nooa.atif import Trajectory
-from nooa.atif.exporter import AtifExporter
-from nooa.context_blocks.events import EventBase
-from nooa.context_blocks.roles import Role
-from nooa.events import (
+from aster.atif import Trajectory
+from aster.atif.exporter import AtifExporter
+from aster.context_blocks.events import EventBase
+from aster.context_blocks.roles import Role
+from aster.events import (
     AfterTurn,
     BeforeTurn,
     LLMResponse,
@@ -220,11 +220,11 @@ class TestWildcardSubscription:
         # then returns via return_result.
         import json
 
-        from nooa import Agent, strategy
-        from nooa.atif import atif_scope
-        from nooa.config import CodeActConfig
-        from nooa.strategies import CodeActStrategy
-        from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+        from aster import Agent, strategy
+        from aster.atif import atif_scope
+        from aster.config import CodeActConfig
+        from aster.strategies import CodeActStrategy
+        from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
         def _resp(tool_calls: list[ToolCall] | None = None) -> LLMResponse:
             return LLMResponse(

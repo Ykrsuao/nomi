@@ -11,20 +11,20 @@ import pytest
 from litellm.types.llms.openai import ResponsesAPIResponse
 from litellm.types.utils import Choices, Message, ModelResponse
 
-from nooa.context_blocks.events import ToolCallEvent, ToolResult
-from nooa.context_blocks.formatter import (
+from aster.context_blocks.events import ToolCallEvent, ToolResult
+from aster.context_blocks.formatter import (
     OpenAIProviderFormatter,
     XMLBlockFormatter,
 )
-from nooa.context_blocks.models import ResolvedBlock, Role
-from nooa.unifiedllm import CompletionClient, LLMResponse, ResponsesClient, Tool
-from nooa.unifiedllm.chat_parts import capture_chat_parts
-from nooa.unifiedllm.replay_state import (
+from aster.context_blocks.models import ResolvedBlock, Role
+from aster.unifiedllm import CompletionClient, LLMResponse, ResponsesClient, Tool
+from aster.unifiedllm.chat_parts import capture_chat_parts
+from aster.unifiedllm.replay_state import (
     ReasoningReplayError,
     prepare_chat_messages,
     replay_scope,
 )
-from nooa.unifiedllm.response_parts import capture_parts, project_turn
+from aster.unifiedllm.response_parts import capture_parts, project_turn
 
 ANTHROPIC_THINKING = [
     {"type": "thinking", "thinking": "Check the inputs.", "signature": "anthropic-sig"},
@@ -338,7 +338,7 @@ def test_native_endpoint_check_matches_dispatchs_own_base_url_precedence(
     precedence, or a client with a gateway api_base whose call overrides
     base_url to real OpenAI (or the reverse) gets a decision that disagrees
     with where the request actually goes."""
-    from nooa.unifiedllm.replay_state import _uses_native_openai_endpoint
+    from aster.unifiedllm.replay_state import _uses_native_openai_endpoint
 
     assert _uses_native_openai_endpoint({"api_base": api_base, "base_url": base_url}) is expected
 
@@ -349,7 +349,7 @@ def test_replay_scope_resolves_the_same_endpoint_precedence() -> None:
     _uses_native_openai_endpoint's -- both now share _configured_endpoint, so
     provider resolution is based on the same endpoint dispatch actually
     reaches, not a different one picked by a second, inconsistent copy."""
-    from nooa.unifiedllm.replay_state import _configured_endpoint
+    from aster.unifiedllm.replay_state import _configured_endpoint
 
     params = {"api_base": "https://gateway.example/v1", "base_url": "https://api.openai.com/v1"}
     assert _configured_endpoint(params) == "https://api.openai.com/v1"

@@ -11,9 +11,9 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, ConfigDict
 
-from nooa.errors.storage import DeserializationError, SerializationError
-from nooa.storage.markers import snapshotable
-from nooa.storage.serialization import MAX_SNAPSHOT_DEPTH, deserialize, serialize
+from aster.errors.storage import DeserializationError, SerializationError
+from aster.storage.markers import snapshotable
+from aster.storage.serialization import MAX_SNAPSHOT_DEPTH, deserialize, serialize
 
 
 class _Node(BaseModel):
@@ -388,13 +388,13 @@ def test_restore_skips_too_deep_attribute_and_warns(caplog):
     import logging
     from types import SimpleNamespace
 
-    from nooa.storage.snapshot import AgentSnapshot
+    from aster.storage.snapshot import AgentSnapshot
 
     snapshot = AgentSnapshot(
         attributes={"memory": ["a", "b"], "deep": _deep_blob(MAX_SNAPSHOT_DEPTH + 1), "n": 3}
     )
     agent = SimpleNamespace()
-    with caplog.at_level(logging.WARNING, logger="nooa.storage.snapshot"):
+    with caplog.at_level(logging.WARNING, logger="aster.storage.snapshot"):
         snapshot.restore(agent)
     assert agent.memory == ["a", "b"]
     assert agent.n == 3

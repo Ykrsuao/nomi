@@ -11,19 +11,22 @@ resolution-markers = [
 exclude-newer = "2026-10-21T00:00:00Z"
 
 [options.exclude-newer-package]
-microsandbox = "2026-11-07T23:59:59Z"
+botocore = "2026-11-13T23:59:59Z"
+litellm = "2026-11-13T23:59:59Z"
+boto3 = "2026-11-13T23:59:59Z"
+microsandbox = "2026-11-13T23:59:59Z"
 
 [manifest]
 members = [
+    "aster",
+    "aster-acp",
+    "aster-bench",
+    "aster-cli",
+    "aster-memory",
     "eval-pipeline",
-    "nooa",
-    "nooa-acp",
-    "nooa-bench",
-    "nooa-cli",
-    "nooa-memory",
 ]
 constraints = [
-    { name = "litellm", specifier = "==1.97.0" },
+    { name = "litellm", specifier = "==1.109.1" },
     { name = "mcp", specifier = ">=1.30,<2" },
     { name = "openinference-instrumentation", specifier = "==0.1.54" },
     { name = "openinference-instrumentation-litellm", specifier = "==0.1.34" },
@@ -231,6 +234,280 @@ wheels = [
 ]
 
 [[package]]
+name = "aster"
+source = { editable = "." }
+dependencies = [
+    { name = "anyio" },
+    { name = "filelock", marker = "sys_platform == 'win32'" },
+    { name = "httpx" },
+    { name = "litellm" },
+    { name = "msgpack" },
+    { name = "openinference-instrumentation-litellm" },
+    { name = "pydantic" },
+    { name = "urllib3" },
+]
+
+[package.optional-dependencies]
+acp = [
+    { name = "aster-acp" },
+]
+arc = [
+    { name = "arc-agi" },
+    { name = "arcengine" },
+    { name = "pillow" },
+    { name = "rich" },
+]
+bench = [
+    { name = "aster-bench" },
+]
+cli = [
+    { name = "aster-cli" },
+]
+mcp = [
+    { name = "cryptography" },
+    { name = "mcp" },
+    { name = "pyjwt", extra = ["crypto"] },
+]
+memory = [
+    { name = "aster-memory" },
+]
+nemo-relay = [
+    { name = "nemo-relay" },
+]
+sandbox = [
+    { name = "cloudpickle" },
+    { name = "microsandbox" },
+]
+tracing = [
+    { name = "openinference-instrumentation" },
+    { name = "openinference-instrumentation-litellm" },
+    { name = "openinference-semantic-conventions" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-sdk" },
+]
+tui = [
+    { name = "aster-cli", extra = ["tui"] },
+]
+viewer = [
+    { name = "fastapi" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "aster-acp" },
+    { name = "aster-bench" },
+    { name = "aster-cli" },
+    { name = "aster-memory" },
+    { name = "eval-pipeline" },
+    { name = "fastapi" },
+    { name = "httpx", extra = ["socks"] },
+    { name = "matplotlib" },
+    { name = "mypy" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "pandas" },
+    { name = "pre-commit" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-timeout" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "pyyaml" },
+    { name = "ruff" },
+    { name = "uvicorn" },
+    { name = "watchfiles" },
+]
+trace-viewer = [
+    { name = "fastapi" },
+    { name = "python-dotenv" },
+    { name = "python-multipart" },
+    { name = "pyyaml" },
+    { name = "uvicorn" },
+    { name = "watchfiles" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anyio", specifier = ">=4.15.1" },
+    { name = "arc-agi", marker = "extra == 'arc'", specifier = ">=0.9.8" },
+    { name = "arcengine", marker = "extra == 'arc'", specifier = ">=0.9.3" },
+    { name = "aster-acp", marker = "extra == 'acp'", editable = "packages/aster-acp" },
+    { name = "aster-bench", marker = "extra == 'bench'", editable = "packages/aster-bench" },
+    { name = "aster-cli", marker = "extra == 'cli'", editable = "packages/aster-cli" },
+    { name = "aster-cli", extras = ["tui"], marker = "extra == 'tui'", editable = "packages/aster-cli" },
+    { name = "aster-memory", marker = "extra == 'memory'", editable = "packages/aster-memory" },
+    { name = "cloudpickle", marker = "extra == 'sandbox'", specifier = ">=3.1,<4" },
+    { name = "cryptography", marker = "extra == 'mcp'", specifier = ">=50.0.2" },
+    { name = "fastapi", marker = "extra == 'viewer'", specifier = ">=0.100.0" },
+    { name = "filelock", marker = "sys_platform == 'win32'", specifier = ">=3.29.4" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "litellm", specifier = ">=1.97.0,!=1.106.0.dev2,!=1.106.0.dev3,!=1.106.0rc1,!=1.106.0rc2,!=1.106.0rc3,!=1.106.0rc4,!=1.106.0,!=1.106.1,!=1.106.2,!=1.106.3,!=1.106.4,!=1.106.5,!=1.106.6,!=1.106.7,!=1.107.0.dev1,!=1.107.0.dev2,!=1.107.0.dev3,!=1.107.0rc1,!=1.107.0rc2,!=1.107.0rc3,!=1.108.0rc1,!=1.108.0,!=1.108.1" },
+    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.30,<2" },
+    { name = "microsandbox", marker = "extra == 'sandbox'", specifier = ">=0.7.15,<0.8" },
+    { name = "msgpack", specifier = ">=1.2.1" },
+    { name = "nemo-relay", marker = "extra == 'nemo-relay'", specifier = ">=0.6,<0.7" },
+    { name = "openinference-instrumentation", marker = "extra == 'tracing'", specifier = ">=0.1.42" },
+    { name = "openinference-instrumentation-litellm", specifier = ">=0.1.30" },
+    { name = "openinference-instrumentation-litellm", marker = "extra == 'tracing'", specifier = ">=0.1.28" },
+    { name = "openinference-semantic-conventions", marker = "extra == 'tracing'", specifier = ">=0.1.9" },
+    { name = "opentelemetry-api", marker = "extra == 'tracing'", specifier = ">=1.20.0" },
+    { name = "opentelemetry-sdk", marker = "extra == 'tracing'", specifier = ">=1.20.0" },
+    { name = "pillow", marker = "extra == 'arc'", specifier = ">=10.0" },
+    { name = "pydantic", specifier = ">=2.14" },
+    { name = "pyjwt", extras = ["crypto"], marker = "extra == 'mcp'", specifier = ">=2.15.1" },
+    { name = "python-dotenv", marker = "extra == 'viewer'", specifier = ">=1.0.0" },
+    { name = "python-multipart", marker = "extra == 'viewer'", specifier = ">=0.0.5" },
+    { name = "rich", marker = "extra == 'arc'", specifier = ">=13.0" },
+    { name = "urllib3", specifier = ">=2.8.0" },
+    { name = "uvicorn", extras = ["standard"], marker = "extra == 'viewer'", specifier = ">=0.20.0" },
+]
+provides-extras = ["acp", "arc", "bench", "cli", "mcp", "memory", "nemo-relay", "sandbox", "tracing", "tui", "viewer"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "aster-acp", editable = "packages/aster-acp" },
+    { name = "aster-bench", editable = "packages/aster-bench" },
+    { name = "aster-cli", editable = "packages/aster-cli" },
+    { name = "aster-memory", editable = "packages/aster-memory" },
+    { name = "eval-pipeline", editable = "util/eval_pipeline" },
+    { name = "fastapi", specifier = ">=0.123.4" },
+    { name = "httpx", extras = ["socks"], specifier = ">=0.28.1" },
+    { name = "matplotlib", specifier = ">=3.8.0" },
+    { name = "mypy", specifier = ">=1.7.0" },
+    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.39.1" },
+    { name = "pandas", specifier = ">=2.0.0" },
+    { name = "pre-commit", specifier = ">=4.5.0" },
+    { name = "pyright", specifier = ">=1.1.408" },
+    { name = "pytest", specifier = ">=7.4.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.0" },
+    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "pytest-rerunfailures", specifier = ">=14.0" },
+    { name = "pytest-timeout", specifier = ">=2.3.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "pyyaml", specifier = ">=6.0.0" },
+    { name = "ruff", specifier = ">=0.14.14" },
+    { name = "uvicorn", specifier = ">=0.38.0" },
+    { name = "watchfiles", specifier = ">=1.0.0" },
+]
+trace-viewer = [
+    { name = "fastapi", specifier = ">=0.123.4" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "pyyaml", specifier = ">=6.0.0" },
+    { name = "uvicorn", specifier = ">=0.38.0" },
+    { name = "watchfiles", specifier = ">=1.0.0" },
+]
+
+[[package]]
+name = "aster-acp"
+source = { editable = "packages/aster-acp" }
+dependencies = [
+    { name = "agent-client-protocol" },
+    { name = "aster", extra = ["mcp"] },
+    { name = "aster-cli" },
+    { name = "click" },
+    { name = "litellm" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "agent-client-protocol", specifier = ">=0.11,<0.12" },
+    { name = "aster", extras = ["mcp"], editable = "." },
+    { name = "aster-cli", editable = "packages/aster-cli" },
+    { name = "click", specifier = ">=8.1.0" },
+    { name = "litellm", specifier = "!=1.95.0" },
+]
+
+[[package]]
+name = "aster-bench"
+source = { editable = "packages/aster-bench" }
+dependencies = [
+    { name = "aster" },
+    { name = "aster-cli" },
+    { name = "click" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aster", editable = "." },
+    { name = "aster-cli", editable = "packages/aster-cli" },
+    { name = "click", specifier = ">=8.1" },
+]
+
+[[package]]
+name = "aster-cli"
+source = { editable = "packages/aster-cli" }
+dependencies = [
+    { name = "aster" },
+    { name = "click" },
+    { name = "prompt-toolkit" },
+    { name = "pyyaml" },
+]
+
+[package.optional-dependencies]
+ast = [
+    { name = "tree-sitter" },
+    { name = "tree-sitter-go" },
+    { name = "tree-sitter-javascript" },
+    { name = "tree-sitter-python" },
+    { name = "tree-sitter-rust" },
+    { name = "tree-sitter-typescript" },
+]
+datascience = [
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "plotly" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+]
+tui = [
+    { name = "aster-acp" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aster", editable = "." },
+    { name = "aster-acp", marker = "extra == 'tui'", editable = "packages/aster-acp" },
+    { name = "click", specifier = ">=8.2.1" },
+    { name = "numpy", marker = "extra == 'datascience'", specifier = ">=1.24.0" },
+    { name = "pandas", marker = "extra == 'datascience'", specifier = ">=2.0.0" },
+    { name = "plotly", marker = "extra == 'datascience'", specifier = ">=5.0.0" },
+    { name = "prompt-toolkit", specifier = ">=3.0.52" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "scikit-learn", marker = "extra == 'datascience'", specifier = ">=1.3.0" },
+    { name = "scipy", marker = "extra == 'datascience'", specifier = ">=1.10.0" },
+    { name = "tree-sitter", marker = "extra == 'ast'", specifier = ">=0.23.0" },
+    { name = "tree-sitter-go", marker = "extra == 'ast'", specifier = ">=0.23.0" },
+    { name = "tree-sitter-javascript", marker = "extra == 'ast'", specifier = ">=0.23.0" },
+    { name = "tree-sitter-python", marker = "extra == 'ast'", specifier = ">=0.23.0" },
+    { name = "tree-sitter-rust", marker = "extra == 'ast'", specifier = ">=0.23.0" },
+    { name = "tree-sitter-typescript", marker = "extra == 'ast'", specifier = ">=0.23.0" },
+]
+provides-extras = ["ast", "datascience", "tui"]
+
+[[package]]
+name = "aster-memory"
+source = { editable = "packages/aster-memory" }
+dependencies = [
+    { name = "aster" },
+    { name = "numpy" },
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aster", editable = "." },
+    { name = "numpy", specifier = ">=1.24.0" },
+    { name = "pydantic", specifier = ">=2.14" },
+]
+
+[[package]]
 name = "attrs"
 version = "26.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -246,6 +523,34 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/21/28/9b3f50ce0e048515135495f198351908d99540d69bfdc8c1d15b73dc55ce/blinker-1.9.0.tar.gz", hash = "sha256:b4ce2265a7abece45e7cc896e98dbebe6cead56bcf805a3d23136d145f5445bf", size = 22460, upload-time = "2024-11-08T17:25:47.436Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/10/cb/f2ad4230dc2eb1a74edf38f1a38b9b52277f75bef262d8908e60d957e13c/blinker-1.9.0-py3-none-any.whl", hash = "sha256:ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc", size = 8458, upload-time = "2024-11-08T17:25:46.184Z" },
+]
+
+[[package]]
+name = "boto3"
+version = "1.44.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "botocore" },
+    { name = "jmespath" },
+    { name = "s3transfer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/58/ab/c2d0e6b543e718af9b963e980f9e72d918c2b889cb2cc3749999f63f14f3/boto3-1.44.2.tar.gz", hash = "sha256:70c02826640da17c15067033af01667059dde5e86057c2d1227cd8523c2f24dd", size = 112796, upload-time = "2026-11-12T20:58:21.405Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/72/ac/d6fb4b50f688b106a9be682d5146829d717bddafef04b061b6ef43d1a859/boto3-1.44.2-py3-none-any.whl", hash = "sha256:d62ff8a9eb06cab9f0b4242d7a2907a8fff9cca630e27ef736660f9d53e5b18e", size = 140157, upload-time = "2026-11-12T20:58:19.236Z" },
+]
+
+[[package]]
+name = "botocore"
+version = "1.44.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jmespath" },
+    { name = "python-dateutil" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5b/fa/5cc188196076a432700671ef36c63fab463f41919b7a1440de906247bb16/botocore-1.44.2.tar.gz", hash = "sha256:39da314d7bab66e9da9af5531445d237beaeeab1fce0ed034bb6315d480b85ce", size = 16642983, upload-time = "2026-11-12T20:58:15.821Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ee/de/c9df76a63d82203a335b2ab02e5a976758747c9a5960b096dbc00c22f8eb/botocore-1.44.2-py3-none-any.whl", hash = "sha256:f255849e8adc413812162e100cf53c4d096d07d9fd6f1773d90fa6034f7d8980", size = 16342924, upload-time = "2026-11-12T20:58:11.603Z" },
 ]
 
 [[package]]
@@ -547,8 +852,8 @@ name = "eval-pipeline"
 version = "0.2.0"
 source = { editable = "util/eval_pipeline" }
 dependencies = [
+    { name = "aster", extra = ["viewer"] },
     { name = "fastapi" },
-    { name = "nooa", extra = ["viewer"] },
     { name = "pyyaml" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -560,8 +865,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aster", extras = ["viewer"], editable = "." },
     { name = "fastapi", specifier = ">=0.109.1" },
-    { name = "nooa", extras = ["viewer"], editable = "." },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.20.0" },
@@ -754,6 +1059,19 @@ wheels = [
 ]
 
 [[package]]
+name = "h2"
+version = "4.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "hpack" },
+    { name = "hyperframe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e7/85/7c366e69d84c17bb778fe41419e1fbcce3033d5b7ce29bbffff0a98b859f/h2-4.4.1.tar.gz", hash = "sha256:4e866ffb1a869ae14dd9b5e6beb5c24a13da0495ad72b65925ded182521c1516", size = 2157281, upload-time = "2026-08-03T11:45:09.509Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/22/e85faf23bd72a92d1921e37d674ca56eb298a3c8be31fdecef0ff2b3aaac/h2-4.4.1-py3-none-any.whl", hash = "sha256:0e25f1462b23c9cb82d9eb02e28bc706dac2a68cb457c6a0d74d63c8a2a5d0e6", size = 62636, upload-time = "2026-08-03T11:44:59.164Z" },
+]
+
+[[package]]
 name = "hf-xet"
 version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -770,6 +1088,15 @@ wheels = [
 ]
 
 [[package]]
+name = "hpack"
+version = "4.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/26/5b/fcabf6028144a8723726318b07a32c2f3314acdff6265743cf08a344b18e/hpack-4.2.0.tar.gz", hash = "sha256:0895cfa3b5531fc65fe439c05eb65144f123bf7a394fcaa56aa423548d8e45c0", size = 51300, upload-time = "2026-06-23T18:34:46.667Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/b4/4a9fcfb2aef6ba44d9073ecd301443aa00b3dac95de5619f2a7de7ec8a91/hpack-4.2.0-py3-none-any.whl", hash = "sha256:858ac0b02280fa582b5080d68db0899c62a80375e0e5413a74970c5e518b6986", size = 34246, upload-time = "2026-06-23T18:34:45.472Z" },
+]
+
+[[package]]
 name = "httpcore"
 version = "1.0.9"
 source = { registry = "https://pypi.org/simple" }
@@ -780,19 +1107,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/06/94/82699a10bca87a5556c9c59b5963f2d039dbd239f25bc2a63907a05a14cb/httpcore-1.0.9.tar.gz", hash = "sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8", size = 85484, upload-time = "2025-04-24T22:06:22.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl", hash = "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55", size = 78784, upload-time = "2025-04-24T22:06:20.566Z" },
-]
-
-[[package]]
-name = "httpcore2"
-version = "2.15.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "h11", marker = "sys_platform != 'emscripten'" },
-    { name = "truststore", marker = "sys_platform != 'emscripten'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c2/a9/11bc39967bb9dfaab0981ab4d49f519818acbee662a7e76d06813319c838/httpcore2-2.15.1.tar.gz", hash = "sha256:a94b6b3e6260e1a3f035915408d3dcd7dc8e844c2b544b642e227cf98a747af0", size = 69859, upload-time = "2026-10-19T20:14:23.824Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/9b/e2b556e26fbc67716ab1dfc18832eb6fe196d88363f7094cb1da3d7c0d3e/httpcore2-2.15.1-py3-none-any.whl", hash = "sha256:730f603058c260a3288378217b464713350c23e3b8fe8bba753701054032d98a", size = 85055, upload-time = "2026-10-19T20:14:21.363Z" },
 ]
 
 [[package]]
@@ -845,6 +1159,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+http2 = [
+    { name = "h2" },
+]
 socks = [
     { name = "socksio" },
 ]
@@ -859,49 +1176,32 @@ wheels = [
 ]
 
 [[package]]
-name = "httpx2"
-version = "2.15.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio", marker = "sys_platform != 'emscripten'" },
-    { name = "httpcore2", marker = "sys_platform != 'emscripten'" },
-    { name = "httpx2-jsfetch", marker = "sys_platform == 'emscripten'" },
-    { name = "idna" },
-    { name = "truststore", marker = "sys_platform != 'emscripten'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7f/85/07978f4afd168d6b408fa75c1dc13e3010653a81e182aa1b6d89ab94d9c6/httpx2-2.15.1.tar.gz", hash = "sha256:ff75485308fbe441e75b1218546e4e78d884df41e1a9741c1f79335ed8fcfef7", size = 101673, upload-time = "2026-10-19T20:14:24.587Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7a/bf/56068f774620330c8330e4b4915fae889a5b2d4b52667b3b7c8f66c4a9ad/httpx2-2.15.1-py3-none-any.whl", hash = "sha256:75841cd83d16b417f7d6da8f2089ce8120806efdbf96af37d46c5129c49015be", size = 96411, upload-time = "2026-10-19T20:14:22.789Z" },
-]
-
-[[package]]
-name = "httpx2-jsfetch"
-version = "1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/cd/c4/0e5636363151a2a1795e0a77617168b9ca438e1748ec05fc9b5687f93d64/httpx2_jsfetch-1.0.tar.gz", hash = "sha256:70a0e3eabfef7cce5ad9c629f7d01ca05e418f586646f4ddf14782e4c1454c60", size = 6872, upload-time = "2026-08-07T00:13:07.492Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9b/43/832f631d32e4f1211caa2ba368317739fe71f0b8530e4c9d15dc454bac2a/httpx2_jsfetch-1.0-py3-none-any.whl", hash = "sha256:cb916b707601e69a07721aabc8f3f6659be3a6893bc1ff5c6f9e02241df2da32", size = 6382, upload-time = "2026-08-07T00:13:06.567Z" },
-]
-
-[[package]]
 name = "huggingface-hub"
-version = "2.2.0"
+version = "1.33.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "filelock" },
     { name = "fsspec" },
-    { name = "hf-xet", marker = "platform_machine == 'AMD64' or platform_machine == 'ARM64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'" },
-    { name = "httpx2" },
+    { name = "hf-xet", marker = "platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'" },
+    { name = "httpx" },
     { name = "packaging" },
     { name = "pyyaml" },
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/12/47/6858d63643e66fb4f6585c3cfd4029c0b2bc1ae21688cee9b3335f20a10d/huggingface_hub-2.2.0.tar.gz", hash = "sha256:5d1b47537394e4215cb858aa12fd493d0f7ef7f58990f5dcd24bc173107b2871", size = 1041026, upload-time = "2026-10-08T15:30:59.971Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/2a/484d112c0d8fc5f665d7b65137ac9cdb2953c982391598c3597968a12ee7/huggingface_hub-1.33.0.tar.gz", hash = "sha256:367be21a201db9523eddf8aeac7048f2602c1b308691c97640d5e72ed188007e", size = 1043548, upload-time = "2026-09-24T09:49:29.971Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/b0/0f7b430fd100b3a3b037fdbb314878200241082e607b3383c63d91a13a72/huggingface_hub-2.2.0-py3-none-any.whl", hash = "sha256:1667f145dc56dc210d60966069397df9ecfca9607a5d43db88b308c89dae56b3", size = 839884, upload-time = "2026-10-08T15:30:57.914Z" },
+    { url = "https://files.pythonhosted.org/packages/fc/16/963096d224b80909432dc16561a615fd33d2d13beef3ce4c63fa25e40867/huggingface_hub-1.33.0-py3-none-any.whl", hash = "sha256:04e434b06e100eddbce9a6e817d72693a7884b10a79bd67ab48080d5c07eb899", size = 846435, upload-time = "2026-09-24T09:49:28.059Z" },
+]
+
+[[package]]
+name = "hyperframe"
+version = "6.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/02/e7/94f8232d4a74cc99514c13a9f995811485a6903d48e5d952771ef6322e30/hyperframe-6.1.0.tar.gz", hash = "sha256:f630908a00854a7adeabd6382b43923a4c4cd4b821fcb527e6ab9e15382a3b08", size = 26566, upload-time = "2025-01-22T21:41:49.302Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/48/30/47d0bf6072f7252e6521f3447ccfa40b421b6824517f82854703d0f5a98b/hyperframe-6.1.0-py3-none-any.whl", hash = "sha256:b03380493a519fce58ea5af42e4a42317bf9bd425596f7a0835ffce80f1a42e5", size = 13007, upload-time = "2025-01-22T21:41:47.295Z" },
 ]
 
 [[package]]
@@ -1002,6 +1302,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/28/30/879570ecf82574eaea77c5eb10309f4b630dece5f2a556e9814a90ba3f2d/jiter-0.17.0-graalpy312-graalpy250_312_native-macosx_11_0_arm64.whl", hash = "sha256:40d2c240f8f80b5b0f201b29f0ae129c81448c60c772227a41747b5e0026f6a2", size = 279113, upload-time = "2026-09-12T15:14:10.117Z" },
     { url = "https://files.pythonhosted.org/packages/77/7a/1f0b8a35fbd079a4f1752c31a15dc99cf277f863747c459be0af39e900e5/jiter-0.17.0-graalpy312-graalpy250_312_native-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3e05f5adbf68c4bd11e1610f394034d984152988e84be6f8314235ce6f2139e5", size = 303708, upload-time = "2026-09-12T15:14:11.445Z" },
     { url = "https://files.pythonhosted.org/packages/e1/8b/d76219ebdbcf3d4209d9d21a0810db4c8d0a6f88e3ee87d30bdea4e90d30/jiter-0.17.0-graalpy312-graalpy250_312_native-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d2c0bf24c72fd0491405dce5d40194f2070e9021ce648c1a1d46234b93d848ff", size = 307147, upload-time = "2026-09-12T15:14:12.897Z" },
+]
+
+[[package]]
+name = "jmespath"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/59/322338183ecda247fb5d1763a6cbe46eff7222eaeebafd9fa65d4bf5cb11/jmespath-1.1.0.tar.gz", hash = "sha256:472c87d80f36026ae83c6ddd0f1d05d4e510134ed462851fd5f754c8c3cbb88d", size = 27377, upload-time = "2026-01-22T16:35:26.279Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl", hash = "sha256:a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64", size = 20419, upload-time = "2026-01-22T16:35:24.919Z" },
 ]
 
 [[package]]
@@ -1128,32 +1437,40 @@ wheels = [
 
 [[package]]
 name = "litellm"
-version = "1.97.0"
+version = "1.109.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
+    { name = "anyio" },
+    { name = "boto3" },
+    { name = "certifi" },
     { name = "click" },
     { name = "fastuuid" },
-    { name = "httpx" },
+    { name = "filelock" },
+    { name = "httpx", extra = ["http2"] },
+    { name = "huggingface-hub" },
     { name = "importlib-metadata" },
     { name = "jinja2" },
     { name = "jsonschema" },
     { name = "openai" },
+    { name = "packaging" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
+    { name = "pyyaml" },
     { name = "tiktoken" },
     { name = "tokenizers" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/08/db78a9f53e5688ad0f9e50d5c3bfe616e445aac120eafcca907f04634e48/litellm-1.97.0.tar.gz", hash = "sha256:6f7ce326a2e5385ef850e0b0768d41f502ec79278860090a838511cea067b067", size = 17762282, upload-time = "2026-08-16T00:05:44.724Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/cc/6295db7faccd95aae86392e06531817e8ef2661b04805e95cfde56165a32/litellm-1.109.1.tar.gz", hash = "sha256:5b98ecccd93374b8ea1746ee98de16b505c0b5e6c0dfb7e8afec3d817d08d7c2", size = 25570168, upload-time = "2026-11-12T02:00:18.465Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/35/d4/a04f8bda468fb25a0a8a392a6922c9ecf6c122ad9bf9e2f69ebd173e1cac/litellm-1.97.0-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:ff401dd5d66f54b9b474f0652c419fb7bf883fbf5ca64c0bc363acdc98b758b5", size = 24235645, upload-time = "2026-08-16T00:05:20.055Z" },
-    { url = "https://files.pythonhosted.org/packages/f1/51/a055bf5df38112f07970937d95416b22379ee84664b739bfe87a8292e098/litellm-1.97.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:2983b40ed5d8b1bcbbfbc0d66fefa21b04db91b87c05dd680ae77cba74e561ef", size = 23893493, upload-time = "2026-08-16T00:05:23.79Z" },
-    { url = "https://files.pythonhosted.org/packages/14/28/b1cf429493aec5260ac2737dd82f6200c729fd26b336dc21cf001cfbcd8a/litellm-1.97.0-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:e3a1f70d693716b4e8a8108f0a464b0e2c555e274ddbb8ef89c4c59c80be14ed", size = 24031743, upload-time = "2026-08-16T00:05:27.138Z" },
-    { url = "https://files.pythonhosted.org/packages/08/4a/22c49e8bd068bfdab0daba235cc2d2752d76d855ccb8f6dafe7dabf01ca4/litellm-1.97.0-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:5b56dce7df44a6a9e6caf5379de2578a8cb82831ceabd3d71cc99b370a1015e7", size = 24397362, upload-time = "2026-08-16T00:05:30.89Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/22/f60558230969ac7d860bd93aff6bf6a69bcd8a3ef4f35eea211174ef4e81/litellm-1.97.0-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:6b360ddc3162c2ed39b64d3f9957a7af70cd9c60cf71f7a4dfa355a0bf05bebc", size = 24107078, upload-time = "2026-08-16T00:05:34.463Z" },
-    { url = "https://files.pythonhosted.org/packages/5d/e4/6c74ff4b188d9399a036d41e86c4c616d95ce5fd9d9b3c42646bd02f270e/litellm-1.97.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:3c4f1dd45e14127f2303769a7ae79482697823e329ae503513d014ceea4dd704", size = 24493640, upload-time = "2026-08-16T00:05:37.85Z" },
-    { url = "https://files.pythonhosted.org/packages/8c/d1/1475c4ecdf43221ab8ee8d0fcc6b469c26d0d80913d0773e18de81cf18f1/litellm-1.97.0-cp310-abi3-win_amd64.whl", hash = "sha256:dce3377207234fc5c5b275a5e234ba056a5051fd178ae8e9a6aeb5d056f12095", size = 24289278, upload-time = "2026-08-16T00:05:41.441Z" },
+    { url = "https://files.pythonhosted.org/packages/0c/1e/f83650f0840f47b4d48e7d3fcc49ee23f2b9ab27fb90937f0e1d9e0dbd5c/litellm-1.109.1-cp310-abi3-macosx_10_12_x86_64.whl", hash = "sha256:1fdf789757fc71c9a9ac183cd326b978782dfa9ebd44087c6603b5b963956841", size = 40565744, upload-time = "2026-11-12T01:59:54.804Z" },
+    { url = "https://files.pythonhosted.org/packages/16/10/9c973a582a29ace1b4437b0851b278f8b65a22c351ab3c3180d6bcebb0ec/litellm-1.109.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:1b2866219249186babe194d7e3f4af29095c0905a4c5712b62be662aa6a38fb7", size = 39911789, upload-time = "2026-11-12T01:59:58.373Z" },
+    { url = "https://files.pythonhosted.org/packages/af/20/d305f1243712131a79c7f069cdaad8be9f5a3746f09440576933ec55b6a9/litellm-1.109.1-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:1dcf31166d385e6eaaef7f5840ba88c4eac319d1aa2d3ec2787de981e07fcf11", size = 40353049, upload-time = "2026-11-12T02:00:01.288Z" },
+    { url = "https://files.pythonhosted.org/packages/30/5b/05ec8f224dd31cc294a5e0483fd6385d8991ffe4c0312978f5924ac053a5/litellm-1.109.1-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:1c8b4dd671fa0cd0850aa751678704ff77e595fb1e6085b2dc3be39ee19bdaaf", size = 41091727, upload-time = "2026-11-12T02:00:05.2Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/93/80f9b16aea7a10ccc1bac561fd65130271a928b5a8f23a6a1e8b32ec349b/litellm-1.109.1-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:c84737897b6b459acd660fd7adb33e2d552c5d0b93c4a47b8cd4f5e299c93bac", size = 40482185, upload-time = "2026-11-12T02:00:08.516Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/49/120f60c831983fccfddfaa8683e0bb75c2ba70ed62263acae44ddd360534/litellm-1.109.1-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:b94080b0436c471e686735d10fd1069c151cf8b9816d823a1450419573f30e46", size = 41180765, upload-time = "2026-11-12T02:00:11.814Z" },
+    { url = "https://files.pythonhosted.org/packages/44/82/dfd6aa8ac212f5c2c7576079c92b97fcb666f3da521f47c813d1ee02e195/litellm-1.109.1-cp310-abi3-win_amd64.whl", hash = "sha256:738fd2465e24460f03a8c5ff33dc57c3fdfad88ff489811d718ee6ba3c5ad900", size = 41985493, upload-time = "2026-11-12T02:00:15.416Z" },
 ]
 
 [[package]]
@@ -1280,14 +1597,14 @@ wheels = [
 
 [[package]]
 name = "microsandbox"
-version = "0.7.13"
+version = "0.7.15"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c6/6b/495350ebd2ac529b16385e0bb824b2501bcf25bc99484916bdbdb50a2420/microsandbox-0.7.13-cp310-abi3-macosx_14_0_arm64.whl", hash = "sha256:c15a4a7952188fd41f8779a8c703fe4f721441ceaa9f2158d3bbfec1e3d4dea5", size = 47842610, upload-time = "2026-11-01T15:37:15.465Z" },
-    { url = "https://files.pythonhosted.org/packages/8f/a0/456fda5079e622bec163cac55f9315e42e30ddb0d51a7e525edaa2d493fa/microsandbox-0.7.13-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:9ec98a309c8820baa81a84fb217705a3b831ffc82dd22a91d0111eef41d4bf5e", size = 50978736, upload-time = "2026-11-01T15:37:19.419Z" },
-    { url = "https://files.pythonhosted.org/packages/33/b7/87c5eeffd8180ae095a274e539de31abc584de2f45720381d68e26506a95/microsandbox-0.7.13-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:db904218b404ade30006a1770c46fba51e1cece6fbab787360e48fb4c07f69cd", size = 49105594, upload-time = "2026-11-01T15:37:23.398Z" },
-    { url = "https://files.pythonhosted.org/packages/d9/88/44499a687a1327df674e72f0caa425d3831c53144c4e501955fe2335d269/microsandbox-0.7.13-cp310-abi3-win_amd64.whl", hash = "sha256:573934513f490f1e8bccc924acce9f3106c2864474eeb59cd9f17b74dbd37bd5", size = 45165427, upload-time = "2026-11-01T15:37:26.959Z" },
-    { url = "https://files.pythonhosted.org/packages/14/9b/1b5a5e966161b9fa0f93cfbb5b10fb2fedf85c13c6a08eaa5fc31df25da5/microsandbox-0.7.13-cp310-abi3-win_arm64.whl", hash = "sha256:7b25322a2723bd9560fd67691e6080ebb7af4542940244958403c87aa3df5a09", size = 47722413, upload-time = "2026-11-01T15:37:30.273Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/a3/8f3443da404f0a4011b030d1fc78af700fde337989b3a6936f12dbd8761a/microsandbox-0.7.15-cp310-abi3-macosx_14_0_arm64.whl", hash = "sha256:efb56b0d8ea98cd05b77a13e20855f79e30a91b7648f87be43e1adb18190a42f", size = 48696938, upload-time = "2026-11-12T17:58:53.37Z" },
+    { url = "https://files.pythonhosted.org/packages/be/f3/35755343c0a5903d16b2f3a562b83ee51a9f5dfda711ce5904400accd32e/microsandbox-0.7.15-cp310-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:a1309f14508f7145879b7888ac80db9debf41f5305d61790bc54e9b566f2bf13", size = 51912856, upload-time = "2026-11-12T17:58:58.513Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/1c/d8d9730f60da27cd8b2f2a940f669b0c3ece6d11bab46c962a4a4fbf1a29/microsandbox-0.7.15-cp310-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:c682405c4a9ae3c669a1615d626c1769168142be513cd29c3dc00d567f7873f6", size = 50337685, upload-time = "2026-11-12T17:59:03.303Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/e1/c7fde453881b22070023f30c2179f509feb7db43480d91b9a3e1056f4130/microsandbox-0.7.15-cp310-abi3-win_amd64.whl", hash = "sha256:2ca30c24dde251109691e7366812296d2904a4c2d529eef109d202144ebc6433", size = 46930533, upload-time = "2026-11-12T17:59:08.011Z" },
+    { url = "https://files.pythonhosted.org/packages/66/a4/6d5a45dd4a6f68d854cd1b56641139712b6b7db72a032f09929d87575bc9/microsandbox-0.7.15-cp310-abi3-win_arm64.whl", hash = "sha256:2d36f1af52ed1b80b332b3ac1800b0093e8f4961a5e69582eaaa9e9eb9c34cbc", size = 48632605, upload-time = "2026-11-12T17:59:13.022Z" },
 ]
 
 [[package]]
@@ -1441,272 +1758,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/9a/8e/105de02c1322cfada6d9710d9146ef8026419d433c9d08359a2d35805811/nodeenv-1.11.0.tar.gz", hash = "sha256:3ce8fe5b71d16e8af7039ca65257354100bc772965d6bc549070649e53b1b146", size = 99301, upload-time = "2026-09-26T11:29:21.367Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/54/c8/12811c9b48fde162bb72b6f2e78fada9a247a09d7bb5be2050a5d099c77b/nodeenv-1.11.0-py2.py3-none-any.whl", hash = "sha256:edaa16e6c14d7cf395d75d4bbd5a26390f4dc06501a33b4e76282b02cc688a25", size = 34277, upload-time = "2026-09-26T11:29:19.933Z" },
-]
-
-[[package]]
-name = "nooa"
-source = { editable = "." }
-dependencies = [
-    { name = "anyio" },
-    { name = "filelock", marker = "sys_platform == 'win32'" },
-    { name = "httpx" },
-    { name = "litellm" },
-    { name = "msgpack" },
-    { name = "openinference-instrumentation-litellm" },
-    { name = "pydantic" },
-    { name = "urllib3" },
-]
-
-[package.optional-dependencies]
-acp = [
-    { name = "nooa-acp" },
-]
-arc = [
-    { name = "arc-agi" },
-    { name = "arcengine" },
-    { name = "pillow" },
-    { name = "rich" },
-]
-bench = [
-    { name = "nooa-bench" },
-]
-cli = [
-    { name = "nooa-cli" },
-]
-mcp = [
-    { name = "cryptography" },
-    { name = "mcp" },
-    { name = "pyjwt", extra = ["crypto"] },
-]
-memory = [
-    { name = "nooa-memory" },
-]
-nemo-relay = [
-    { name = "nemo-relay" },
-]
-sandbox = [
-    { name = "cloudpickle" },
-    { name = "microsandbox" },
-]
-tracing = [
-    { name = "openinference-instrumentation" },
-    { name = "openinference-instrumentation-litellm" },
-    { name = "openinference-semantic-conventions" },
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-sdk" },
-]
-viewer = [
-    { name = "fastapi" },
-    { name = "python-dotenv" },
-    { name = "python-multipart" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "eval-pipeline" },
-    { name = "fastapi" },
-    { name = "httpx", extra = ["socks"] },
-    { name = "matplotlib" },
-    { name = "mypy" },
-    { name = "nooa-acp" },
-    { name = "nooa-bench" },
-    { name = "nooa-cli" },
-    { name = "nooa-memory" },
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "pandas" },
-    { name = "pre-commit" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-timeout" },
-    { name = "python-dotenv" },
-    { name = "python-multipart" },
-    { name = "pyyaml" },
-    { name = "ruff" },
-    { name = "uvicorn" },
-    { name = "watchfiles" },
-]
-trace-viewer = [
-    { name = "fastapi" },
-    { name = "python-dotenv" },
-    { name = "python-multipart" },
-    { name = "pyyaml" },
-    { name = "uvicorn" },
-    { name = "watchfiles" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "anyio", specifier = ">=4.15.1" },
-    { name = "arc-agi", marker = "extra == 'arc'", specifier = ">=0.9.8" },
-    { name = "arcengine", marker = "extra == 'arc'", specifier = ">=0.9.3" },
-    { name = "cloudpickle", marker = "extra == 'sandbox'", specifier = ">=3.1,<4" },
-    { name = "cryptography", marker = "extra == 'mcp'", specifier = ">=50.0.2" },
-    { name = "fastapi", marker = "extra == 'viewer'", specifier = ">=0.100.0" },
-    { name = "filelock", marker = "sys_platform == 'win32'", specifier = ">=3.29.4" },
-    { name = "httpx", specifier = ">=0.27.0" },
-    { name = "litellm", specifier = ">=1.97.0,!=1.106.0.dev2,!=1.106.0.dev3,!=1.106.0rc1,!=1.106.0rc2,!=1.106.0rc3,!=1.106.0rc4,!=1.106.0,!=1.106.1,!=1.106.2,!=1.106.3,!=1.106.4,!=1.106.5,!=1.106.6,!=1.106.7,!=1.107.0.dev1,!=1.107.0.dev2,!=1.107.0.dev3,!=1.107.0rc1,!=1.107.0rc2,!=1.107.0rc3,!=1.108.0rc1,!=1.108.0,!=1.108.1" },
-    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.30,<2" },
-    { name = "microsandbox", marker = "extra == 'sandbox'", specifier = ">=0.7.13,<0.8" },
-    { name = "msgpack", specifier = ">=1.2.1" },
-    { name = "nemo-relay", marker = "extra == 'nemo-relay'", specifier = ">=0.6,<0.7" },
-    { name = "nooa-acp", marker = "extra == 'acp'", editable = "packages/nooa-acp" },
-    { name = "nooa-bench", marker = "extra == 'bench'", editable = "packages/nooa-bench" },
-    { name = "nooa-cli", marker = "extra == 'cli'", editable = "packages/nooa-cli" },
-    { name = "nooa-memory", marker = "extra == 'memory'", editable = "packages/nooa-memory" },
-    { name = "openinference-instrumentation", marker = "extra == 'tracing'", specifier = ">=0.1.42" },
-    { name = "openinference-instrumentation-litellm", specifier = ">=0.1.30" },
-    { name = "openinference-instrumentation-litellm", marker = "extra == 'tracing'", specifier = ">=0.1.28" },
-    { name = "openinference-semantic-conventions", marker = "extra == 'tracing'", specifier = ">=0.1.9" },
-    { name = "opentelemetry-api", marker = "extra == 'tracing'", specifier = ">=1.20.0" },
-    { name = "opentelemetry-sdk", marker = "extra == 'tracing'", specifier = ">=1.20.0" },
-    { name = "pillow", marker = "extra == 'arc'", specifier = ">=10.0" },
-    { name = "pydantic", specifier = ">=2.14" },
-    { name = "pyjwt", extras = ["crypto"], marker = "extra == 'mcp'", specifier = ">=2.15.1" },
-    { name = "python-dotenv", marker = "extra == 'viewer'", specifier = ">=1.0.0" },
-    { name = "python-multipart", marker = "extra == 'viewer'", specifier = ">=0.0.5" },
-    { name = "rich", marker = "extra == 'arc'", specifier = ">=13.0" },
-    { name = "urllib3", specifier = ">=2.8.0" },
-    { name = "uvicorn", extras = ["standard"], marker = "extra == 'viewer'", specifier = ">=0.20.0" },
-]
-provides-extras = ["acp", "arc", "bench", "cli", "mcp", "memory", "nemo-relay", "sandbox", "tracing", "viewer"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "eval-pipeline", editable = "util/eval_pipeline" },
-    { name = "fastapi", specifier = ">=0.123.4" },
-    { name = "httpx", extras = ["socks"], specifier = ">=0.28.1" },
-    { name = "matplotlib", specifier = ">=3.8.0" },
-    { name = "mypy", specifier = ">=1.7.0" },
-    { name = "nooa-acp", editable = "packages/nooa-acp" },
-    { name = "nooa-bench", editable = "packages/nooa-bench" },
-    { name = "nooa-cli", editable = "packages/nooa-cli" },
-    { name = "nooa-memory", editable = "packages/nooa-memory" },
-    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.39.1" },
-    { name = "pandas", specifier = ">=2.0.0" },
-    { name = "pre-commit", specifier = ">=4.5.0" },
-    { name = "pyright", specifier = ">=1.1.408" },
-    { name = "pytest", specifier = ">=7.4.0" },
-    { name = "pytest-asyncio", specifier = ">=0.21.0" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
-    { name = "pytest-rerunfailures", specifier = ">=14.0" },
-    { name = "pytest-timeout", specifier = ">=2.3.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "python-multipart", specifier = ">=0.0.20" },
-    { name = "pyyaml", specifier = ">=6.0.0" },
-    { name = "ruff", specifier = ">=0.14.14" },
-    { name = "uvicorn", specifier = ">=0.38.0" },
-    { name = "watchfiles", specifier = ">=1.0.0" },
-]
-trace-viewer = [
-    { name = "fastapi", specifier = ">=0.123.4" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "python-multipart", specifier = ">=0.0.20" },
-    { name = "pyyaml", specifier = ">=6.0.0" },
-    { name = "uvicorn", specifier = ">=0.38.0" },
-    { name = "watchfiles", specifier = ">=1.0.0" },
-]
-
-[[package]]
-name = "nooa-acp"
-source = { editable = "packages/nooa-acp" }
-dependencies = [
-    { name = "agent-client-protocol" },
-    { name = "click" },
-    { name = "litellm" },
-    { name = "nooa", extra = ["mcp"] },
-    { name = "nooa-cli" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "agent-client-protocol", specifier = ">=0.11,<0.12" },
-    { name = "click", specifier = ">=8.1.0" },
-    { name = "litellm", specifier = "!=1.95.0" },
-    { name = "nooa", extras = ["mcp"], editable = "." },
-    { name = "nooa-cli", editable = "packages/nooa-cli" },
-]
-
-[[package]]
-name = "nooa-bench"
-source = { editable = "packages/nooa-bench" }
-dependencies = [
-    { name = "click" },
-    { name = "nooa" },
-    { name = "nooa-cli" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1" },
-    { name = "nooa", editable = "." },
-    { name = "nooa-cli", editable = "packages/nooa-cli" },
-]
-
-[[package]]
-name = "nooa-cli"
-source = { editable = "packages/nooa-cli" }
-dependencies = [
-    { name = "click" },
-    { name = "nooa" },
-    { name = "prompt-toolkit" },
-    { name = "pyyaml" },
-]
-
-[package.optional-dependencies]
-ast = [
-    { name = "tree-sitter" },
-    { name = "tree-sitter-go" },
-    { name = "tree-sitter-javascript" },
-    { name = "tree-sitter-python" },
-    { name = "tree-sitter-rust" },
-    { name = "tree-sitter-typescript" },
-]
-datascience = [
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "plotly" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1.0" },
-    { name = "nooa", editable = "." },
-    { name = "numpy", marker = "extra == 'datascience'", specifier = ">=1.24.0" },
-    { name = "pandas", marker = "extra == 'datascience'", specifier = ">=2.0.0" },
-    { name = "plotly", marker = "extra == 'datascience'", specifier = ">=5.0.0" },
-    { name = "prompt-toolkit", specifier = ">=3.0.52" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "scikit-learn", marker = "extra == 'datascience'", specifier = ">=1.3.0" },
-    { name = "scipy", marker = "extra == 'datascience'", specifier = ">=1.10.0" },
-    { name = "tree-sitter", marker = "extra == 'ast'", specifier = ">=0.23.0" },
-    { name = "tree-sitter-go", marker = "extra == 'ast'", specifier = ">=0.23.0" },
-    { name = "tree-sitter-javascript", marker = "extra == 'ast'", specifier = ">=0.23.0" },
-    { name = "tree-sitter-python", marker = "extra == 'ast'", specifier = ">=0.23.0" },
-    { name = "tree-sitter-rust", marker = "extra == 'ast'", specifier = ">=0.23.0" },
-    { name = "tree-sitter-typescript", marker = "extra == 'ast'", specifier = ">=0.23.0" },
-]
-provides-extras = ["ast", "datascience"]
-
-[[package]]
-name = "nooa-memory"
-source = { editable = "packages/nooa-memory" }
-dependencies = [
-    { name = "nooa" },
-    { name = "numpy" },
-    { name = "pydantic" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "nooa", editable = "." },
-    { name = "numpy", specifier = ">=1.24.0" },
-    { name = "pydantic", specifier = ">=2.14" },
 ]
 
 [[package]]
@@ -2564,6 +2615,18 @@ wheels = [
 ]
 
 [[package]]
+name = "s3transfer"
+version = "0.19.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "botocore" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/49/c5/0a5ce655109cb96b8dfad36908a4e108d15f5dc2eff8fbc3146c4312e704/s3transfer-0.19.3.tar.gz", hash = "sha256:8326acc3d056d7f7b8a37110c7d2aea41f67e83f6ae79cd3b5fbcca34c726406", size = 166087, upload-time = "2026-10-19T19:19:49.751Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e2/a4/88f9e10498759121060b8050a1554753dfc04df39bbbcc7aad9ecc8d9440/s3transfer-0.19.3-py3-none-any.whl", hash = "sha256:24eb7535804306355e31c952a90022bf5b2f9d760f9a11062c7493a217c08553", size = 90252, upload-time = "2026-10-19T19:19:48.309Z" },
+]
+
+[[package]]
 name = "scikit-learn"
 version = "1.9.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2858,15 +2921,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/cb/f57b149d7beed1a85b8266d0c60ebe4c46e79c9ba56bc17b898e17daf88e/tree_sitter_typescript-0.23.2-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:8d4f0f9bcb61ad7b7509d49a1565ff2cc363863644a234e1e0fe10960e55aea0", size = 340245, upload-time = "2024-11-11T02:36:06.473Z" },
     { url = "https://files.pythonhosted.org/packages/8b/ab/dd84f0e2337296a5f09749f7b5483215d75c8fa9e33738522e5ed81f7254/tree_sitter_typescript-0.23.2-cp39-abi3-win_amd64.whl", hash = "sha256:3f730b66396bc3e11811e4465c41ee45d9e9edd6de355a58bbbc49fa770da8f9", size = 278015, upload-time = "2024-11-11T02:36:07.631Z" },
     { url = "https://files.pythonhosted.org/packages/9f/e4/81f9a935789233cf412a0ed5fe04c883841d2c8fb0b7e075958a35c65032/tree_sitter_typescript-0.23.2-cp39-abi3-win_arm64.whl", hash = "sha256:05db58f70b95ef0ea126db5560f3775692f609589ed6f8dd0af84b7f19f1cbb7", size = 274052, upload-time = "2024-11-11T02:36:09.514Z" },
-]
-
-[[package]]
-name = "truststore"
-version = "0.10.5"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/ee/9f/c5201d42a484c061e528825fc8e2d565f5abd50a4ced6fb7d29c4ec99b2b/truststore-0.10.5.tar.gz", hash = "sha256:30d36967ccaded5cbb38d602c433f53600036c79d502f4533a49b60a03bbefcd", size = 28091, upload-time = "2026-10-12T22:27:31.808Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/e9/3a7820be2bb0fe53b6bc9c3be26d3d1158004e4c3ab953aa6840b955b1e9/truststore-0.10.5-py3-none-any.whl", hash = "sha256:9aaaedaefaf06d8b206278cf8b5012bc897f485a874503501e12d776df78951c", size = 19017, upload-time = "2026-10-12T22:27:30.377Z" },
 ]
 
 [[package]]

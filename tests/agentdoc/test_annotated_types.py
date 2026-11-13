@@ -13,8 +13,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from nooa.agentdoc import doc
-from nooa.agentdoc._structured import format_type
+from aster.agentdoc import doc
+from aster.agentdoc._structured import format_type
 
 
 class TestFormatType:

@@ -7,16 +7,16 @@ from __future__ import annotations
 import litellm
 import pytest
 
-from nooa.events import DebugTrace, Error
-from nooa.llm_types import AssistantText, CacheBoundary, LLMResponse, ToolCall
-from nooa.tracing import journal_llm_call, set_session
-from nooa.tracing._context_sideband import (
+from aster.events import DebugTrace, Error
+from aster.llm_types import AssistantText, CacheBoundary, LLMResponse, ToolCall
+from aster.tracing import journal_llm_call, set_session
+from aster.tracing._context_sideband import (
     JournalPayload,
     get_journal_payload,
     set_journal_payload,
 )
-from nooa.tracing._litellm_journal import FileMessageJournalCallback, MessageJournalCallback
-from nooa.viewer.otlp_store import _resolve_message
+from aster.tracing._litellm_journal import FileMessageJournalCallback, MessageJournalCallback
+from aster.viewer.otlp_store import _resolve_message
 
 
 class FakeWriter:
@@ -62,7 +62,7 @@ def _assistant(text: str, *calls: ToolCall, usage: dict | None = None) -> LLMRes
     )
 
 
-def test_records_call_with_mixed_nooa_messages(writer):
+def test_records_call_with_mixed_aster_messages(writer):
     set_session("journal-api-session")
     replayed = _assistant("calling", ToolCall(id="t1", name="run", arguments='{"x": 1}'))
     messages = [
@@ -193,7 +193,7 @@ def test_never_raises(monkeypatch, caplog):
 
 
 def test_live_viewer_sink_posts_blocks_and_call(monkeypatch):
-    import nooa.tracing._litellm_journal as journal_mod
+    import aster.tracing._litellm_journal as journal_mod
 
     posted: list[tuple[str, object]] = []
 
@@ -240,7 +240,7 @@ def test_generated_llm_span_takes_the_record_session(writer, monkeypatch):
     from opentelemetry.sdk.trace.export import SimpleSpanProcessor
     from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
-    from nooa.tracing._session_processor import SessionSpanProcessor
+    from aster.tracing._session_processor import SessionSpanProcessor
 
     exporter = InMemorySpanExporter()
     provider = TracerProvider()

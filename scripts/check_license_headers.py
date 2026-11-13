@@ -67,8 +67,7 @@ def main() -> int:
             print(f"  {rel}")
         print(
             "\nAdd the header to the top of each file (after any shebang):\n"
-            "  # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION "
-            "& AFFILIATES. All rights reserved.\n"
+            "  # SPDX-FileCopyrightText: Copyright (c) YEAR, copyright holder.\n"
             "  # SPDX-License-Identifier: Apache-2.0"
         )
         return 1

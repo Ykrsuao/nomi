@@ -10,15 +10,15 @@ from typing import Any
 
 import pytest
 
-from nooa.unifiedllm import AdmissionControlConfig, AdmissionTimeoutError
-from nooa.unifiedllm.admission import (
+from aster.unifiedllm import AdmissionControlConfig, AdmissionTimeoutError
+from aster.unifiedllm.admission import (
     AdmissionPolicy,
     CooldownAdmissionPermit,
     _admission_controller_scope,
     _get_or_create_group,
     _reset_admission_groups_for_tests,
 )
-from nooa.unifiedllm.unifiedllm import _run_async_provider_call
+from aster.unifiedllm.unifiedllm import _run_async_provider_call
 
 
 @pytest.fixture(autouse=True)

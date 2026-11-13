@@ -10,7 +10,7 @@ import httpx
 import pytest
 from pydantic import BaseModel
 
-from nooa import (
+from aster import (
     Agent,
     BooleanDecision,
     ChoiceDecision,
@@ -22,8 +22,8 @@ from nooa import (
     Threshold,
     strategy,
 )
-from nooa.decisions import DecisionRefusedError, InvalidDecisionResponseError
-from nooa.events import DecisionRecord
+from aster.decisions import DecisionRefusedError, InvalidDecisionResponseError
+from aster.events import DecisionRecord
 
 ENDPOINT = "https://api.openai.com/v1/decisions"
 
@@ -237,7 +237,7 @@ async def test_malformed_responses_are_rejected(answers: list[dict]) -> None:
 
 
 def test_registry_builds_an_openai_decision_client(monkeypatch) -> None:
-    from nooa.unifiedllm.registry import client_from_config
+    from aster.unifiedllm.registry import client_from_config
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     client = client_from_config(

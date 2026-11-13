@@ -16,13 +16,13 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config.strategy_config import CodeActConfig
-from nooa.context_blocks.events import ToolCallEvent
-from nooa.events import PythonOutput, ResultStatus
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config.strategy_config import CodeActConfig
+from aster.context_blocks.events import ToolCallEvent
+from aster.events import PythonOutput, ResultStatus
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # Module globals are visible to generated cells (execute_code builds its
 # globals from the agent's module), so the test can hand the cell events.

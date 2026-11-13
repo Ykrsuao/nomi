@@ -10,10 +10,10 @@ Focus on:
 
 import pytest
 
-from nooa import Agent
-from nooa.errors import ValidationError
-from nooa.runtime.actor import ActorRuntime
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.errors import ValidationError
+from aster.runtime.actor import ActorRuntime
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM (can be overridden at instantiation)
 _TEST_LLM = FakeLLMClient()

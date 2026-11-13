@@ -53,7 +53,7 @@ def agent_from_spec(spec) -> AgentWrapper:
     # Build client from config dict (empty config → no LLM needed)
     client = None
     if spec.client_config and spec.client_config.get("model"):
-        from nooa.unifiedllm import CompletionClient, ResponsesClient, RetryConfig
+        from aster.unifiedllm import CompletionClient, ResponsesClient, RetryConfig
 
         cc = dict(spec.client_config)
         # Resolve API key from env var name at construction time

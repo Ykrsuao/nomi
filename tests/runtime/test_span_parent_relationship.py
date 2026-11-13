@@ -11,11 +11,11 @@ So child methods get parent_call_id=None instead of the parent's call_id.
 
 import pytest
 
-from nooa import no_trace, strategy
-from nooa.agent import Agent
-from nooa.runtime.hooks import get_hooks, set_hooks
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import no_trace, strategy
+from aster.agent import Agent
+from aster.runtime.hooks import get_hooks, set_hooks
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def _resp(content: str) -> LLMResponse:

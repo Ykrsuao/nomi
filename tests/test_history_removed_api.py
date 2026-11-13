@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Test that legacy attributes have been removed and new API exists."""
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM (can be overridden at instantiation)
 _TEST_LLM = FakeLLMClient()

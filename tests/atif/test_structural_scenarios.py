@@ -24,13 +24,13 @@ from typing import Literal
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.atif import Trajectory, atif_scope
-from nooa.atif.exporter import AtifExporter
-from nooa.atif.schema import StepObject
-from nooa.config import CodeActConfig
-from nooa.context_blocks import ResultStatus
-from nooa.events import (
+from aster import Agent, strategy
+from aster.atif import Trajectory, atif_scope
+from aster.atif.exporter import AtifExporter
+from aster.atif.schema import StepObject
+from aster.config import CodeActConfig
+from aster.context_blocks import ResultStatus
+from aster.events import (
     AfterTurn,
     BeforeTurn,
     PythonOutput,
@@ -38,8 +38,8 @@ from nooa.events import (
     SystemPrompt,
     Task,
 )
-from nooa.strategies import CodeActStrategy, PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.strategies import CodeActStrategy, PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 from tests.atif.normative import assert_atif_normative
 
 # ---------------------------------------------------------------------------

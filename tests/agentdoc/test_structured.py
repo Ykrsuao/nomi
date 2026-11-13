@@ -14,9 +14,9 @@ if str(_tests_dir) not in sys.path:
 from dataclasses import dataclass
 from typing import NamedTuple, TypedDict
 
-from nooa.agentdoc import doc
-from nooa.agentdoc._info import REQUIRED
-from nooa.agentdoc._structured import extract_type_info
+from aster.agentdoc import doc
+from aster.agentdoc._info import REQUIRED
+from aster.agentdoc._structured import extract_type_info
 
 
 class TestExtractStructuredType:
@@ -131,7 +131,7 @@ class TestExtractStructuredType:
             assert field.description == "optional"  # Marked as optional
 
         # Test rendering
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         output = doc(Config)
         assert "debug: bool  # optional" in output
@@ -267,7 +267,7 @@ class TestInitFieldExtraction:
         """
         from fixtures.init_field_classes import SimpleCounter
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(SimpleCounter)
 
@@ -287,7 +287,7 @@ class TestInitFieldExtraction:
         """Extract Annotated fields with descriptions from a real file."""
         from fixtures.init_field_classes import AnnotatedTool
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(AnnotatedTool)
 
@@ -310,7 +310,7 @@ class TestInitFieldExtraction:
         """Should not extract private fields from __init__."""
         from fixtures.init_field_classes import SecretClass
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(SecretClass)
 
@@ -354,7 +354,7 @@ class TestInitFieldExtractionMRO:
         """Child with own __init__ should see both its fields and parent's."""
         from fixtures.init_field_classes import ChildWithOwnInit
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(ChildWithOwnInit)
         field_names = [f.name for f in fields]
@@ -372,7 +372,7 @@ class TestInitFieldExtractionMRO:
         """When child redefines a parent field, child's version wins."""
         from fixtures.init_field_classes import ChildWithOwnInit
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(ChildWithOwnInit)
         shared = next(f for f in fields if f.name == "shared_field")
@@ -384,7 +384,7 @@ class TestInitFieldExtractionMRO:
         """Child with no __init__ should get all parent's fields."""
         from fixtures.init_field_classes import ChildWithoutInit
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(ChildWithoutInit)
         field_names = [f.name for f in fields]
@@ -398,7 +398,7 @@ class TestInitFieldExtractionMRO:
         """Grandchild should see fields from all ancestors."""
         from fixtures.init_field_classes import GrandchildClass
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(GrandchildClass)
         field_names = [f.name for f in fields]
@@ -416,7 +416,7 @@ class TestInitFieldExtractionMRO:
         """Each field name should appear exactly once."""
         from fixtures.init_field_classes import GrandchildClass
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(GrandchildClass)
         field_names = [f.name for f in fields]
@@ -428,7 +428,7 @@ class TestInitFieldExtractionMRO:
         """Child fields should appear before parent fields (MRO order)."""
         from fixtures.init_field_classes import ChildWithOwnInit
 
-        from nooa.agentdoc._structured import _extract_init_fields
+        from aster.agentdoc._structured import _extract_init_fields
 
         fields = _extract_init_fields(ChildWithOwnInit)
         field_names = [f.name for f in fields]
@@ -464,7 +464,7 @@ class TestFormatType:
     """Tests for format_type() utility."""
 
     def test_format_simple_types(self):
-        from nooa.agentdoc._structured import format_type
+        from aster.agentdoc._structured import format_type
 
         assert format_type(str) == "str"
         assert format_type(int) == "int"
@@ -473,7 +473,7 @@ class TestFormatType:
         assert format_type(type(None)) == "None"
 
     def test_format_generic_types(self):
-        from nooa.agentdoc._structured import format_type
+        from aster.agentdoc._structured import format_type
 
         assert format_type(list[str]) == "list[str]"
         assert format_type(dict[str, int]) == "dict[str, int]"
@@ -481,7 +481,7 @@ class TestFormatType:
         assert "None" in format_type(str | None)
 
     def test_format_union_types(self):
-        from nooa.agentdoc._structured import format_type
+        from aster.agentdoc._structured import format_type
 
         # Test modern union syntax
         result = format_type(str | int)
@@ -550,7 +550,7 @@ class TestPydanticDefaultNone:
 class TestSlotsDocRendering:
     def test_slots_class_no_member_descriptor_in_doc(self):
         """doc() on a __slots__ class must not render member_descriptor as a default."""
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         class Vec:
             __slots__ = ("x", "y")
@@ -566,7 +566,7 @@ class TestSlotsDocRendering:
         """__slots__ dataclass with defaults renders the default, not member_descriptor."""
         import dataclasses
 
-        from nooa.agentdoc import doc
+        from aster.agentdoc import doc
 
         @dataclasses.dataclass(slots=True)
         class Point:
@@ -579,7 +579,7 @@ class TestSlotsDocRendering:
 
     def test_slots_class_required_fields_shown_without_default(self):
         """__slots__ fields without defaults are shown as required (no default displayed)."""
-        from nooa.agentdoc._structured import REQUIRED, extract_type_info
+        from aster.agentdoc._structured import REQUIRED, extract_type_info
 
         class Vec:
             __slots__ = ("x", "y")
@@ -676,8 +676,8 @@ class TestFormatModuleInfoInaccessibleSymbol:
 
     def test_inaccessible_symbol_renders_comment(self):
         """A symbol listed in ordered_names but missing from all maps renders a comment."""
-        from nooa.agentdoc import pformat
-        from nooa.agentdoc._info import ModuleInfo
+        from aster.agentdoc import pformat
+        from aster.agentdoc._info import ModuleInfo
 
         info = ModuleInfo(
             name="fake_module",
@@ -694,8 +694,8 @@ class TestFormatModuleInfoInaccessibleSymbol:
 
     def test_accessible_symbols_render_normally(self):
         """Symbols that are accessible are rendered without fallback comment."""
-        from nooa.agentdoc import pformat
-        from nooa.agentdoc._info import ModuleInfo
+        from aster.agentdoc import pformat
+        from aster.agentdoc._info import ModuleInfo
 
         info = ModuleInfo(
             name="fake_module",
@@ -717,7 +717,7 @@ class TestCollectItemsNarrowExcept:
 
     def test_property_raising_value_error_is_skipped(self):
         """A property that raises ValueError is skipped gracefully by pformat()."""
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         class Problematic:
             x: int = 1
@@ -733,7 +733,7 @@ class TestCollectItemsNarrowExcept:
 
     def test_property_raising_runtime_error_is_skipped(self):
         """A property that raises RuntimeError is skipped gracefully by pformat()."""
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         class Problematic:
             value: str = "ok"
@@ -799,7 +799,7 @@ class TestPropertyExtraction:
 
     def test_property_hidden_via_spec(self):
         """spec(hidden=True) on a property excludes it from doc()."""
-        from nooa.agentdoc import spec
+        from aster.agentdoc import spec
 
         class Agent:
             @property

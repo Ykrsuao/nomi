@@ -10,11 +10,11 @@ from dataclasses import dataclass
 
 import pytest
 
-from nooa.agentdoc import pformat
-from nooa.agentdoc._format_observation import observe_truncation
-from nooa.runtime.actor import ContextVarStream, _stderr_buffer_var
-from nooa.strategies.current_call import CurrentCall
-from nooa.strategies.prefill import PrefillTruncationWarning, warn_on_prefill_truncation
+from aster.agentdoc import pformat
+from aster.agentdoc._format_observation import observe_truncation
+from aster.runtime.actor import ContextVarStream, _stderr_buffer_var
+from aster.strategies.current_call import CurrentCall
+from aster.strategies.prefill import PrefillTruncationWarning, warn_on_prefill_truncation
 
 
 @pytest.mark.parametrize(
@@ -80,15 +80,15 @@ def test_dictionary_key_warning_explains_fixed_limit():
 @pytest.mark.asyncio
 async def test_worker_omissions_survive_transport():
     """A worker reports omissions to its parent rather than warning inside its stderr."""
-    from nooa.runtime.pprint import pprint
-    from nooa.runtime.sandbox.cell_core import run_cell_source
-    from nooa.runtime.sandbox.serialization import (
+    from aster.runtime.pprint import pprint
+    from aster.runtime.sandbox.cell_core import run_cell_source
+    from aster.runtime.sandbox.serialization import (
         dto_from_wire,
         dto_to_result,
         dto_to_wire,
         result_to_dto,
     )
-    from nooa.runtime.sandbox.wire import Codec
+    from aster.runtime.sandbox.wire import Codec
 
     result = await run_cell_source(
         "pprint(data, max_string=3)", {"pprint": pprint, "data": "long input"}
@@ -104,8 +104,8 @@ async def test_worker_omissions_survive_transport():
 @pytest.mark.parametrize("reason", [123, "untrusted\nwarning", ["max_string"]])
 def test_worker_omission_names_are_validated(reason):
     """Untrusted worker metadata cannot inject arbitrary text into developer warnings."""
-    from nooa.runtime.sandbox.errors import CellSerializationError
-    from nooa.runtime.sandbox.serialization import dto_from_wire
+    from aster.runtime.sandbox.errors import CellSerializationError
+    from aster.runtime.sandbox.serialization import dto_from_wire
 
     with pytest.raises(CellSerializationError):
         dto_from_wire({"truncation_reasons": [reason]})

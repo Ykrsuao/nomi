@@ -9,9 +9,9 @@ and can actually use the defined class to produce results.
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, strategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 # Code where the LLM defines a helper class and uses it to compute the result.
 _CLASS_AND_USE_SNIPPET = """

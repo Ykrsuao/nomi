@@ -28,7 +28,7 @@ STATE = {"turn": 0, "state": "NOT_FINISHED", "available_actions": ["UP", "DOWN"]
 
 
 def _tool_response(name: str, args: dict):
-    from nooa.unifiedllm.unifiedllm import LLMResponse, ToolCall
+    from aster.unifiedllm.unifiedllm import LLMResponse, ToolCall
 
     args_json = json.dumps(args)
     call_id = f"call_{abs(hash(args_json)) & 0xFFFF}"
@@ -47,7 +47,7 @@ def _cell(code: str):
 
 
 def _build_agent(tmp_path, scripted_responses):
-    from nooa.unifiedllm import FakeLLMClient
+    from aster.unifiedllm import FakeLLMClient
 
     llm = FakeLLMClient(scripted_responses=scripted_responses)
     agent = sa.MdArcSolverAgent(

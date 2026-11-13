@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-from nooa.runtime.code_validator import ValidationContext
+from aster.runtime.code_validator import ValidationContext
 
 
 def test_validation_context_has_exec_globals():

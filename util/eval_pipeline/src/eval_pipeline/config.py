@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-from nooa.unifiedllm import CompletionClient, RetryConfig
+from aster.unifiedllm import CompletionClient, RetryConfig
 
 from .eval_types import ModelSpec, Tier
 from .models import Task
@@ -40,7 +40,7 @@ def _enable_error_capture_if_requested():
     """
     global _error_capture_enabled
     if not _error_capture_enabled and os.getenv("CAPTURE_LLM_ERRORS"):
-        from nooa.unifiedllm.http_logging import enable_http_request_logging
+        from aster.unifiedllm.http_logging import enable_http_request_logging
 
         # Determine output directory - use CAPTURE_LLM_ERRORS value if it's a path
         capture_setting = os.getenv("CAPTURE_LLM_ERRORS")
@@ -151,7 +151,7 @@ def _resolve_registry_model(registry_name: str, overrides: dict | None = None) -
     # eval_pipeline is launched as a standalone CLI without the TUI
     # bootstrap, so the registry would otherwise be empty. Trigger the
     # lazy auto-load before reading MODELS.
-    from nooa.unifiedllm.registry import MODELS, _registry_lock, ensure_loaded
+    from aster.unifiedllm.registry import MODELS, _registry_lock, ensure_loaded
 
     ensure_loaded()
 
@@ -476,7 +476,7 @@ def evaluator_from_config(
 
                 # Dispatch based on client_type from registry config
                 if getattr(s, "client_type", None) == "responses":
-                    from nooa.unifiedllm import ResponsesClient
+                    from aster.unifiedllm import ResponsesClient
 
                     return ResponsesClient(retry_config=retry_config, **config_dict)
                 return CompletionClient(retry_config=retry_config, **config_dict)

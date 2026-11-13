@@ -8,7 +8,7 @@ import asyncio
 
 import pytest
 
-from nooa.runtime.channels import QueueManager
+from aster.runtime.channels import QueueManager
 
 
 @pytest.mark.parametrize(

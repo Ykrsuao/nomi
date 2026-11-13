@@ -13,7 +13,7 @@ class TestRuntimeServicesProtocol:
 
     def test_protocol_exists(self):
         """RuntimeServices protocol should exist."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         # Should be a Protocol
         assert hasattr(RuntimeServices, "__protocol_attrs__") or issubclass(
@@ -22,7 +22,7 @@ class TestRuntimeServicesProtocol:
 
     def test_protocol_is_runtime_checkable(self):
         """RuntimeServices should be runtime checkable."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         # Should work with isinstance()
         class MockRuntime:
@@ -61,7 +61,7 @@ class TestRuntimeServicesProtocol:
 
     def test_protocol_requires_agent_property(self):
         """RuntimeServices should require agent property."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         class MissingAgent:
             @property
@@ -79,7 +79,7 @@ class TestRuntimeServicesProtocol:
 
     def test_protocol_requires_event_manager_property(self):
         """RuntimeServices should require event_manager property."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         class MissingEventManager:
             @property
@@ -97,7 +97,7 @@ class TestRuntimeServicesProtocol:
 
     def test_protocol_requires_generate_method(self):
         """RuntimeServices should require generate() method."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         class MissingGenerate:
             @property
@@ -116,7 +116,7 @@ class TestRuntimeServicesProtocol:
 
     def test_protocol_requires_execute_code_method(self):
         """RuntimeServices should require execute_code() method."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         class MissingExecuteCode:
             @property
@@ -138,7 +138,7 @@ class TestRuntimeServicesProtocol:
 
     def test_protocol_requires_execute_nested_method(self):
         """RuntimeServices should require execute_nested() method."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         class MissingExecuteNested:
             @property
@@ -164,7 +164,7 @@ class TestRuntimeServicesComplete:
 
     def test_complete_implementation_passes_check(self):
         """Complete implementation should pass isinstance check."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         class CompleteRuntime:
             @property
@@ -202,7 +202,7 @@ class TestRuntimeServicesComplete:
 
     def test_extra_methods_are_allowed(self):
         """RuntimeServices implementations can have extra methods."""
-        from nooa.strategies.base import RuntimeServices
+        from aster.strategies.base import RuntimeServices
 
         class ExtendedRuntime:
             @property

@@ -17,12 +17,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from nooa import Agent
-from nooa.context_blocks.events import ResultStatus, ToolCallEvent, ToolResult
-from nooa.events import PythonOutput
-from nooa.runtime.actor import _current_llm_var, _current_method_var
-from nooa.storage.sqlite import SQLiteStorageManager
-from nooa.unifiedllm import CompletionClient
+from aster import Agent
+from aster.context_blocks.events import ResultStatus, ToolCallEvent, ToolResult
+from aster.events import PythonOutput
+from aster.runtime.actor import _current_llm_var, _current_method_var
+from aster.storage.sqlite import SQLiteStorageManager
+from aster.unifiedllm import CompletionClient
 
 _MODEL_NAME = "openai/nvidia/nvidia/Nemotron-3-Nano-30B-A3B"
 _API_BASE = "https://inference-api.nvidia.com/v1"

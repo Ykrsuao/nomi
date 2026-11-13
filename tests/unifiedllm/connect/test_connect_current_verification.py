@@ -10,8 +10,8 @@ from dataclasses import replace
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
-from nooa.unifiedllm.connect._records import public_record, text_baseline_passed
+from aster.unifiedllm import connect
+from aster.unifiedllm.connect._records import public_record, text_baseline_passed
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -463,7 +463,7 @@ async def test_factory_backend_extra_body_precedence_matches_actual_http(
 
 
 def test_snapshot_drop_params_matches_factory_defaults_and_explicit_setting(monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     observed = []
 
@@ -473,7 +473,7 @@ def test_snapshot_drop_params_matches_factory_defaults_and_explicit_setting(monk
             self.config = params
             observed.append(params)
 
-    monkeypatch.setattr("nooa.unifiedllm.CompletionClient", CaptureClient)
+    monkeypatch.setattr("aster.unifiedllm.CompletionClient", CaptureClient)
     for settings in ({}, {"drop_params": False}, {"drop_params": True}):
         entry = connect.configure_entry({"model_name": "openai/model", **settings})
         registry.client_from_config("local", entry, api_key="transient-secret")
@@ -526,7 +526,7 @@ async def test_decision_image_encoding_dependency_does_not_erase_genuine_baselin
 
 
 async def test_configured_retry_identity_is_not_claimed_as_executed_retry_policy(monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     sent, clients = [], []
     mock_http(
@@ -598,7 +598,7 @@ def _openai_unprefixed(temperature):
 
 async def test_unprefixed_openai_model_snapshot_matches_extra_body_dispatch(monkeypatch):
     """An unprefixed model LiteLLM resolves to OpenAI gets OpenAI's extra_body precedence."""
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     sent = []
     mock_http(

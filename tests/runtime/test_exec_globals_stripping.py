@@ -3,7 +3,7 @@
 import subprocess
 import time
 
-from nooa.runtime.actor import _strip_blocked_modules
+from aster.runtime.actor import _strip_blocked_modules
 
 
 class TestExecGlobalsStripping:
@@ -64,8 +64,8 @@ class TestExecGlobalsStripping:
         Both layers should use DEFAULT_BLOCKED_MODULES when no override is
         provided, so a module stripped by one layer is also rejected by the other.
         """
-        from nooa.runtime.code_validator import BlockingCallValidator
-        from nooa.runtime.restrictions import DEFAULT_BLOCKED_MODULES
+        from aster.runtime.code_validator import BlockingCallValidator
+        from aster.runtime.restrictions import DEFAULT_BLOCKED_MODULES
 
         # Stripping removes subprocess by default
         globs = {"subprocess": subprocess}
@@ -75,7 +75,7 @@ class TestExecGlobalsStripping:
         # Validator also rejects subprocess by default
         import ast
 
-        from nooa.runtime.code_validator import ValidationContext
+        from aster.runtime.code_validator import ValidationContext
 
         validator = BlockingCallValidator()
         issues = validator.validate(

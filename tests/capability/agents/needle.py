@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Needle-in-haystack test agent."""
 
-from nooa import Agent
+from aster import Agent
 
 
 class NeedleTestWrapper(Agent):

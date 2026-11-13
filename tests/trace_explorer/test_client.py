@@ -9,7 +9,7 @@ import httpx
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from nooa.trace_explorer.client import TraceExplorerClient
+from aster.trace_explorer.client import TraceExplorerClient
 
 # =============================================================================
 # Fixtures
@@ -91,7 +91,7 @@ def app():
     """Create a test FastAPI app with explorer routes."""
     from fastapi import FastAPI
 
-    from nooa.viewer.explorer_routes import router
+    from aster.viewer.explorer_routes import router
 
     test_app = FastAPI()
     test_app.include_router(router)
@@ -101,10 +101,10 @@ def app():
 @pytest.fixture
 def mock_otlp_store():
     """Mock otlp_store functions used by explorer_routes."""
-    from nooa.viewer.explorer_routes import clear_explorer_cache
+    from aster.viewer.explorer_routes import clear_explorer_cache
 
     clear_explorer_cache()
-    with patch("nooa.viewer.explorer_routes.otlp_store") as mock_store:
+    with patch("aster.viewer.explorer_routes.otlp_store") as mock_store:
         mock_store.session_exists.return_value = True
         mock_store.get_session_spans.return_value = _make_otlp_spans()
         yield mock_store
@@ -275,7 +275,7 @@ async def test_client_honors_env_proxy_and_no_proxy(monkeypatch, no_proxy):
     """The actual thin client uses a proxy unless NO_PROXY exempts the viewer."""
     for name in ("http_proxy", "https_proxy", "all_proxy", "no_proxy"):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.delenv("NOOA_VIEWER_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("ASTER_VIEWER_AUTH_TOKEN", raising=False)
     monkeypatch.setenv("HTTP_PROXY", "http://blackhole.invalid:3128")
     monkeypatch.setenv("HTTPS_PROXY", "http://blackhole.invalid:3128")
     monkeypatch.setenv("NO_PROXY", no_proxy)
@@ -302,12 +302,12 @@ async def test_client_honors_env_proxy_and_no_proxy(monkeypatch, no_proxy):
 )
 async def test_all_viewer_requests_use_configured_auth(monkeypatch, token, operation, scheme, host):
     """Every viewer entry point authenticates, without adding a header when unset."""
-    from nooa.trace_explorer import explorer
+    from aster.trace_explorer import explorer
 
     if token is None:
-        monkeypatch.delenv("NOOA_VIEWER_AUTH_TOKEN", raising=False)
+        monkeypatch.delenv("ASTER_VIEWER_AUTH_TOKEN", raising=False)
     else:
-        monkeypatch.setenv("NOOA_VIEWER_AUTH_TOKEN", token)
+        monkeypatch.setenv("ASTER_VIEWER_AUTH_TOKEN", token)
     requests = []
 
     async def handle(_transport, request):
@@ -349,9 +349,9 @@ async def test_all_viewer_requests_use_configured_auth(monkeypatch, token, opera
 
 def test_http_auth_warning_contains_no_credentials_or_endpoint(monkeypatch):
     """The compatibility warning is actionable without disclosing connection details."""
-    from nooa.trace_explorer.client import _viewer_headers
+    from aster.trace_explorer.client import _viewer_headers
 
-    monkeypatch.setenv("NOOA_VIEWER_AUTH_TOKEN", "offline-secret-sentinel")
+    monkeypatch.setenv("ASTER_VIEWER_AUTH_TOKEN", "offline-secret-sentinel")
     with pytest.warns(UserWarning, match="unencrypted") as captured:
         headers = _viewer_headers("http://private-viewer.example:5001")
     assert headers == {"Authorization": "Bearer offline-secret-sentinel"}

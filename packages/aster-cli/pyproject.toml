@@ -1,0 +1,73 @@
+[project]
+name = "aster-cli"
+# Version is derived from git tags at build time by uv-dynamic-versioning.
+dynamic = ["version"]
+description = "Aster terminal coding agent and developer toolkit"
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    # Floor reflects the actual minimum-compatible core (bump when the cli
+    # starts to require a newer core API). No auto-lockstep — published
+    # wheels declare what they actually need, not what was co-released.
+    "aster",
+    "click>=8.2.1",
+    # CLI config files
+    "pyyaml>=6.0",
+    "prompt-toolkit>=3.0.52",
+]
+
+
+[project.scripts]
+aster = "aster_cli:main"
+
+[project.entry-points."aster.skills"]
+"aster.repo" = "aster_cli.tools.repo_tools:RepoTools"
+
+[project.optional-dependencies]
+# The Rust terminal uses the same Python agent and saved sessions as ACP hosts.
+tui = [
+    "aster-acp",
+]
+# AST-aware code analysis for RepoTools (tree-sitter grammars).
+# The CLI works without these — RepoTools falls back to regex.
+ast = [
+    "tree-sitter>=0.23.0",
+    "tree-sitter-python>=0.23.0",
+    "tree-sitter-javascript>=0.23.0",
+    "tree-sitter-typescript>=0.23.0",
+    "tree-sitter-go>=0.23.0",
+    "tree-sitter-rust>=0.23.0",
+]
+# Data-science stack pre-loaded into the agent's REPL execution namespace
+# (np, pd, px, go, scipy, sklearn). Soft-imported via try/except; they
+# exist purely so LLM-generated CodeAct cells can use these libs without
+# first failing on a missing import.
+datascience = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "plotly>=5.0.0",
+    "scipy>=1.10.0",
+    "scikit-learn>=1.3.0",
+]
+
+[tool.uv.sources]
+aster = { workspace = true }
+aster-acp = { workspace = true }
+
+[build-system]
+requires = ["hatchling>=1.26.0", "uv-dynamic-versioning>=0.14.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
+metadata = false
+fallback-version = "0.0.6"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aster_cli"]

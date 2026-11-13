@@ -1,44 +1,72 @@
-<div align="center">
+# Aster
 
-<br />
+**A terminal coding workspace for working with an AI agent in your repository.**
 
-<!-- Absolute URLs, not repo-relative paths: this README is also the PyPI
-     long_description, and PyPI renders it standalone with no assets/
-     directory alongside it, so relative paths 404 there. -->
-<picture>
-  <source
-    media="(prefers-color-scheme: dark)"
-    srcset="https://raw.githubusercontent.com/NVIDIA-NeMo/labs-OO-Agents/main/assets/nvidia-labs-object-oriented-agents-dark.svg"
-  >
-  <source
-    media="(prefers-color-scheme: light)"
-    srcset="https://raw.githubusercontent.com/NVIDIA-NeMo/labs-OO-Agents/main/assets/nvidia-labs-object-oriented-agents-light.svg"
-  >
-  <img
-    alt="NVIDIA-labs Object Oriented Agents"
-    src="https://raw.githubusercontent.com/NVIDIA-NeMo/labs-OO-Agents/main/assets/nvidia-labs-object-oriented-agents-light.svg"
-    width="820"
-  >
-</picture>
+Aster brings conversations, code execution, tool output, Git changes, and saved
+sessions into one keyboard-driven interface. Follow a task as it runs, inspect
+its changes, and return to the same conversation later.
 
-<p align="center"><b>A Pythonic way to build AI agents.</b></p>
+Aster combines a Rust / Ratatui interface, a Python agent framework, and an ACP
+runtime shared by the terminal and editor integrations.
 
-[![NVIDIA](https://img.shields.io/badge/NVIDIA-76B900?logo=nvidia&logoColor=white)](https://www.nvidia.com/)
-[![Paper](https://img.shields.io/badge/paper-arXiv-b31b1b?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2607.20709)
-[![Blog](https://img.shields.io/badge/blog-NVIDIA-76B900?logo=nvidia&logoColor=white)](https://developer.nvidia.com/blog/six-agent-harness-capabilities-for-higher-model-performance/)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue)](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/LICENSE)
+**[Run Aster](#run-aster-from-a-source-checkout)** · **[Terminal guide](packages/aster-tui/README.md)** · **[Framework docs](docs/README.md)** · **[Framework quick start](#quick-start)** · **[Notebook tutorials](notebook_tutorials/README.md)** · **[Examples](examples/README.md)**
 
-**[Docs](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/docs/README.md)** &nbsp;·&nbsp; **[Quick Start](#quick-start)** &nbsp;·&nbsp; **[Notebook Tutorials](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/notebook_tutorials/README.md)** &nbsp;·&nbsp; **[Examples](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/examples/README.md)** &nbsp;·&nbsp; **[Paper](https://arxiv.org/abs/2607.20709)** &nbsp;·&nbsp; **[Blog](https://developer.nvidia.com/blog/six-agent-harness-capabilities-for-higher-model-performance/)**
+## Run Aster from a source checkout
 
-<br />
+From the repository root, use Python 3.12–3.13,
+[uv](https://docs.astral.sh/uv/getting-started/installation/), and Rust 1.88+:
 
-</div>
+```powershell
+uv sync --extra tui
+cargo build --locked --release --manifest-path packages/aster-tui/Cargo.toml
+uv run --extra tui aster connect
+uv run --extra tui aster
+```
 
+Skip Connect if you already have a configured model. Aster uses the saved default,
+or the only configured chat model. With several aliases, choose a default in
+your project's `.aster/settings.yaml`:
 
-NVIDIA-labs Object Oriented Agents (NOOA) is a model-agnostic Python framework designed to support reliable AI agent development. Many agent frameworks represent prompts, tools, callbacks, and workflows as separate abstractions. NOOA offers an alternative object-oriented interface that brings these concepts together in a Python class. NOOA lets developers express an agent’s state, capabilities, prompts, and typed interfaces through a single Python class:
+```yaml
+tui:
+  default_model: my-model
+```
+
+Add `-w PATH` to open another workspace. The build creates
+`aster` (`aster.exe` on Windows) in `packages/aster-tui/target/release/`, which the
+Python launcher finds automatically. Rebuild after changing Rust sources.
+
+Once the Python launcher is on PATH, simply run `aster`. In a local Windows setup
+where `%USERPROFILE%\.local\bin` is already on PATH, export the installed launcher:
+
+```powershell
+Copy-Item .venv\Scripts\aster.exe "$env:USERPROFILE\.local\bin\aster.exe"
+aster
+```
+
+`aster` and `aster tui` start a new conversation. Use `--continue` to reopen the
+most recent saved conversation or `--resume ID` to choose one. Inside the terminal,
+`/sessions` selects a saved conversation and `/drafts` selects saved input to recover.
+`/tree` shows saved message branches so you can continue from an earlier question
+or reply while keeping the original path. See the [session tree](packages/aster-tui/README.md#session-tree).
+
+Re-export the launcher if you move the checkout or recreate its environment.
+`--model my-model` overrides `ASTER_MODEL` and the saved default. `aster tui`
+explicitly opens the same interface; `aster connect`, `aster config`, and other
+subcommands run the toolkit. `ASTER_TUI_BIN` selects a native binary by absolute path.
+See the [terminal guide](packages/aster-tui/README.md) for controls and sandbox setup.
+
+Python packages and imports use the `aster` namespace. Project configuration and
+sessions live in `.aster/`; user configuration lives in `~/.config/aster/`.
+Microsandbox is an optional execution dependency.
+
+## Aster framework
+
+Aster's Python framework supports agents whose state, tools, prompts, and typed
+interfaces live in one Python class:
 
 ```python
-from nooa import Agent
+from aster import Agent
 
 # The agent is a Python object.
 class SupportAgent(Agent):
@@ -67,73 +95,47 @@ class SupportAgent(Agent):
 
 This design supports familiar Python testing, tracing, refactoring, and version-control workflows — **just like the rest of your software**. Read [the paper](https://arxiv.org/abs/2607.20709) for the design principles and evaluation results.
 
-Want to see how the pieces compose? Take the [**10-minute tour**](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/docs/tour.md), from one thinking method through tools, typed contracts, deterministic orchestration, and object composition.
+Want to see how the pieces compose? Take the [**10-minute tour**](docs/tour.md), from one thinking method through tools, typed contracts, deterministic orchestration, and object composition.
 
 ## Installation
 
-Add the **core** framework to a new (or existing) Python project with [uv](https://docs.astral.sh/uv/getting-started/installation/):
+Install from this source checkout with [uv](https://docs.astral.sh/uv/getting-started/installation/).
+Run these commands from the repository root; sibling distributions resolve from
+the local workspace:
 
 ```bash
-uv init my-agent-project
-cd my-agent-project
-
-uv add nooa
+uv sync
+uv sync --extra tui             # terminal launcher and ACP runtime
+uv sync --extra viewer          # trace viewer
+uv sync --extra cli --extra memory   # combine optional components
 ```
 
-> **Supported platforms:** Linux and native Windows. Windows support includes in-process CodeAct, shell tools, file-backed SQLite and `monitor()`. Shell commands use PowerShell on Windows and bash on Linux. Enable CodeAct sandbox execution with `nooa[sandbox]` to use microsandbox; its hardware virtualization requirements apply only when sandbox execution is enabled. No platform override is required. macOS is not currently supported; existing compatibility code and manual CI checks are retained for future validation.
+Supported platforms are Linux and native Windows. Host tools use PowerShell on
+Windows and bash on Linux. Sandbox execution uses the optional microsandbox
+runtime; enable it with `uv sync --extra tui --extra sandbox`. macOS is outside
+the current support scope.
 
-<details>
-<summary><b>Optional sub-packages</b> — CLI, ACP, memory, benchmarks, evaluation pipeline</summary>
-
-<br />
-
-The CLI, ACP, memory, and benchmark packages are separate distributions. Install
-them by name, or pull them in as extras of the core package:
-
-```bash
-uv add nooa-cli                 # or: uv add "nooa[cli]"
-uv add nooa-acp                 # or: uv add "nooa[acp]"
-uv add nooa-memory              # or: uv add "nooa[memory]"
-uv add nooa-bench               # or: uv add "nooa[bench]"
-
-uv add "nooa[cli,memory]"       # several at once
-```
-
-| Package | Extra | What it adds |
+| Package | Core extra | What it adds |
 |---|---|---|
-| `nooa-cli` | `nooa[cli]` | the `nooa` command, trace-viewer command, eval runner |
-| `nooa-acp` | `nooa[acp]` | coding agent for Agent Client Protocol hosts such as Zed — [setup](packages/nooa-acp/README.md) |
-| `nooa-memory` | `nooa[memory]` | long-term memory subsystem (`MemoryManager`) |
-| `nooa-bench` | `nooa[bench]` | `BenchAgent` and the Harbor benchmark runner |
+| `aster` | — | Python agent framework |
+| `aster-cli` | `cli` | `aster` launcher, model setup, configuration, traces and evaluations |
+| `aster-cli[tui]` | `tui` | Shared Python backend for the Rust terminal — [build guide](packages/aster-tui/README.md) |
+| `aster-acp` | `acp` | Agent Client Protocol server for editor integrations — [setup](packages/aster-acp/README.md) |
+| `aster-memory` | `memory` | Long-term memory subsystem (`MemoryManager`) |
+| `aster-bench` | `bench` | Benchmark agents and the Harbor runner |
 
-For `eval_pipeline`, follow the [Contributing](#contributing) instructions to clone
-the repo and run `uv sync --group dev`. This installs it editable with the other
-workspace packages.
-
-</details>
-
-<details>
-<summary><b>Installing from source</b> — track <code>main</code> or pin a tag</summary>
-
-<br />
-
-```bash
-# latest development state
-uv add "nooa @ git+https://github.com/NVIDIA-NeMo/labs-OO-Agents.git@main"
-
-# pinned to a release tag
-uv add "nooa @ git+https://github.com/NVIDIA-NeMo/labs-OO-Agents.git@v0.0.7"
-```
-
-</details>
+`uv sync --group dev` installs the evaluation pipeline and development tools too.
+To use the core framework from another Python project, add this checkout by its
+absolute path: `uv add --editable /absolute/path/to/aster`. See
+[Releasing](RELEASING.md) for building distributions and configuring a release channel.
 
 ## Quick Start
 
 ### ⚠️ Before Starting: safety note
-NOOA is **research software**, and agents can be configured to execute LLM-generated code. We welcome contributions and fixes, but expect rough edges. LLM-generated code may take dangerous or unwanted actions, including sending private data to uncontrolled locations, deleting files, or modifying its environments.  Ensure you run NOOA agents in a sandboxed environment isolated from your primary filesystem, such as [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell).
+Aster is **research software**, and agents can be configured to execute LLM-generated code. We welcome contributions and fixes, but expect rough edges. LLM-generated code may take dangerous or unwanted actions, including sending private data to uncontrolled locations, deleting files, or modifying its environments.  Ensure you run Aster agents in a sandboxed environment isolated from your primary filesystem, such as [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell).
 
 
-NOOA validates generated code (AST checks) and applies module deny-lists before execution. **These are defense-in-depth guardrails, not a containment boundary.** They exist to keep generated code from freezing the event loop and to catch common mistakes early — not to stop code that is actively trying to escape. A static checker over Python cannot provide that guarantee: `open()` gives arbitrary file access, `importlib` can load modules straight from a path, and reflection reaches the rest. **The containment boundary is OS-level isolation** — always run agents that execute generated code inside a sandbox such as a container, VM, or [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell). Do not rely on the in-process validators alone.
+Aster validates generated code (AST checks) and applies module deny-lists before execution. **These are defense-in-depth guardrails, not a containment boundary.** They exist to keep generated code from freezing the event loop and to catch common mistakes early — not to stop code that is actively trying to escape. A static checker over Python cannot provide that guarantee: `open()` gives arbitrary file access, `importlib` can load modules straight from a path, and reflection reaches the rest. **The containment boundary is OS-level isolation** — always run agents that execute generated code inside a sandbox such as a container, VM, or [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell). Do not rely on the in-process validators alone.
 
 
 ### 1. Connect a model
@@ -141,8 +143,8 @@ NOOA validates generated code (AST checks) and applies module deny-lists before 
 Install the CLI and run the guided setup:
 
 ```bash
-uv add "nooa[cli]"
-uv run nooa connect
+uv sync --extra cli
+uv run aster connect
 ```
 
 Choose your provider or endpoint, API key, exact model, and an alias such as
@@ -151,23 +153,23 @@ reply/output token limit, records the context window when known (you can supply
 it), and lists your chosen media formats. It also tests the configured route,
 tools, reasoning, and caching. The checks send real requests and may incur
 provider charges. The wizard asks before checks and saving. Keep keys in
-environment variables or NOOA's secrets file, not in model configuration or
+environment variables or Aster's secrets file, not in model configuration or
 committed code.
 
 Use the saved alias in Python:
 
 ```python
-from nooa.unifiedllm import get_llm_client
+from aster.unifiedllm import get_llm_client
 
 llm = get_llm_client("my-model")
 ```
 
-See [Connect setup](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/docs/model-connect.md)
+See [Connect setup](docs/model-connect.md)
 for providers, model settings, editing, and diagnostic stages.
 
 You can also construct clients directly using
 [LiteLLM-supported model names](https://docs.litellm.ai/), with your endpoint
-and credentials. See [Model configuration](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/docs/model-configuration.md).
+and credentials. See [Model configuration](docs/model-configuration.md).
 
 ### 2. Your first agent
 
@@ -176,7 +178,7 @@ and credentials. See [Model configuration](https://github.com/NVIDIA-NeMo/labs-O
 ```python
 import asyncio
 
-from nooa import Agent
+from aster import Agent
 
 
 class FeedbackAgent(Agent, llm=llm):
@@ -203,23 +205,23 @@ Save the model-selection and agent snippets together as `first_agent.py`, then
 run `uv run python first_agent.py` in your project. After your final call,
 `await llm.aclose()` releases client resources.
 
-The [checked-in first example](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/examples/quickstart/01_first_generation_method.py)
+The [checked-in first example](examples/quickstart/01_first_generation_method.py)
 is a separate source-checkout example: it chooses its own client from environment
 credentials and does not automatically use your `my-model` alias.
 
 Rename `analyze_feedback` to `analyze_feedback_briefly` and the output changes — your method name, parameters, and docstring *are* the prompt.
 
-Prefer a guided notebook path? Start with the [**notebook tutorials**](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/notebook_tutorials/README.md), which walk through the same ideas in Colab-friendly steps, with more notebooks planned.
+Prefer a guided notebook path? Start with the [**notebook tutorials**](notebook_tutorials/README.md), which walk through the same ideas in Colab-friendly steps, with more notebooks planned.
 
-Ready to run something specific? Use the [**examples catalog**](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/examples/README.md) to find quickstarts for structured output, tools, strategies, tracing, context blocks, MCP, and more.
+Ready to run something specific? Use the [**examples catalog**](examples/README.md) to find quickstarts for structured output, tools, strategies, tracing, context blocks, MCP, and more.
 
 ### 3. See what your agent is doing
 
 Every LLM call, code execution, and method invocation is traced by default — orchestrators, generation methods, and helpers, with parent-child spans preserved. If you installed the CLI and viewer dependencies, start the trace viewer and open the run in your browser:
 
 ```bash
-uv add "nooa[cli,viewer]"    # includes viewer runtime dependencies
-uv run nooa start-dev        # trace viewer on http://localhost:5001
+uv sync --extra cli --extra viewer    # includes viewer runtime dependencies
+uv run aster start-dev        # trace viewer on http://localhost:5001
 ```
 
 If the viewer isn't running, tracing is silently disabled — no configuration needed either way.
@@ -229,15 +231,15 @@ If the viewer isn't running, tracing is silently disabled — no configuration n
 Pass `Image`, `Audio`, `Video`, or PDF `File` objects as method arguments.
 CodeAct can also use `show()` to see media created while it runs.
 
-NOOA assumes models are text-only until configured. Set `media_inputs`, such
+Aster assumes models are text-only until configured. Set `media_inputs`, such
 as `[image, pdf]`, in the model entry. Connect lets you choose formats manually
 or test them with generated samples. If you enable a format the provider does
 not accept, requests may fail.
 
 ```python
-from nooa import Agent, PredictStrategy, strategy
-from nooa.media import Image
-from nooa.unifiedllm import get_llm_client
+from aster import Agent, PredictStrategy, strategy
+from aster.media import Image
+from aster.unifiedllm import get_llm_client
 
 # This alias must allow image input and use an endpoint that accepts it.
 vision = get_llm_client("vision")
@@ -257,35 +259,34 @@ Load media with `from_file`, `from_bytes(..., media_type=...)`, or `from_url`.
 URL support depends on the provider. `File` supports PDFs. Formats left out of
 `media_inputs` are replaced with text notices when sending a request.
 
-See the [media API guide](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/docs/media.md)
+See the [media API guide](docs/media.md)
 for a complete example, CodeAct `show()`, audio/video/PDF inputs, and limits.
 
 ## Learn more
 
-- **[Documentation](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/docs/README.md)** — human-oriented reading paths, core concepts, architecture, and safety guidance.
-- **[Framework tour](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/docs/tour.md)** — a concise conceptual showcase of NOOA's core ideas and Python-first design.
-- **[Decision models](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/docs/concepts/decisions.md)** — route classification, yes/no, and scoring methods to a calibrated decision model such as `typesafe/jev-1.13` with `DecideStrategy`; agents that only make decisions need no chat LLM. Runnable example: [`16_decisions.py`](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/examples/quickstart/16_decisions.py).
-- **[Notebook tutorials](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/notebook_tutorials/README.md)** — the primary hands-on path for your first agent, strategy selection, CodeAct's live-object workflow, and composing subagents. More notebooks are planned.
-- **[Examples catalog](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/examples/README.md)** — runnable quickstarts, advanced mechanics, and complete benchmark systems, indexed by capability and setup requirements.
+- **[Documentation](docs/README.md)** — human-oriented reading paths, core concepts, architecture, and safety guidance.
+- **[Framework tour](docs/tour.md)** — a concise conceptual showcase of Aster's core ideas and Python-first design.
+- **[Decision models](docs/concepts/decisions.md)** — route classification, yes/no, and scoring methods to a calibrated decision model such as `typesafe/jev-1.13` with `DecideStrategy`; agents that only make decisions need no chat LLM. Runnable example: [`16_decisions.py`](examples/quickstart/16_decisions.py).
+- **[Notebook tutorials](notebook_tutorials/README.md)** — the primary hands-on path for your first agent, strategy selection, CodeAct's live-object workflow, and composing subagents. More notebooks are planned.
+- **[Examples catalog](examples/README.md)** — runnable quickstarts, advanced mechanics, and complete benchmark systems, indexed by capability and setup requirements.
 - **[Paper](https://arxiv.org/abs/2607.20709)** — design principles, harness details, capability tests, and SWE-bench Verified / Terminal-Bench 2.0 results.
 - **[Blog post](https://developer.nvidia.com/blog/six-agent-harness-capabilities-for-higher-model-performance/)** — Six Agent Harness Capabilities for Higher Model Performance.
-- **[AGENTS.md](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/AGENTS.md)** — conventions used inside this repo (helpful when reading the source).
+- **[AGENTS.md](AGENTS.md)** — conventions used inside this repo (helpful when reading the source).
 
 ## Contributing
 
-For a local editable install, clone the repo and sync the development environment with `uv`:
+From the repository root, sync the development environment with `uv`. To run
+Aster, use the [Aster quickstart](#run-aster-from-a-source-checkout).
 
 ```bash
-git clone https://github.com/NVIDIA-NeMo/labs-OO-Agents.git
-cd labs-OO-Agents
 uv sync --group dev
 ```
 
-This installs the core framework, workspace packages, development tools, the `nooa` CLI, and the trace viewer runtime in the repo's `.venv`. Run CLI commands through `uv`:
+This installs the core framework, workspace packages, development tools, the `aster` CLI, and the trace viewer runtime in the repo's `.venv`. Run CLI commands through `uv`:
 
 ```bash
-uv run nooa --help
-uv run nooa start-dev       # trace viewer on http://localhost:5001
+uv run aster --help
+uv run aster start-dev       # trace viewer on http://localhost:5001
 ```
 
 Enable pre-commit hooks and run the test/lint suite:
@@ -297,23 +298,8 @@ uv run ruff check            # lint
 uv run pyright               # type check
 ```
 
-See [CONTRIBUTING.md](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/CONTRIBUTING.md) for the full workflow.
-
-## Citation
-
-If you use NVIDIA-labs Object Oriented Agents in your research, please cite:
-
-```bibtex
-@techreport{nvidia_oo_agents_2026,
-  title  = {NVIDIA-labs OO Agents: Native Python Object-Oriented Agents},
-  author = {Furgale, Paul and Klingler, Severin and Nolan, James and Staats, Matt and
-            Di Lorenzo, Gaia and Martinez Abad, Elisa and Schueler, Christian and
-            Dinu, Razvan and Devoto, Alessio and Berard, Pascal and Kaplun, Gal and Sarafian, Elad and
-            Roveri, Riccardo and Derczynski, Leon and Silveira Cabral, Ricardo},
-  year   = {2026},
-}
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
 
 ## License
 
-Apache 2.0. See [LICENSE](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/LICENSE) and [THIRD_PARTY_NOTICES.md](https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/THIRD_PARTY_NOTICES.md).
+Apache 2.0. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

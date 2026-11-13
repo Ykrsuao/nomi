@@ -3,15 +3,15 @@
 
 import pytest
 
-from nooa.paths import find_project_root, get_project_dir, get_user_dir
+from aster.paths import find_project_root, get_project_dir, get_user_dir
 
 
-def test_xdg_user_dir_uses_nooa_name(tmp_path, monkeypatch):
-    """User-level settings retain their XDG-based nooa directory."""
-    monkeypatch.delenv("NEMO_OO_USER_DIR", raising=False)
+def test_xdg_user_dir_uses_aster_name(tmp_path, monkeypatch):
+    """User-level settings retain their XDG-based aster directory."""
+    monkeypatch.delenv("ASTER_USER_DIR", raising=False)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
 
-    assert get_user_dir() == tmp_path / "nooa"
+    assert get_user_dir() == tmp_path / "aster"
 
 
 @pytest.mark.parametrize("nested", [False, True])
@@ -23,10 +23,10 @@ def test_project_root_starts_at_working_directory(tmp_path, monkeypatch, nested)
     cwd = project / "src" if nested else project
     cwd.mkdir(exist_ok=True)
     monkeypatch.chdir(cwd)
-    monkeypatch.delenv("NEMO_OO_PROJECT_DIR", raising=False)
+    monkeypatch.delenv("ASTER_PROJECT_DIR", raising=False)
 
     assert find_project_root() == project
-    assert get_project_dir("sessions") == project / ".nooa" / "sessions"
+    assert get_project_dir("sessions") == project / ".aster" / "sessions"
 
 
 def test_project_root_uses_nearest_project(tmp_path, monkeypatch):
@@ -47,6 +47,6 @@ def test_project_root_without_marker_falls_back_to_cwd(tmp_path, monkeypatch):
 
 def test_project_dir_honors_override(tmp_path, monkeypatch):
     """An explicit project-directory override still wins over automatic discovery."""
-    override = tmp_path / "custom-nooa"
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(override))
+    override = tmp_path / "custom-aster"
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(override))
     assert get_project_dir("settings.yaml") == override / "settings.yaml"

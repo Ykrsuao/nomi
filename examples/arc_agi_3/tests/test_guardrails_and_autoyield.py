@@ -93,7 +93,7 @@ def _fake_agent(tmp_path, state):
 
 
 def test_submit_actions_autoyields_on_success(tmp_path):
-    from nooa.strategies.codeact import _ReturnResultSignal
+    from aster.strategies.codeact import _ReturnResultSignal
 
     state = {"turn": 0, "state": "NOT_FINISHED", "available_actions": ["UP", "DOWN"]}
     fake = _fake_agent(tmp_path, state)

@@ -9,15 +9,15 @@ from types import SimpleNamespace
 
 import pytest
 
-pytest.importorskip("nooa")
+pytest.importorskip("aster")
 
 from opentelemetry import trace as otel_trace  # noqa: E402
 
-from examples.cybergym.nooa_cybergym import agent as nooa_cybergym_agent  # noqa: E402
-from examples.cybergym.nooa_cybergym import main as nooa_cybergym_main  # noqa: E402
-from examples.cybergym.nooa_cybergym import submissions as cybergym_submissions  # noqa: E402
-from nooa.tracing import flush_traces  # noqa: E402
-from nooa.unifiedllm.fake import FakeLLMClient  # noqa: E402
+from aster.tracing import flush_traces  # noqa: E402
+from aster.unifiedllm.fake import FakeLLMClient  # noqa: E402
+from examples.cybergym.aster_cybergym import agent as aster_cybergym_agent  # noqa: E402
+from examples.cybergym.aster_cybergym import main as aster_cybergym_main  # noqa: E402
+from examples.cybergym.aster_cybergym import submissions as cybergym_submissions  # noqa: E402
 
 
 def _unused_shell() -> SimpleNamespace:
@@ -173,11 +173,11 @@ def test_submit_rejects_an_empty_hypothesis_before_running_verifier():
 
 
 def test_finder_uses_feedback_history_for_portfolio_context():
-    portfolio = nooa_cybergym_agent.Portfolio(
+    portfolio = aster_cybergym_agent.Portfolio(
         cybergym_submissions.SubmissionManager(shell=_unused_shell())
     )
 
-    finder = nooa_cybergym_agent.Finder(
+    finder = aster_cybergym_agent.Finder(
         llm=FakeLLMClient(), portfolio=portfolio, model_name="test-model"
     )
 
@@ -196,10 +196,10 @@ def test_finder_uses_feedback_history_for_portfolio_context():
 
 
 def test_finder_records_portfolio_feedback_only_when_changed():
-    portfolio = nooa_cybergym_agent.Portfolio(
+    portfolio = aster_cybergym_agent.Portfolio(
         cybergym_submissions.SubmissionManager(shell=_unused_shell())
     )
-    finder = nooa_cybergym_agent.Finder(
+    finder = aster_cybergym_agent.Finder(
         llm=FakeLLMClient(), portfolio=portfolio, model_name="test-model"
     )
 
@@ -216,11 +216,11 @@ def test_finder_records_portfolio_feedback_only_when_changed():
 
 
 def test_expander_uses_static_tool_reminder_without_dynamic_context():
-    portfolio = nooa_cybergym_agent.Portfolio(
+    portfolio = aster_cybergym_agent.Portfolio(
         cybergym_submissions.SubmissionManager(shell=_unused_shell())
     )
 
-    expander = nooa_cybergym_agent.Expander(
+    expander = aster_cybergym_agent.Expander(
         llm=FakeLLMClient(), portfolio=portfolio, model_name="test-model"
     )
 
@@ -234,26 +234,26 @@ def test_expander_uses_static_tool_reminder_without_dynamic_context():
 
 
 def test_cybergym_agent_disables_default_state_context():
-    agent = nooa_cybergym_agent.CyberGymAgent(llm=FakeLLMClient())
+    agent = aster_cybergym_agent.CyberGymAgent(llm=FakeLLMClient())
 
     assert "state" in agent.context_manager._blocks
     assert agent.context_manager.is_disabled("state")
 
 
 def test_cybergym_agents_have_isolated_shell_sessions():
-    first = nooa_cybergym_agent.CyberGymAgent(llm=FakeLLMClient())
-    second = nooa_cybergym_agent.CyberGymAgent(llm=FakeLLMClient())
+    first = aster_cybergym_agent.CyberGymAgent(llm=FakeLLMClient())
+    second = aster_cybergym_agent.CyberGymAgent(llm=FakeLLMClient())
 
     assert first.shell is not second.shell
     assert first.shell._session is not second.shell._session
 
 
 def test_glm52_is_the_agent_default_with_three_finder_lanes():
-    assert nooa_cybergym_agent.DEFAULT_MODEL_NAME == "glm-5.2"
-    assert nooa_cybergym_agent.LANES == [
-        nooa_cybergym_agent.Lane(label="glm-5.2", model_name="glm-5.2"),
-        nooa_cybergym_agent.Lane(label="nemotron-3-ultra", model_name="nvidia/nemotron-3-ultra"),
-        nooa_cybergym_agent.Lane(label="deepseek-v4-flash", model_name="deepseek-v4-flash"),
+    assert aster_cybergym_agent.DEFAULT_MODEL_NAME == "glm-5.2"
+    assert aster_cybergym_agent.LANES == [
+        aster_cybergym_agent.Lane(label="glm-5.2", model_name="glm-5.2"),
+        aster_cybergym_agent.Lane(label="nemotron-3-ultra", model_name="nvidia/nemotron-3-ultra"),
+        aster_cybergym_agent.Lane(label="deepseek-v4-flash", model_name="deepseek-v4-flash"),
     ]
 
 
@@ -297,17 +297,17 @@ def test_submission_manager_digest_clusters_submissions_without_llm_constructor(
     assert "submissions=[1, 2]" in digest
 
 
-def test_configure_tracing_installs_atif_with_nooa_api(tmp_path, monkeypatch):
+def test_configure_tracing_installs_atif_with_aster_api(tmp_path, monkeypatch):
     trace_dir = tmp_path / "traces"
     trajectory_path = tmp_path / "trajectory.json"
-    monkeypatch.setenv("NOOA_CYBERGYM_TRACE_DIR", str(trace_dir))
-    monkeypatch.setenv("NOOA_CYBERGYM_TRAJECTORY_PATH", str(trajectory_path))
-    monkeypatch.setenv("NOOA_CYBERGYM_SESSION_ID", "test-session")
-    monkeypatch.delenv("NOOA_CYBERGYM_OTLP_ENDPOINT", raising=False)
+    monkeypatch.setenv("ASTER_CYBERGYM_TRACE_DIR", str(trace_dir))
+    monkeypatch.setenv("ASTER_CYBERGYM_TRAJECTORY_PATH", str(trajectory_path))
+    monkeypatch.setenv("ASTER_CYBERGYM_SESSION_ID", "test-session")
+    monkeypatch.delenv("ASTER_CYBERGYM_OTLP_ENDPOINT", raising=False)
 
-    agent = nooa_cybergym_main.CyberGymAgent(llm=FakeLLMClient())
+    agent = aster_cybergym_main.CyberGymAgent(llm=FakeLLMClient())
 
-    nooa_cybergym_main.configure_tracing(agent, "fake-model")
+    aster_cybergym_main.configure_tracing(agent, "fake-model")
     try:
         uninstall = agent._atif_uninstall
         assert callable(uninstall)
@@ -320,23 +320,23 @@ def test_configure_tracing_installs_atif_with_nooa_api(tmp_path, monkeypatch):
             span.set_attribute("input.value", duplicated_message)
             span.set_attribute("llm.input_messages.0.message.content", duplicated_message)
         flush_traces()
-        journal_path = trace_dir / "test-session.nooa.jsonl"
+        journal_path = trace_dir / "test-session.aster.jsonl"
         assert journal_path.is_file()
         journal_text = journal_path.read_text()
         bodies = [json.loads(line) for line in journal_text.splitlines()]
-        assert any("nooaJournal" in body for body in bodies)
+        assert any("asterJournal" in body for body in bodies)
         assert any("resourceSpans" in body for body in bodies)
         assert duplicated_message not in journal_text
     finally:
         uninstall()
-        nooa_cybergym_main.shutdown_tracing()
+        aster_cybergym_main.shutdown_tracing()
 
 
 def test_portfolio_apply_review_updates_guidance_and_stop_flag():
-    portfolio = nooa_cybergym_agent.Portfolio(
+    portfolio = aster_cybergym_agent.Portfolio(
         cybergym_submissions.SubmissionManager(shell=_unused_shell())
     )
-    review = nooa_cybergym_agent.Review(
+    review = aster_cybergym_agent.Review(
         on_target=True,
         guidance="Explore a different parser branch.",
         stop=True,
@@ -353,7 +353,7 @@ def test_portfolio_apply_review_updates_guidance_and_stop_flag():
 
 def test_portfolio_renders_hypothesis_for_each_crash_family():
     manager = _submission_manager()
-    portfolio = nooa_cybergym_agent.Portfolio(manager)
+    portfolio = aster_cybergym_agent.Portfolio(manager)
     fingerprint = cybergym_submissions.SubmissionManager.fingerprint_output(
         "crashed",
         1,
@@ -382,7 +382,7 @@ def test_portfolio_renders_hypothesis_for_each_crash_family():
 
 def test_portfolio_pending_crash_clusters_skips_duplicates_and_expanders():
     manager = cybergym_submissions.SubmissionManager(shell=_unused_shell())
-    portfolio = nooa_cybergym_agent.Portfolio(manager)
+    portfolio = aster_cybergym_agent.Portfolio(manager)
     fp_a = cybergym_submissions.SubmissionManager.fingerprint_output(
         "crashed",
         1,
@@ -440,15 +440,15 @@ def test_portfolio_pending_crash_clusters_skips_duplicates_and_expanders():
 
 
 def test_finder_and_expander_are_distinct_worker_agent_types():
-    portfolio = nooa_cybergym_agent.Portfolio(
+    portfolio = aster_cybergym_agent.Portfolio(
         cybergym_submissions.SubmissionManager(shell=_unused_shell())
     )
 
-    finder = nooa_cybergym_agent.Finder(llm=FakeLLMClient(), portfolio=portfolio)
-    expander = nooa_cybergym_agent.Expander(llm=FakeLLMClient(), portfolio=portfolio)
+    finder = aster_cybergym_agent.Finder(llm=FakeLLMClient(), portfolio=portfolio)
+    expander = aster_cybergym_agent.Expander(llm=FakeLLMClient(), portfolio=portfolio)
 
-    assert isinstance(finder, nooa_cybergym_agent.Finder)
-    assert isinstance(expander, nooa_cybergym_agent.Expander)
-    assert not isinstance(expander, nooa_cybergym_agent.Finder)
+    assert isinstance(finder, aster_cybergym_agent.Finder)
+    assert isinstance(expander, aster_cybergym_agent.Expander)
+    assert not isinstance(expander, aster_cybergym_agent.Finder)
     assert finder is not expander
     assert finder.shell is not expander.shell

@@ -15,8 +15,8 @@ from dataclasses import dataclass
 
 import pytest
 
-from nooa.agentdoc import hidden, pformat, spec, truncating_pformat
-from nooa.agentdoc._visibility import _type_hint_scope, is_hidden_field
+from aster.agentdoc import hidden, pformat, spec, truncating_pformat
+from aster.agentdoc._visibility import _type_hint_scope, is_hidden_field
 
 
 @dataclass

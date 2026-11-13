@@ -11,8 +11,8 @@ import asyncio
 
 import pytest
 
-from nooa.unifiedllm.http_config import HttpConfig
-from nooa.unifiedllm.unifiedllm import (
+from aster.unifiedllm.http_config import HttpConfig
+from aster.unifiedllm.unifiedllm import (
     _await_provider_task,
     _run_async_provider_call,
 )

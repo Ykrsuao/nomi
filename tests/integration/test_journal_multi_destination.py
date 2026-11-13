@@ -53,7 +53,7 @@ def _drive_one_call(
         if on_success is not None:
             on_success()
 
-    from nooa.tracing import set_session
+    from aster.tracing import set_session
 
     set_session(session_id)
 
@@ -71,7 +71,7 @@ def _drive_one_call(
     )
 
     with patch(
-        "nooa.tracing._litellm_journal._post_json",
+        "aster.tracing._litellm_journal._post_json",
         side_effect=fake_post,
     ):
         callback.log_pre_api_call(
@@ -92,7 +92,7 @@ def _drive_one_call(
 def test_callback_fans_out_call_record_to_every_destination():
     """The callback must be configurable with multiple destination base URLs
     and POST ``/v1/journal/calls`` to each of them on every ``log_success_event``."""
-    from nooa.tracing._litellm_journal import MessageJournalCallback
+    from aster.tracing._litellm_journal import MessageJournalCallback
 
     base_a = "http://a.invalid"
     base_b = "http://b.invalid"
@@ -156,7 +156,7 @@ def test_two_callbacks_each_fan_out_independently():
     they may collapse into one shared callback with two destinations; either
     way, each destination must end up with the call record.
     """
-    from nooa.tracing._litellm_journal import MessageJournalCallback
+    from aster.tracing._litellm_journal import MessageJournalCallback
 
     base_a = "http://a.invalid"
     base_b = "http://b.invalid"

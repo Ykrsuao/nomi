@@ -42,10 +42,10 @@ pytest tests/onboarding/
 pytest tests/onboarding/test_code_generation.py
 
 # Run with coverage
-pytest tests/onboarding/ --cov=nooa
+pytest tests/onboarding/ --cov=aster
 
 # Generate capability scorecard
-python -m nooa.onboarding.evaluator --output report.html
+python -m aster.onboarding.evaluator --output report.html
 ```
 
 ## Test Data Format

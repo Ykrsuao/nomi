@@ -9,7 +9,7 @@ test_shell_tools_modern.py.
 
 import pytest
 
-from nooa.tools.shell_tools import Match, ShellResult, ShellTools
+from aster.tools.shell_tools import Match, ShellResult, ShellTools
 
 
 def test_shell_tools_directs_agents_to_its_file_and_command_methods():
@@ -316,8 +316,8 @@ async def test_run_with_cwd_keeps_environment_changes(sh, tmp_path):
     """``cwd=`` runs in the session's own shell, not a subshell: exports persist."""
     (tmp_path / "sub").mkdir()
     try:
-        await sh.run("export NOOA_CWD_PROBE=kept", cwd="sub")
-        assert (await sh.run("echo $NOOA_CWD_PROBE")).stdout == "kept"
+        await sh.run("export ASTER_CWD_PROBE=kept", cwd="sub")
+        assert (await sh.run("echo $ASTER_CWD_PROBE")).stdout == "kept"
     finally:
         await sh.close()
 
@@ -350,9 +350,9 @@ async def test_run_with_stdin_keeps_shell_changes(sh, tmp_path):
     """``stdin=`` runs in the session's own shell, not a subshell: cd and exports persist."""
     (tmp_path / "sub").mkdir()
     try:
-        r = await sh.run("read value; export NOOA_STDIN_PROBE=$value", stdin="kept\n")
+        r = await sh.run("read value; export ASTER_STDIN_PROBE=$value", stdin="kept\n")
         assert r.success
-        assert (await sh.run("echo $NOOA_STDIN_PROBE")).stdout == "kept"
+        assert (await sh.run("echo $ASTER_STDIN_PROBE")).stdout == "kept"
         await sh.run("cd sub", stdin="ignored\n")
         assert sh.cwd == (tmp_path / "sub").resolve()
     finally:
@@ -385,7 +385,7 @@ async def test_run_stream_with_cwd_runs_there(sh, tmp_path):
 
 
 def test_run_documents_cwd_for_the_model():
-    from nooa.agentdoc import doc
+    from aster.agentdoc import doc
 
     rendered = doc(ShellTools.run)
     assert "cwd: str | Path | None = None" in rendered

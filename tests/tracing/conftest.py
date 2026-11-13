@@ -21,8 +21,8 @@ def reset_tracing_module_state():
     Necessary because enable_tracing() uses module-level flags for idempotency.
     Tests need to reset this to verify behaviour in isolation.
     """
-    import nooa.tracing as module
-    from nooa.tracing._session import set_session
+    import aster.tracing as module
+    from aster.tracing._session import set_session
 
     # Shutdown provider if any
     if module._provider is not None:
@@ -40,7 +40,7 @@ def reset_tracing_module_state():
 
     # Reset instrumentation hooks ContextVar (set by enable_tracing / set_hooks)
     with contextlib.suppress(ImportError):
-        from nooa.runtime.hooks import set_hooks
+        from aster.runtime.hooks import set_hooks
 
         set_hooks(None)
 
@@ -51,7 +51,7 @@ def reset_tracing_module_state():
     # use asyncio.gather() inherit the shared dict and fail because all child
     # tasks see the same non-None value instead of getting their own fresh dict.
     with contextlib.suppress(ImportError):
-        from nooa.tracing._hooks_impl import _context_active_spans
+        from aster.tracing._hooks_impl import _context_active_spans
 
         _context_active_spans.set(None)
 
@@ -66,7 +66,7 @@ def reset_tracing_module_state():
     with contextlib.suppress(ImportError):
         import litellm
 
-        from nooa.tracing._litellm_journal import MessageJournalCallback
+        from aster.tracing._litellm_journal import MessageJournalCallback
 
         def _strip(lst: list) -> list:
             return [cb for cb in lst if not isinstance(cb, MessageJournalCallback)]

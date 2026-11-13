@@ -7,9 +7,9 @@ Tests the dict-like ContextApi API and integration with Agent.
 
 import pytest
 
-from nooa.agent import Agent
-from nooa.context_blocks import DynamicContext
-from nooa.unifiedllm import FakeLLMClient
+from aster.agent import Agent
+from aster.context_blocks import DynamicContext
+from aster.unifiedllm import FakeLLMClient
 
 
 class TestContextManager:
@@ -65,7 +65,7 @@ class TestContextManager:
 
     def test_setitem_accepts_context_type(self):
         """self.context['key'] = Context(...) sets block with correct placement."""
-        from nooa.context_blocks import Context
+        from aster.context_blocks import Context
 
         fake_llm = FakeLLMClient()
 
@@ -134,7 +134,7 @@ class TestContextManager:
 
     def test_disabled_context_blocks_round_trip_through_snapshot(self):
         """Disabled block keys survive save/restore snapshot serialization."""
-        from nooa.storage.snapshot import AgentSnapshot
+        from aster.storage.snapshot import AgentSnapshot
 
         fake_llm = FakeLLMClient()
 
@@ -151,7 +151,7 @@ class TestContextManager:
 
     def test_set_dynamic_rejects_invalid_expr(self):
         """set_dynamic() rejects invalid Python expressions."""
-        from nooa.context_blocks.exceptions import BlockSyntaxError
+        from aster.context_blocks.exceptions import BlockSyntaxError
 
         fake_llm = FakeLLMClient()
 
@@ -252,7 +252,7 @@ class TestContextManager:
 
     def test_dynamic_unresolved_raises_error(self):
         """Reading a dynamic block before resolution raises DynamicNotResolvedError."""
-        from nooa.context_blocks.exceptions import DynamicNotResolvedError
+        from aster.context_blocks.exceptions import DynamicNotResolvedError
 
         fake_llm = FakeLLMClient()
 
@@ -290,7 +290,7 @@ class TestContextManager:
 
     def test_delete_existing_protected_key_raises_protected_error(self):
         """del context['system_prompt'] raises ProtectedBlockError when key is protected."""
-        from nooa.context_blocks.exceptions import ProtectedBlockError
+        from aster.context_blocks.exceptions import ProtectedBlockError
 
         fake_llm = FakeLLMClient()
 
@@ -306,7 +306,7 @@ class TestContextManager:
 
     def test_pop_protected_key_raises_protected_error(self):
         """pop() on an existing protected key raises ProtectedBlockError."""
-        from nooa.context_blocks.exceptions import ProtectedBlockError
+        from aster.context_blocks.exceptions import ProtectedBlockError
 
         fake_llm = FakeLLMClient()
 
@@ -334,7 +334,7 @@ class TestContextManager:
 
     def test_pop_existing_protected_key_raises_protected_error(self):
         """pop() on a protected key that is in _blocks raises ProtectedBlockError."""
-        from nooa.context_blocks.exceptions import ProtectedBlockError
+        from aster.context_blocks.exceptions import ProtectedBlockError
 
         fake_llm = FakeLLMClient()
 
@@ -397,7 +397,7 @@ class TestBuildMessages:
         agent.context_manager.set_dynamic("status", "self.get_status()")
 
         # Before build: dynamic block not yet resolved — raises error
-        from nooa.context_blocks.exceptions import DynamicNotResolvedError
+        from aster.context_blocks.exceptions import DynamicNotResolvedError
 
         with pytest.raises(DynamicNotResolvedError):
             _ = agent.context_manager["status"]
@@ -537,10 +537,10 @@ class TestAgentContextParam:
         agent = TestAgent()
         assert "status" in agent.context_manager
 
-    def test_dynamic_importable_from_nooa(self):
-        """DynamicContext is importable from nooa top-level."""
-        from nooa import DynamicContext as D
-        from nooa.context_blocks import DynamicContext as OrigDynamicContext
+    def test_dynamic_importable_from_aster(self):
+        """DynamicContext is importable from aster top-level."""
+        from aster import DynamicContext as D
+        from aster.context_blocks import DynamicContext as OrigDynamicContext
 
         assert D is OrigDynamicContext
 
@@ -565,10 +565,10 @@ class TestScopedContextCurrentCallFiltering:
         """
         import json
 
-        from nooa import EventQuery, strategy
-        from nooa.context_blocks import ScopedContext
-        from nooa.strategies.codeact import CodeActStrategy
-        from nooa.unifiedllm import LLMResponse, ToolCall
+        from aster import EventQuery, strategy
+        from aster.context_blocks import ScopedContext
+        from aster.strategies.codeact import CodeActStrategy
+        from aster.unifiedllm import LLMResponse, ToolCall
 
         # Script a single LLM response: execute_python with inline return_result
         fake_llm = FakeLLMClient(
@@ -624,8 +624,8 @@ class TestDecoratorEventsIntegration:
     @pytest.mark.asyncio
     async def test_decorator_context_parameter_basic(self):
         """@strategy(context=ScopedContext(...)) basic usage works."""
-        from nooa import strategy
-        from nooa.context_blocks import ScopedContext
+        from aster import strategy
+        from aster.context_blocks import ScopedContext
 
         fake_llm = FakeLLMClient()
 
@@ -647,7 +647,7 @@ class TestDecoratorEventsIntegration:
     @pytest.mark.asyncio
     async def test_decorator_context_accepts_plain_dict(self):
         """@strategy(context=...) accepts a plain dict as context overrides."""
-        from nooa import strategy
+        from aster import strategy
 
         class TestAgent(Agent, llm=FakeLLMClient()):
             @strategy(context={"focus": "testing"})
@@ -658,8 +658,8 @@ class TestDecoratorEventsIntegration:
     @pytest.mark.asyncio
     async def test_decorator_context_with_events(self):
         """@strategy(context=ScopedContext(events={...})) sets decorator events."""
-        from nooa import strategy
-        from nooa.context_blocks import ScopedContext
+        from aster import strategy
+        from aster.context_blocks import ScopedContext
 
         fake_llm = FakeLLMClient()
 
@@ -677,8 +677,8 @@ class TestDecoratorEventsIntegration:
     @pytest.mark.asyncio
     async def test_decorator_context_with_both_context_and_events(self):
         """@strategy(context=ScopedContext(context={...}, events={...})) works."""
-        from nooa import strategy
-        from nooa.context_blocks import ScopedContext
+        from aster import strategy
+        from aster.context_blocks import ScopedContext
 
         fake_llm = FakeLLMClient()
 
@@ -702,7 +702,7 @@ class TestDecoratorEventsIntegration:
     @pytest.mark.asyncio
     async def test_decorator_context_none_is_valid(self):
         """@strategy(context=None) is valid - no context override."""
-        from nooa import strategy
+        from aster import strategy
 
         fake_llm = FakeLLMClient()
 

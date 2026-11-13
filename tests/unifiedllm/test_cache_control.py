@@ -4,7 +4,7 @@
 
 import pytest
 
-from nooa.unifiedllm import CompletionClient
+from aster.unifiedllm import CompletionClient
 
 
 @pytest.fixture(autouse=True)

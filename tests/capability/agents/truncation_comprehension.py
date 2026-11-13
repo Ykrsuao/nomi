@@ -16,9 +16,9 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from nooa import Agent
-from nooa.decorators import strategy
-from nooa.strategies import CodeActStrategy, PredictStrategy
+from aster import Agent
+from aster.decorators import strategy
+from aster.strategies import CodeActStrategy, PredictStrategy
 
 
 class Answer(BaseModel):

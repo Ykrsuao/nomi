@@ -17,12 +17,12 @@ import asyncio
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.context_blocks.roles import Role
-from nooa.events import AfterAgentCall, BeforeAgentCall
-from nooa.runtime.hooks import set_hooks
-from nooa.strategies import PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent, strategy
+from aster.context_blocks.roles import Role
+from aster.events import AfterAgentCall, BeforeAgentCall
+from aster.runtime.hooks import set_hooks
+from aster.strategies import PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 _DEFAULT = FakeLLMClient()
 

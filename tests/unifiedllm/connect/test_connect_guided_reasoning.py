@@ -9,9 +9,9 @@ from dataclasses import replace
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect, registry
-from nooa.unifiedllm.connect._reasoning import native_levels, reasoning_metadata
-from nooa.unifiedllm.connect._session import reply_budget, session_steps
+from aster.unifiedllm import connect, registry
+from aster.unifiedllm.connect._reasoning import native_levels, reasoning_metadata
+from aster.unifiedllm.connect._session import reply_budget, session_steps
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 from tests.unifiedllm.connect.reasoning_fixture import MODEL_ID, NATIVE_MODEL
 from tests.unifiedllm.test_anthropic_native_profile import TypedAgent
@@ -310,7 +310,7 @@ async def test_same_route_active_replan_retains_whitelist_and_actual_controls(mo
             or httpx.Response(200, json=response_body("chat", '{"value":323}'))
         ),
     )
-    monkeypatch.setenv("NOOA_LLM_TRANSPORT", "litellm")
+    monkeypatch.setenv("ASTER_LLM_TRANSPORT", "litellm")
     original = connect.plan(
         "local",
         "vendor/unlisted-model",

@@ -5,7 +5,7 @@
 import io
 import sys
 
-from nooa.runtime.pprint import _pformat, pprint
+from aster.runtime.pprint import _pformat, pprint
 
 
 class TestPformat:

@@ -1,7 +1,7 @@
 # Orchestration
 
 Agentic methods are good at judgment. Python is better at enforcing sequence,
-branching, retries, concurrency, and acceptance criteria. A reliable NOOA
+branching, retries, concurrency, and acceptance criteria. A reliable Aster
 workflow uses both.
 
 ## Put the workflow in a real method
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from nooa import hidden
+from aster import hidden
 
 
 class Finding(BaseModel):

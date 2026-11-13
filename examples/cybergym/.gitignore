@@ -1,5 +1,5 @@
 .env
-.nooa/
+.aster/
 .vscode/
 runs/
 __pycache__/

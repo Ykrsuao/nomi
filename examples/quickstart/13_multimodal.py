@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Quickstart 13: Images with CodeAct and structured Predict analysis.
 
-Setup: run ``uv run nooa connect``, save a vision-capable route as ``vision``,
+Setup: run ``uv run aster connect``, save a vision-capable route as ``vision``,
 and choose image in its media_inputs (YAML: ``media_inputs: [image]``).
 Connect also configures the reply token limit and known or supplied context size.
 Enable image inputs for the saved model before running this example.
@@ -21,10 +21,10 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from nooa import Agent, hidden, strategy
-from nooa.media import Image
-from nooa.strategies import PredictStrategy
-from nooa.unifiedllm import UnifiedLLM, get_llm_client, reload_registry
+from aster import Agent, hidden, strategy
+from aster.media import Image
+from aster.strategies import PredictStrategy
+from aster.unifiedllm import UnifiedLLM, get_llm_client, reload_registry
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
@@ -59,7 +59,7 @@ async def run_example(llm: UnifiedLLM) -> None:
     """Run both image paths; the caller owns the injected client."""
     if "image" not in llm.media_inputs:
         raise ValueError(
-            "This example requires media_inputs: [image]. Run `uv run nooa connect`, "
+            "This example requires media_inputs: [image]. Run `uv run aster connect`, "
             "save a vision-capable alias (default: vision), and enable image inputs."
         )
 

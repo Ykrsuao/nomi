@@ -8,7 +8,7 @@ import pytest
 from litellm.types.llms.openai import ResponsesAPIResponse
 from litellm.types.utils import Choices, Message, ModelResponse
 
-from nooa.unifiedllm import MODELS, CompletionClient, Tool, get_llm_client
+from aster.unifiedllm import MODELS, CompletionClient, Tool, get_llm_client
 
 
 def _execute_python(code: str) -> str:
@@ -64,7 +64,7 @@ def _chat_response() -> ModelResponse:
 
 def _client(model: str = "openai/gpt-5.6", **config: object) -> CompletionClient:
     with (
-        patch("nooa.unifiedllm.registry.ensure_loaded"),
+        patch("aster.unifiedllm.registry.ensure_loaded"),
         patch.dict(MODELS, {}, clear=True),
     ):
         client = get_llm_client(model, api_key="test", **config)
@@ -95,7 +95,7 @@ async def test_default_reasoning_tool_call_uses_responses_bridge(model: str) -> 
 
         responses.assert_called_once()
         assert result.finish_reason == "tool_calls"
-        from nooa.unifiedllm.chat_parts import project_chat_turn
+        from aster.unifiedllm.chat_parts import project_chat_turn
 
         assert result.replay_scope.startswith("chat:openai:")
         projected, _ = project_chat_turn(result, result.replay_scope)

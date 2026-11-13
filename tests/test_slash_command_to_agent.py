@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for the user-only slash command flag (@slash_command(output_to_agent=...))."""
 
-from nooa.skill import Skill, get_slash_commands, slash_command
-from nooa.slash_dispatch import SlashCommandResult
+from aster.skill import Skill, get_slash_commands, slash_command
+from aster.slash_dispatch import SlashCommandResult
 
 
 def test_slash_result_defaults_output_to_agent():

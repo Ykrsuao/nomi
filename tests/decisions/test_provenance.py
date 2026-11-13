@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-from nooa.decisions.client import BooleanQuestion, ChoiceQuestion, ScoreQuestion
-from nooa.decisions.provenance import question_digest
+from aster.decisions.client import BooleanQuestion, ChoiceQuestion, ScoreQuestion
+from aster.decisions.provenance import question_digest
 
 
 def test_question_digest_is_independent_of_question_order() -> None:

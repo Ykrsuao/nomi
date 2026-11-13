@@ -8,9 +8,9 @@ agent has a deterministic call_for_help() method that MUST be invoked via
 execute_python("result = self.call_for_help(request)").
 """
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact import CodeActStrategy
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
 
 
 class FastHelpAgent(Agent):

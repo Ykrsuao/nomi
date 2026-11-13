@@ -14,9 +14,9 @@ After applying the fix, all tests should PASS.
 
 import pytest
 
-from nooa import Agent
-from nooa.errors import RestrictedCodeError
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.errors import RestrictedCodeError
+from aster.unifiedllm import FakeLLMClient
 
 _TEST_LLM = FakeLLMClient()
 

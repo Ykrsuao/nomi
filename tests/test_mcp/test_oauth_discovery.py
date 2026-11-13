@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 import pytest
 
-from nooa.mcp import oauth
+from aster.mcp import oauth
 
 
 @pytest.mark.parametrize("include_trailing_options", [False, True])
@@ -301,8 +301,8 @@ def test_token_is_expired_logic():
 )
 def test_load_cached_token_ignores_non_object_cache(tmp_path, monkeypatch, label, payload):
     """A valid-but-non-object cache file must fall back to None, not raise."""
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(tmp_path))
-    cache_file = tmp_path / ".nooa" / "mcp_tokens.json"
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(tmp_path))
+    cache_file = tmp_path / ".aster" / "mcp_tokens.json"
     cache_file.parent.mkdir(parents=True, exist_ok=True)
     cache_file.write_text(payload, encoding="utf-8")
 
@@ -310,7 +310,7 @@ def test_load_cached_token_ignores_non_object_cache(tmp_path, monkeypatch, label
 
 
 def test_token_cache_roundtrip(tmp_path, monkeypatch):
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(tmp_path))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(tmp_path))
     url = "https://maas.example/mcp"
     assert oauth._load_cached_token(url) is None
 
@@ -331,7 +331,7 @@ def test_token_cache_roundtrip(tmp_path, monkeypatch):
     assert loaded.client_id == "client-id"
     assert loaded.client_secret == "client-secret"
 
-    cache_file = tmp_path / ".nooa" / "mcp_tokens.json"
+    cache_file = tmp_path / ".aster" / "mcp_tokens.json"
     assert cache_file.exists()
     # Owner-only permissions (0o600).
     assert (cache_file.stat().st_mode & 0o777) == 0o600
@@ -339,7 +339,7 @@ def test_token_cache_roundtrip(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_handle_mcp_oauth_returns_cached_token(monkeypatch, tmp_path):
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(tmp_path))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(tmp_path))
     url = "https://maas.example/mcp"
     oauth._save_cached_token(
         url,
@@ -357,7 +357,7 @@ async def test_handle_mcp_oauth_returns_cached_token(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_handle_mcp_oauth_refreshes_expired_token(monkeypatch, tmp_path):
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(tmp_path))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(tmp_path))
     url = "https://maas.example/mcp"
     oauth._save_cached_token(
         url,
@@ -932,7 +932,7 @@ async def test_loopback_cancellation_closes_callback_thread(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_handle_mcp_oauth_defaults_scope_from_resource_metadata(monkeypatch, tmp_path):
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(tmp_path))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(tmp_path))
     seen_scopes: list[str | None] = []
     seen_resources: list[str | None] = []
 
@@ -1265,7 +1265,7 @@ async def test_client_credentials_token_missing_access_token(monkeypatch):
 @pytest.mark.asyncio
 async def test_handle_mcp_oauth_prefers_client_credentials(monkeypatch, tmp_path):
     """When the server advertises client_credentials and a secret exists, use it (no browser)."""
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(tmp_path))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(tmp_path))
     url = "https://maas.example/mcp"
 
     async def fake_resource_metadata(client, server_url):

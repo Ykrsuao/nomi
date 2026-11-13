@@ -10,9 +10,9 @@ import httpx
 import pytest
 from litellm import ContextWindowExceededError
 
-from nooa.unifiedllm import connect, registry
-from nooa.unifiedllm.connect._media import pdf_fixture, png_fixture, video_fixture, wav_fixture
-from nooa.unifiedllm.connect._typed_media import typed_media
+from aster.unifiedllm import connect, registry
+from aster.unifiedllm.connect._media import pdf_fixture, png_fixture, video_fixture, wav_fixture
+from aster.unifiedllm.connect._typed_media import typed_media
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -197,7 +197,7 @@ async def test_only_completed_public_final_answer_can_pass(monkeypatch, kind, mo
 @pytest.mark.parametrize("kind", ["image", "audio", "video", "pdf"])
 @pytest.mark.parametrize("missing", ["attachment", "settings"])
 async def test_typed_answer_never_replaces_wire_evidence(monkeypatch, kind, missing):
-    from nooa.unifiedllm.unifiedllm import CompletionClient
+    from aster.unifiedllm.unifiedllm import CompletionClient
 
     original = CompletionClient._prepare_media_messages
 
@@ -222,7 +222,7 @@ async def test_typed_answer_never_replaces_wire_evidence(monkeypatch, kind, miss
 
     mock_http(monkeypatch, handle)
     if missing == "settings":
-        from nooa.unifiedllm.connect import _session
+        from aster.unifiedllm.connect import _session
 
         original_settings = _session.settings_on_wire
         monkeypatch.setattr(
@@ -393,8 +393,8 @@ async def test_http_200_malformed_envelope_keeps_acceptance_not_capability(monke
 
 @pytest.mark.parametrize("kind", ["image", "audio", "video", "pdf"])
 async def test_native_media_reply_never_enters_history_or_caller_hooks(monkeypatch, kind):
-    from nooa.runtime.hooks import hooks_scope
-    from nooa.unifiedllm.connect._typed_media import (
+    from aster.runtime.hooks import hooks_scope
+    from aster.unifiedllm.connect._typed_media import (
         _AudioAccess,
         _DocumentAccess,
         _ImageAccess,

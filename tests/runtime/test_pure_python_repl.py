@@ -13,8 +13,8 @@ These tests complement test_execute_code.py with specific REPL-style behavior te
 
 import pytest
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM
 _TEST_LLM = FakeLLMClient()

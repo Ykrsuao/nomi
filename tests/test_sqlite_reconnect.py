@@ -6,8 +6,8 @@ import sqlite3
 
 import pytest
 
-from nooa.context_blocks import Metadata
-from nooa.storage.sqlite import SQLiteStorageManager
+from aster.context_blocks import Metadata
+from aster.storage.sqlite import SQLiteStorageManager
 
 
 @pytest.fixture

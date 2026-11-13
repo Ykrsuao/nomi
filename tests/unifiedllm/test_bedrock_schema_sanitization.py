@@ -15,7 +15,7 @@ See: gl-134
 import pytest
 from pydantic import BaseModel, Field
 
-from nooa.unifiedllm.unifiedllm import (
+from aster.unifiedllm.unifiedllm import (
     _is_bedrock_model,
     _maybe_sanitize_response_format,
     _sanitize_schema_for_bedrock,

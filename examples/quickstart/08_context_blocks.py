@@ -6,8 +6,8 @@
 uv run python examples/quickstart/08_context_blocks.py
 """
 
-from nooa.agentdoc import spec
-from nooa.util.quickstart import *
+from aster.agentdoc import spec
+from aster.util.quickstart import *
 
 
 class NoteTakingAgent(Agent, llm=llm):
@@ -43,7 +43,7 @@ async def main():
 
     # Expression-backed block: the expression is re-evaluated every LLM turn,
     # so the LLM always sees the latest notes without re-passing them
-    from nooa import Context
+    from aster import Context
 
     agent.context["notes"] = Context(expr="self.render_notes()")
 

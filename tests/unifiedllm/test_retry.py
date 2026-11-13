@@ -9,7 +9,7 @@ import httpx
 import litellm
 import pytest
 
-from nooa.unifiedllm.retry import (
+from aster.unifiedllm.retry import (
     RetryConfig,
     RetryingWrapper,
     _calculate_delay,
@@ -321,7 +321,7 @@ class TestWithRetry:
         operation = AsyncMock(side_effect=[request_timeout_error, request_timeout_error, "success"])
         config = RetryConfig(jitter_factor=0.0)
 
-        with patch("nooa.unifiedllm.retry.asyncio.sleep", new_callable=AsyncMock) as sleep:
+        with patch("aster.unifiedllm.retry.asyncio.sleep", new_callable=AsyncMock) as sleep:
             assert await with_retry(operation, config=config) == "success"
 
         assert operation.call_count == 3
@@ -332,7 +332,7 @@ class TestWithRetry:
         operation = AsyncMock(side_effect=request_timeout_error)
         config = RetryConfig(jitter_factor=0.0)
 
-        with patch("nooa.unifiedllm.retry.asyncio.sleep", new_callable=AsyncMock) as sleep:
+        with patch("aster.unifiedllm.retry.asyncio.sleep", new_callable=AsyncMock) as sleep:
             with pytest.raises(type(request_timeout_error)) as caught:
                 await with_retry(operation, config=config)
 
@@ -478,7 +478,7 @@ class TestSyncRetry:
         operation = MagicMock(side_effect=[request_timeout_error, request_timeout_error, "success"])
         config = RetryConfig(jitter_factor=0.0)
 
-        with patch("nooa.unifiedllm.retry.time.sleep") as sleep:
+        with patch("aster.unifiedllm.retry.time.sleep") as sleep:
             assert sync_retry(operation, config=config) == "success"
 
         assert operation.call_count == 3
@@ -488,7 +488,7 @@ class TestSyncRetry:
         operation = MagicMock(side_effect=request_timeout_error)
         config = RetryConfig(jitter_factor=0.0)
 
-        with patch("nooa.unifiedllm.retry.time.sleep") as sleep:
+        with patch("aster.unifiedllm.retry.time.sleep") as sleep:
             with pytest.raises(type(request_timeout_error)) as caught:
                 sync_retry(operation, config=config)
 

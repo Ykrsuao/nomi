@@ -7,8 +7,8 @@ Selecting a label applies `params.update(level_settings)` before dispatch.
 ```python
 from pathlib import Path
 
-from nooa.unifiedllm import get_llm_client
-from nooa.unifiedllm.registry import reload_registry
+from aster.unifiedllm import get_llm_client
+from aster.unifiedllm.registry import reload_registry
 
 # From the repository root; this example registry is not loaded automatically.
 reload_registry(Path("examples/reasoning_levels/llm_config.yaml"))
@@ -40,7 +40,7 @@ models:
 Write the complete nested block for each level. There is no deep merge or
 inheritance: selecting a level replaces the base value at each key it sets.
 The declarations are trusted configuration, just like the rest of the registry;
-they are not restricted to a list of provider fields maintained by NOOA.
+they are not restricted to a list of provider fields maintained by Aster.
 Client routing and framework controls are reserved: `model`, `api_base`,
 `base_url`, `api_key`, `custom_llm_provider`, `client`, `messages`, `input`, `extra_body`,
 and the three `reasoning_*` configuration fields. They cannot appear inside a
@@ -84,7 +84,7 @@ if a gateway silently ignores parameters.
 Do not enable LiteLLM's global `drop_params` when verifying a declaration: it can
 discard fields for gateway IDs it does not recognize, even with per-call
 `drop_params=False`. The HTTP tests explicitly disable that global flag and check
-the serialized fields. NOOA does not change process-global SDK configuration.
+the serialized fields. Aster does not change process-global SDK configuration.
 
 LangChain/Pi data can inform maintenance, but neither is a runtime dependency or
 an automatic build input. Updating a route means reviewing its small declaration
@@ -112,7 +112,7 @@ For paid probes, configure registry aliases with a `low` level and credentials
 through their normal `api_key_env` settings. Then opt in and name the aliases:
 
 ```sh
-NOOA_RUN_REASONING_LEVELS_LIVE=1 NOOA_REASONING_TEST_MODELS=my-route uv run pytest \
+ASTER_RUN_REASONING_LEVELS_LIVE=1 ASTER_REASONING_TEST_MODELS=my-route uv run pytest \
   tests/integration/test_reasoning_levels_live.py -m integration -q -s
 ```
 

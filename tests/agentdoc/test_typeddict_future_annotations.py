@@ -8,7 +8,7 @@ from typing import Annotated
 
 from typing_extensions import TypedDict
 
-from nooa.agentdoc._structured import extract_type_info
+from aster.agentdoc._structured import extract_type_info
 
 
 class ServerConfig(TypedDict):

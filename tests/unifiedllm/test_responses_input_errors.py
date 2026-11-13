@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import pytest
 
-from nooa.unifiedllm import ResponsesClient
+from aster.unifiedllm import ResponsesClient
 
 
 @pytest.mark.parametrize("kind", ["text", "input_text"])

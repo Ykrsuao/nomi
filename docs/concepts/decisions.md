@@ -10,8 +10,8 @@ import os
 from enum import StrEnum
 from typing import Annotated
 
-from nooa import Agent, Criteria, DecisionClient, DecideStrategy, strategy
-from nooa.unifiedllm.registry import get_llm_client
+from aster import Agent, Criteria, DecisionClient, DecideStrategy, strategy
+from aster.unifiedllm.registry import get_llm_client
 
 
 class Department(StrEnum):
@@ -96,7 +96,7 @@ choice appears.
 To keep the evidence, wrap `ChoiceDecision` in the same criteria:
 
 ```python
-from nooa import ChoiceDecision
+from aster import ChoiceDecision
 
 DEPARTMENT_CRITERIA = Criteria(
     by_value={
@@ -138,7 +138,7 @@ The field's `Instructions` say what to decide for that field, and
 
 An enum used as a decision result needs explicit `Criteria`. Without it,
 calling the method raises a `TypeError` that asks for
-`Criteria(by_value=...)`, before any request is sent. NOOA does not read
+`Criteria(by_value=...)`, before any request is sent. Aster does not read
 criteria from the enum's docstring (including an `Attributes:` section),
 annotations on individual members, comments, custom attributes, or member
 values. Keeping criteria in the annotation means that editing an enum's
@@ -187,7 +187,7 @@ A `Threshold` turns a decision into an accept-or-abstain rule. Use a detailed
 result type to see why a value was accepted or rejected:
 
 ```python
-from nooa import ChoiceDecision, Threshold
+from aster import ChoiceDecision, Threshold
 
 
 class SupportRouter(Agent, decision_model=decision_model):
@@ -257,8 +257,8 @@ Opt in to supporting state with the same `ScopedContext` and `EventQuery`
 mechanisms used by other strategies:
 
 ```python
-from nooa import Context, EventQuery
-from nooa.context_blocks import ScopedContext
+from aster import Context, EventQuery
+from aster.context_blocks import ScopedContext
 
 
 class SupportAgent(Agent, llm=llm, decision_model=decision_model):
@@ -332,7 +332,7 @@ questions:
 from typing import Annotated
 
 from pydantic import BaseModel
-from nooa import Criteria, Instructions
+from aster import Criteria, Instructions
 
 
 class Triage(BaseModel):
@@ -399,7 +399,7 @@ explicitly as described below.
 decision model:
 
 ```python
-from nooa import DecisionModel
+from aster import DecisionModel
 
 chat_decisions = DecisionModel.from_llm(llm)
 
@@ -475,7 +475,7 @@ decision.raw_response  # read-only mapping of the decision API's response body
 `ChoiceDecision`, `ScoreDecision`); primitive results return only the value. In
 a composite, every detailed field shares the same response object. The same
 body is stored in the call's `DecisionRecord.raw_response`, and never in trace
-attributes. NOOA does not interpret it. It is excluded from equality, `repr`,
+attributes. Aster does not interpret it. It is excluded from equality, `repr`,
 and `model_dump()`, and it is `None` for responses created by `decision_call`
 middleware and for decision clients that do not provide a
 raw body.
@@ -541,7 +541,7 @@ async def is_urgent(message: str) -> bool:
     ...
 ```
 
-`nooa connect` can validate and save this entry with
+`aster connect` can validate and save this entry with
 `--api-style systemone`. Minimal setup sends one small typed boolean routing probe and skips
 chat-only tool, reasoning, session, and reply-limit checks.
 
@@ -593,7 +593,7 @@ OpenAI can refuse an individual question. The client then raises
 `raw` holds the complete response, including the answers to other questions.
 The call's `DecisionRecord` is stored as a failure.
 
-`nooa connect` validates and saves these entries with `--api-style openai`,
+`aster connect` validates and saves these entries with `--api-style openai`,
 sending one predicate routing probe for minimal setup, plus fresh typed smoke cases for full setup.
 
 This uses OpenAI's native decision endpoint. `DecisionModel.from_llm(...)` with
@@ -613,7 +613,7 @@ For an OpenAI/Hub Decisions endpoint implementing the documented OpenAI
 Decisions input contract:
 
 ```python
-from nooa.media import Image
+from aster.media import Image
 
 vision_decisions = DecisionClient(
     "YOUR_DECISION_MODEL",
@@ -643,7 +643,7 @@ ordinary JSON data, **not** an attachment or proof of visual inspection.
 
 The normalized `DecisionRequest(state, questions, attachments=())` remains
 compatible with existing two-argument construction. `DecisionAttachment`
-(importable from `nooa.decisions`) retains the encoded image URL/bytes, MIME,
+(importable from `aster.decisions`) retains the encoded image URL/bytes, MIME,
 optional vendor `detail`, alias, and all associated input names. JSON state
 contains token strings instead of image payloads:
 
@@ -664,7 +664,7 @@ and `{"type": "input_image", "image_url": FLAT_STRING}` for each image.
 rejected instead of overriding trusted fields. PNG/JPEG/WebP/GIF MIME values
 are allowed by this bounded normalization (actual model support may be
 narrower). Image URLs may be locally encoded base64 data URLs or
-credential-free HTTP(S) URLs. NOOA never downloads remote images; the OpenAI
+credential-free HTTP(S) URLs. Aster never downloads remote images; the OpenAI
 provider may fetch a permitted URL. Supply public URLs only.
 
 #### Direct TypeSafe experimental multipart transport
@@ -720,7 +720,7 @@ for the replacement route. `DecisionModel.from_llm(...)` remains JSON-only and
 explicitly rejects decision attachments; chat media permission does not change
 this, and text-only calls on multimodal chat routes remain supported.
 
-`nooa connect` supports native decision onboarding and image checks; see
+`aster connect` supports native decision onboarding and image checks; see
 [Check native decisions with Connect](#check-native-decisions-with-connect).
 Offline tests verify the wire contract, not live endpoint acceptance or visual accuracy. Decision
 records currently retain state aliases, not image bytes/URLs or an attachment
@@ -734,7 +734,7 @@ Contract references:
 
 ### Check native decisions with Connect
 
-Use `nooa connect MODEL --stage decision --endpoint FULL_URL --api-style openai`
+Use `aster connect MODEL --stage decision --endpoint FULL_URL --api-style openai`
 (or `systemone`) to run fresh bounded fixtures through an actual Agent
 `DecideStrategy`. One composite result checks boolean, literal choice and
 ordinal score reconstruction; positive and negative boolean fixtures check

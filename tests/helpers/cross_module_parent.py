@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from nooa import Agent, hidden, strategy
-from nooa.strategies import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, hidden, strategy
+from aster.strategies import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient
 
 # Visible module-level symbols — must appear in a child agent's exec_globals.
 SHARED_CONSTANT = 7

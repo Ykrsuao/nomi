@@ -5,9 +5,9 @@
 import re  # noqa: F401 — for LLM exec_globals
 from datetime import date, datetime, time, timedelta, timezone, tzinfo  # noqa: F401
 
-from nooa import Agent, CodeActStrategy, strategy
-from nooa.config import CodeActConfig
-from nooa.tools import MethodWriting
+from aster import Agent, CodeActStrategy, strategy
+from aster.config import CodeActConfig
+from aster.tools import MethodWriting
 
 
 class TaskDecompositionTestAgent(Agent):

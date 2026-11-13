@@ -7,9 +7,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from unittest.mock import patch
 
-from nooa import Agent
-from nooa.storage import SQLiteStorageManager
-from nooa.unifiedllm import CompletionClient
+from aster import Agent
+from aster.storage import SQLiteStorageManager
+from aster.unifiedllm import CompletionClient
 
 
 def _make_storage() -> SQLiteStorageManager:
@@ -69,7 +69,7 @@ def test_latest_snapshot_breaks_timestamp_ties_after_reopen(tmp_path):
     storage = SQLiteStorageManager(path)
     try:
         agent = _SimpleAgent(storage=storage)
-        with patch("nooa.storage.sqlite.datetime") as clock:
+        with patch("aster.storage.sqlite.datetime") as clock:
             clock.now.return_value = datetime(2026, 1, 1, tzinfo=UTC)
             agent.value = 1
             storage.save_snapshot(agent)

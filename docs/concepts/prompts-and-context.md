@@ -1,6 +1,6 @@
 # Prompts and context
 
-NOOA builds prompts from Python structure. The goal is not to place everything
+Aster builds prompts from Python structure. The goal is not to place everything
 in one large instruction string, but to give each kind of information a clear
 home.
 
@@ -55,7 +55,7 @@ inspection code, while an execution trace shows the captured output actually
 sent to the model.
 
 Set `Annotated[str, spec(max_string=None)]` to print a complete string (import
-`Annotated` from `typing` and `spec` from `nooa`). Per-parameter `max_length`
+`Annotated` from `typing` and `spec` from `aster`). Per-parameter `max_length`
 and `max_depth` overrides work the same way. Defaults resolve through agent
 class, instance, and method-level `@strategy(..., truncation=...)` settings;
 per-parameter `spec()` overrides have final precedence.
@@ -75,7 +75,7 @@ captured stderr, and can be filtered with Python's standard warnings filters.
 Context blocks are named sections added to the system prompt:
 
 ```python
-from nooa import Context
+from aster import Context
 
 # Fixed content placed in the stable, cache-friendly prefix.
 agent.context["policy"] = Context(POLICY_TEXT, prefix=True)
@@ -107,7 +107,7 @@ entire past into a context block. See the
 ## Lifetime, persistence, and memory
 
 Context blocks, events, and ordinary fields remain available across calls while
-the same agent object is alive. By default, NOOA uses in-memory storage. A new
+the same agent object is alive. By default, Aster uses in-memory storage. A new
 process or a newly constructed instance does not automatically continue that
 state.
 
@@ -117,7 +117,7 @@ preserve event history, context blocks, and snapshotable fields. This is an
 explicit application workflow, not an automatically checkpointed graph after
 every node.
 
-Long-term semantic memory is different again. The optional `nooa-memory`
+Long-term semantic memory is different again. The optional `aster-memory`
 package provides remember/recall behavior across sessions; it is not the same
 as event history or an agent snapshot. See the
 [memory quickstart](../../examples/quickstart/12_memory.py).

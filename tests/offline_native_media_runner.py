@@ -13,7 +13,7 @@ import socket
 import dotenv
 
 os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
-os.environ["NOOA_DISABLE_TRACING"] = "1"
+os.environ["ASTER_DISABLE_TRACING"] = "1"
 # Legacy offline tests may intentionally leave api_key_env blank. Give the SDKs
 # synthetic defaults, never inherited credentials or dotenv-loaded secrets.
 os.environ["OPENAI_API_KEY"] = "offline-test-only"

@@ -22,8 +22,8 @@ from typing import Any
 
 import pytest
 
-from nooa.library_manager import LibraryManager
-from nooa.skill import Skill
+from aster.library_manager import LibraryManager
+from aster.skill import Skill
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -94,7 +94,7 @@ def test_library_with_skill_subclass_attaches_instance(libs_root):
         libs_root,
         "test_lib_skill_sub",
         '''"""Custom skill lib."""
-from nooa.skill import Skill
+from aster.skill import Skill
 
 
 class MyThing(Skill):
@@ -118,7 +118,7 @@ def test_library_with_module_level_skill_instance(libs_root):
         libs_root,
         "test_lib_skill_inst",
         '''"""Preconfigured skill lib."""
-from nooa.skill import Skill
+from aster.skill import Skill
 
 
 class MyThing(Skill):
@@ -146,7 +146,7 @@ def test_library_with_skill_needing_args_falls_back(libs_root):
         libs_root,
         "test_lib_needs_args",
         '''"""Skill needing ctor args."""
-from nooa.skill import Skill
+from aster.skill import Skill
 
 
 class NeedsArgs(Skill):
@@ -169,7 +169,7 @@ def test_bare_module_not_injected_as_global(libs_root):
         libs_root,
         "test_lib_bare",
         '''"""Has both a skill and a free function."""
-from nooa.skill import Skill
+from aster.skill import Skill
 
 
 class MySk(Skill):

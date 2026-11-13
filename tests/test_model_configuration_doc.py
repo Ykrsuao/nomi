@@ -10,7 +10,7 @@ import yaml
 
 
 def test_manual_configuration_example_loads_without_http(tmp_path, monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     text = (Path(__file__).parents[1] / "docs/model-configuration.md").read_text()
     config = re.search(r"```yaml\n(.*?)\n```", text, re.S).group(1)

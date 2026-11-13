@@ -15,18 +15,18 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from nooa import (
+from aster import (
     Agent,
     CodeActStrategy,
     get_default_strategy,
     set_default_strategy,
 )
-from nooa.config import CodeActConfig
-from nooa.strategies.pure_python import PurePythonStrategy
+from aster.config import CodeActConfig
+from aster.strategies.pure_python import PurePythonStrategy
 
 # Experimental strategies are exposed at the top level only as FutureWarning
 # factories; import the concrete class here for instantiation/isinstance checks.
-from nooa.strategies.reflexion import ReflexionStrategy
+from aster.strategies.reflexion import ReflexionStrategy
 
 
 class TestGetDefaultStrategy:

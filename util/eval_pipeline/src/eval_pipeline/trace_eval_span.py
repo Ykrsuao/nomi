@@ -165,7 +165,7 @@ def post_eval_span_to_otlp(
         ]
     }
     try:
-        from nooa.tracing._viewer_auth import apply_viewer_auth
+        from aster.tracing._viewer_auth import apply_viewer_auth
 
         data = json.dumps(payload, separators=(",", ":")).encode("utf-8")
         req = urllib.request.Request(

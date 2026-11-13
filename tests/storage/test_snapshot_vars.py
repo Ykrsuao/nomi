@@ -6,12 +6,12 @@ import logging
 
 import pytest
 
-from nooa.storage.json_snapshot import (  # noqa: F401
+from aster.storage.json_snapshot import (  # noqa: F401
     snapshot_from_dict,
     snapshot_to_dict,
 )
-from nooa.storage.serialization import MAX_SNAPSHOT_DEPTH, serialize
-from nooa.storage.snapshot_vars import SnapshotVars
+from aster.storage.serialization import MAX_SNAPSHOT_DEPTH, serialize
+from aster.storage.snapshot_vars import SnapshotVars
 
 
 class _Unserializable:
@@ -81,7 +81,7 @@ class TestSnapshotVarsRoundTrips:
         assert blob["data"]["_data"] == {"keep": {"token": "abc"}}
 
     def test_round_trip_preserves_kept_values(self):
-        from nooa.storage.serialization import deserialize
+        from aster.storage.serialization import deserialize
 
         v = SnapshotVars()
         v["keep"] = {"token": "abc"}
@@ -95,20 +95,20 @@ class TestTodoVarsIntegration:
     """SnapshotVars must work as the type of Todo.vars (the wiring the MR claims)."""
 
     def test_todo_is_constructible_and_vars_is_snapshotvars(self):
-        from nooa.tools.todo import Todo
+        from aster.tools.todo import Todo
 
         t = Todo(title="x")
         assert isinstance(t.vars, SnapshotVars)
 
     def test_todo_coerces_dict_vars_to_snapshotvars(self):
-        from nooa.tools.todo import Todo
+        from aster.tools.todo import Todo
 
         t = Todo(title="x", vars={"a": 1})
         assert isinstance(t.vars, SnapshotVars)
         assert t.vars["a"] == 1
 
     def test_todo_manager_add_then_set_var(self):
-        from nooa.tools.todo import TodoManager
+        from aster.tools.todo import TodoManager
 
         tm = TodoManager()
         t = tm.add("hi")
@@ -116,14 +116,14 @@ class TestTodoVarsIntegration:
         assert t.vars["commits"] == ["abc"]
 
     def test_todo_dict_vars_filters_unserializable(self):
-        from nooa.tools.todo import Todo
+        from aster.tools.todo import Todo
 
         t = Todo(title="x", vars={"good": 1, "bad": _Unserializable()})
         assert t.vars["good"] == 1
         assert "bad" not in t.vars
 
     def test_todo_model_validate_round_trip_keeps_snapshotvars(self):
-        from nooa.tools.todo import Todo
+        from aster.tools.todo import Todo
 
         t = Todo(title="x", vars={"a": 1})
         raw = t.model_dump()
@@ -152,9 +152,9 @@ class TestSnapshotVarsMappingHelpers:
 
 def _checkpoint_agent():
     """An interactive agent with agent vars and a todo, as real sessions have."""
-    from nooa.interactive import InteractiveAgent
-    from nooa.tools.todo import TodoManager
-    from nooa.unifiedllm import FakeLLMClient
+    from aster.interactive import InteractiveAgent
+    from aster.tools.todo import TodoManager
+    from aster.unifiedllm import FakeLLMClient
 
     class _Agent(InteractiveAgent, llm=FakeLLMClient()):
         pass
@@ -194,8 +194,8 @@ def _nested_list(levels):
 
 def test_checkpoint_value_depth_covers_real_placements():
     """Re-measure where vars values sit in a real checkpoint (agent and todo vars)."""
-    from nooa.storage.snapshot import AgentSnapshot
-    from nooa.storage.snapshot_vars import CHECKPOINT_VALUE_DEPTH
+    from aster.storage.snapshot import AgentSnapshot
+    from aster.storage.snapshot_vars import CHECKPOINT_VALUE_DEPTH
 
     agent, stores = _checkpoint_agent()
     for store in stores.values():
@@ -215,7 +215,7 @@ def test_checkpoint_value_depth_covers_real_placements():
 @pytest.mark.parametrize("placement", ["vars", "todo"])
 def test_value_accepted_at_write_survives_checkpoint(placement):
     """Near the depth limit, whatever vars accepts is in the next checkpoint."""
-    from nooa.storage.snapshot import AgentSnapshot
+    from aster.storage.snapshot import AgentSnapshot
 
     outcomes = {}
     for levels in range(MAX_SNAPSHOT_DEPTH - 8, MAX_SNAPSHOT_DEPTH + 1):
@@ -233,7 +233,7 @@ def test_value_accepted_at_write_survives_checkpoint(placement):
 
 
 def test_too_deep_value_rejected_at_write_with_clear_warning(caplog):
-    from nooa.storage.snapshot_vars import CHECKPOINT_VALUE_DEPTH
+    from aster.storage.snapshot_vars import CHECKPOINT_VALUE_DEPTH
 
     budget = MAX_SNAPSHOT_DEPTH - CHECKPOINT_VALUE_DEPTH
     v = SnapshotVars()
@@ -250,8 +250,8 @@ def test_too_deep_value_rejected_at_write_with_clear_warning(caplog):
 
 def test_value_that_becomes_unserializable_is_skipped_at_checkpoint(caplog):
     """A live value can turn into a cycle after the write; only its key is lost."""
-    from nooa.storage.serialization import deserialize
-    from nooa.storage.snapshot import AgentSnapshot
+    from aster.storage.serialization import deserialize
+    from aster.storage.snapshot import AgentSnapshot
 
     agent, stores = _checkpoint_agent()
     for store in stores.values():
@@ -272,10 +272,50 @@ def test_value_that_becomes_unserializable_is_skipped_at_checkpoint(caplog):
     assert not any("skipping non-serializable attribute" in m for m in messages)
 
 
+@pytest.mark.parametrize("placement", ["vars", "todo", "nested", "context"])
+@pytest.mark.parametrize("failure", ["unsupported", "cycle"])
+def test_strict_snapshot_rejects_mutated_vars_at_every_depth(placement, failure):
+    from aster.errors.storage import SerializationError
+    from aster.storage.snapshot import AgentSnapshot
+
+    agent, stores = _checkpoint_agent()
+    if placement == "nested":
+        store = SnapshotVars()
+        agent.vars["nested"] = {"task": store}
+    elif placement == "context":
+        store = SnapshotVars()
+        agent.context["nested_state"] = {"task": store}
+    else:
+        store = stores[placement]
+    results = []
+    store["state"] = {"important": "keep this", "results": results}
+    results.append(results if failure == "cycle" else _Unserializable())
+
+    with pytest.raises(SerializationError, match="state"):
+        AgentSnapshot.from_agent(agent, strict=True)
+    assert store["state"]["important"] == "keep this"
+
+
+def test_strict_snapshot_keeps_explicit_nosnapshot_exclusions():
+    from aster.storage.serialization import deserialize
+    from aster.storage.snapshot import AgentSnapshot
+
+    class RuntimeOnly:
+        __nosnapshot__ = True
+
+    agent, stores = _checkpoint_agent()
+    agent.runtime_only = RuntimeOnly()
+    stores["vars"]["state"] = {"important": "keep this", "runtime": RuntimeOnly()}
+    snapshot = AgentSnapshot.from_agent(agent, strict=True)
+    assert "runtime_only" not in snapshot.attributes
+    restored = deserialize(snapshot.attributes["vars"], snapshot.type_allowlist)
+    assert restored["state"] == {"important": "keep this"}
+
+
 def test_depth_hint_uses_error_reason_not_text(caplog, monkeypatch):
     """The write-time hint keys off ``SerializationError.reason``."""
-    from nooa.errors.storage import SerializationError
-    from nooa.storage import snapshot_vars
+    from aster.errors.storage import SerializationError
+    from aster.storage import snapshot_vars
 
     def fake_serialize(value, *, base_depth=0):
         error = SerializationError("worded differently")

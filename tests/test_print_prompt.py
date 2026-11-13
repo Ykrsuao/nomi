@@ -4,8 +4,8 @@
 
 import pytest
 
-from nooa import Agent, build_prompt_data
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, build_prompt_data
+from aster.unifiedllm import FakeLLMClient
 
 _LLM = FakeLLMClient()
 

@@ -7,9 +7,9 @@ reads a YAML config (or CLI flags), runs many (game × variant) solves with a
 concurrency cap, and lays the results out as a **multi-run container** that both
 viewers discover natively:
 
-    results/arc_agi_3/nemo_solver/<ts>_<name>/          <- container
+    results/arc_agi_3/aster_solver/<ts>_<name>/          <- container
       manifest.json  status.json  summary.json          <- container metadata
-      <game>/<ts>_<game>_<variant>/                      <- each run (team_nemo/, steps/, agent_logs/…)
+      <game>/<ts>_<game>_<variant>/                      <- each run (team_aster/, steps/, agent_logs/…)
       ...
 
 ``manifest.json`` + ``status.json`` make ``_detect_run_type`` classify the
@@ -36,7 +36,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_DIR = Path(__file__).resolve().parent
-RESULTS_ROOT = REPO_ROOT / "results" / "arc_agi_3" / "nemo_solver"
+RESULTS_ROOT = REPO_ROOT / "results" / "arc_agi_3" / "aster_solver"
 # Progressive-learning checkout (optional): provides the interactive multi-game
 # TUI (tui_multi_game_viewer.py reuses its reference panels). When absent, the
 # self-contained viewer.py status table is used instead.
@@ -241,7 +241,7 @@ class MultiRunner:
         (self.container / "manifest.json").write_text(
             json.dumps(
                 {
-                    "execution_mode": "nemo_single_agent",
+                    "execution_mode": "aster_single_agent",
                     "command": "examples/arc_agi_3/run_multi.py",
                     "started_at": ts,
                     "python_version": sys.version,
@@ -441,7 +441,7 @@ class MultiRunner:
             return
         if not os.environ.get("ARC_API_KEY"):
             raise SystemExit("competition mode needs ARC_API_KEY (set it in .env)")
-        tags = ",".join(["nemo_solver", self.cfg["name"], "competition"])
+        tags = ",".join(["aster_solver", self.cfg["name"], "competition"])
         # Broker stderr -> a log file (the ARC SDK is chatty); stdout carries the
         # JSON handshake, but the SDK also logs to stdout, so SCAN for JSON rather
         # than trusting the first line.

@@ -10,9 +10,9 @@ from dataclasses import replace
 import httpx
 import pytest
 
-from nooa.unifiedllm import ResponsesClient, connect
-from nooa.unifiedllm.connect import _session
-from nooa.unifiedllm.connect._records import text_baseline_passed
+from aster.unifiedllm import ResponsesClient, connect
+from aster.unifiedllm.connect import _session
+from aster.unifiedllm.connect._records import text_baseline_passed
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 

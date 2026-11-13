@@ -12,15 +12,15 @@ from __future__ import annotations
 
 import pytest
 
-from nooa import Agent
-from nooa.agentdoc import spec
-from nooa.decorators import strategy
-from nooa.prompts import build_prompt_data
-from nooa.skill import Skill
-from nooa.strategies.codeact_v2 import CodeActV2
-from nooa.strategies.predict import PredictStrategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.agentdoc import spec
+from aster.decorators import strategy
+from aster.prompts import build_prompt_data
+from aster.skill import Skill
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.strategies.predict import PredictStrategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 _LLM = FakeLLMClient()
 

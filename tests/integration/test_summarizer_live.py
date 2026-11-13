@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Opt-in installed-agent summarization: three capped requests per provider.
 
-Set NOOA_RUN_SUMMARIZER_E2E=1 and install release-gate-openai/anthropic registry
+Set ASTER_RUN_SUMMARIZER_E2E=1 and install release-gate-openai/anthropic registry
 aliases. Routes and credentials belong to that configuration, not this test.
 Reports contain only counts; captured requests remain in memory.
 """
@@ -15,22 +15,22 @@ from urllib.parse import urlparse
 import httpx
 import pytest
 
-from nooa import Agent, Context, strategy
-from nooa.agents import TokenBudgetSummarizer
-from nooa.config.strategy_config import CodeActConfig
-from nooa.config.summarizer_config import TokenBudgetConfig
-from nooa.config.truncation_config import FormatConfig, TruncationConfig
-from nooa.context_blocks.events import UserEvent
-from nooa.events import Summary
-from nooa.strategies import CodeActStrategy
-from nooa.strategies.codeact import return_text_as_result
-from nooa.unifiedllm import HttpConfig, RetryConfig, registry
+from aster import Agent, Context, strategy
+from aster.agents import TokenBudgetSummarizer
+from aster.config.strategy_config import CodeActConfig
+from aster.config.summarizer_config import TokenBudgetConfig
+from aster.config.truncation_config import FormatConfig, TruncationConfig
+from aster.context_blocks.events import UserEvent
+from aster.events import Summary
+from aster.strategies import CodeActStrategy
+from aster.strategies.codeact import return_text_as_result
+from aster.unifiedllm import HttpConfig, RetryConfig, registry
 
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(
-        os.getenv("NOOA_RUN_SUMMARIZER_E2E") != "1",
-        reason="set NOOA_RUN_SUMMARIZER_E2E=1 to spend inference tokens",
+        os.getenv("ASTER_RUN_SUMMARIZER_E2E") != "1",
+        reason="set ASTER_RUN_SUMMARIZER_E2E=1 to spend inference tokens",
     ),
 ]
 

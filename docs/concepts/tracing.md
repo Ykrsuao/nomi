@@ -1,6 +1,6 @@
 # Tracing
 
-NOOA traces the program's call tree, not only the messages sent to an LLM. A
+Aster traces the program's call tree, not only the messages sent to an LLM. A
 trace can connect a Python orchestrator to nested agentic methods, model calls,
 generated-code cells, helper calls, and external tools.
 
@@ -9,7 +9,7 @@ generated-code cells, helper calls, and external tools.
 From a repository checkout:
 
 ```bash
-uv run nooa start-dev
+uv run aster start-dev
 ```
 
 The viewer listens on port 5001 by default. When an agent starts and the viewer
@@ -22,7 +22,7 @@ output:
 
 ```bash
 uv run python examples/quickstart/06_tracing.py
-uv run nooa import-traces traces/quickstart-06-journal
+uv run aster import-traces traces/quickstart-06-journal
 ```
 
 Refresh the viewer after the import. Calling `enable_tracing(...)` replaces the
@@ -35,7 +35,7 @@ If the viewer is not reachable, there is no automatic file fallback.
 For tests, benchmarks, and unattended runs, configure a file exporter:
 
 ```python
-from nooa.tracing import enable_tracing, exporters, flush_traces
+from aster.tracing import enable_tracing, exporters, flush_traces
 
 enable_tracing(exporters=[exporters.jsonl("traces")])
 
@@ -56,7 +56,7 @@ its model server directly (for example Gym's policy client) records its calls
 with `journal_llm_call` once the response arrives:
 
 ```python
-from nooa.tracing import journal_llm_call
+from aster.tracing import journal_llm_call
 
 response = LLMResponse(parts=parts, usage=usage, model_name="gym-policy")
 journal_llm_call(
@@ -74,7 +74,7 @@ call gets an `LLM` span of its own (`llm_call`) under the current span, the way
 the LiteLLM instrumentor nests `litellm.acompletion` under `generation`; the
 viewer shows journal messages only on `LLM` spans, one call per span. A client
 that already runs inside its own `LLM` span is linked to that span, and
-`span_id=` links the call to any span. Inside a NOOA turn it uses the context
+`span_id=` links the call to any span. Inside a Aster turn it uses the context
 the runtime rendered for the call, so the record matches the LiteLLM path. It
 never raises.
 
@@ -82,8 +82,8 @@ Use `exporters.journal_file` by itself for such runs. It keeps every span
 (LLM spans lose their message attributes) and adds the journal. Don't add
 `exporters.jsonl` next to it. The viewer doesn't dedupe span ids: when both
 copies end up in one imported file, every span shows up twice. When they stay
-in separate files, `nooa import-traces` imports `<session>.jsonl` and then
-skips `<session>.nooa.jsonl` because the session already exists, so the
+in separate files, `aster import-traces` imports `<session>.jsonl` and then
+skips `<session>.aster.jsonl` because the session already exists, so the
 journal is lost.
 
 ## What appears in a trace
@@ -123,7 +123,7 @@ application layer when you need them represented.
 You can exclude a noisy method without changing its behavior:
 
 ```python
-from nooa import no_trace
+from aster import no_trace
 
 
 class AgentWithUtility(Agent, llm=llm):
@@ -147,4 +147,4 @@ This is usually more informative than expanding the prompt and trying again.
 - [Architecture](../architecture.md)
 - [Orchestration](orchestration.md)
 - Runnable example: [tracing](../../examples/quickstart/06_tracing.py)
-- Detailed reference: [`nooa-capturing-traces`](../../skills/nooa-capturing-traces/SKILL.md)
+- Detailed reference: [`aster-capturing-traces`](../../skills/aster-capturing-traces/SKILL.md)

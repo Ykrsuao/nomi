@@ -23,11 +23,11 @@ from urllib.parse import urlparse
 
 import pytest
 
-from nooa.tracing._context_sideband import (
+from aster.tracing._context_sideband import (
     JournalPayload,
     set_journal_payload,
 )
-from nooa.tracing._litellm_journal import MessageJournalCallback
+from aster.tracing._litellm_journal import MessageJournalCallback
 
 
 def _capture_posts():
@@ -88,10 +88,10 @@ def _fake_response_with_tool(arguments: str) -> SimpleNamespace:
 
 def test_reasoning_uses_one_block_across_input_output_and_repeated_calls():
     """Readable reasoning survives journal resolution without repeated payloads."""
-    from nooa.context_blocks.models import RenderedMessage, Role
-    from nooa.tracing import set_session
-    from nooa.tracing._journal_builder import build_journal_payload
-    from nooa.viewer.otlp_store import _resolve_message
+    from aster.context_blocks.models import RenderedMessage, Role
+    from aster.tracing import set_session
+    from aster.tracing._journal_builder import build_journal_payload
+    from aster.viewer.otlp_store import _resolve_message
 
     reasoning = "Check café evidence. " * 5000
     payload = build_journal_payload(
@@ -108,7 +108,7 @@ def test_reasoning_uses_one_block_across_input_output_and_repeated_calls():
         ],
         usage=SimpleNamespace(prompt_tokens=1, completion_tokens=1),
     )
-    with patch("nooa.tracing._litellm_journal._post_json", side_effect=fake_post):
+    with patch("aster.tracing._litellm_journal._post_json", side_effect=fake_post):
         for call_id in ("first", "second"):
             set_journal_payload(payload)
             cb.log_pre_api_call(model="m", messages=[], kwargs={"litellm_call_id": call_id})
@@ -157,11 +157,11 @@ def test_large_tool_call_arguments_routed_through_blocks():
     cb = MessageJournalCallback("http://example.invalid")
     big = "X" * (200 * 1024)  # 200 KB of code
 
-    from nooa.tracing import set_session
+    from aster.tracing import set_session
 
     set_session("output-blocks-1")
 
-    with patch("nooa.tracing._litellm_journal._post_json", side_effect=fake_post):
+    with patch("aster.tracing._litellm_journal._post_json", side_effect=fake_post):
         cb.log_pre_api_call(
             model="gpt-x",
             messages=[{"role": "user", "content": "run this"}],
@@ -215,7 +215,7 @@ def test_per_session_dedup_is_o_delta_across_calls():
     posts, fake_post = _capture_posts()
     cb = MessageJournalCallback("http://example.invalid")
 
-    from nooa.tracing import set_session
+    from aster.tracing import set_session
 
     set_session("dedup-session")
 
@@ -231,7 +231,7 @@ def test_per_session_dedup_is_o_delta_across_calls():
             end_time=1.0,
         )
 
-    with patch("nooa.tracing._litellm_journal._post_json", side_effect=fake_post):
+    with patch("aster.tracing._litellm_journal._post_json", side_effect=fake_post):
         # Call 1: ships 3 blocks.
         drive_call("c1", dict(base_blocks))
         # Call 2: same 3 blocks + 1 new -- only the new one should ship.
@@ -292,7 +292,7 @@ async def test_concurrent_tasks_each_get_own_journal_payload():
     posts, fake_post = _capture_posts()
     cb = MessageJournalCallback("http://example.invalid")
 
-    from nooa.tracing import set_session
+    from aster.tracing import set_session
 
     async def one_call(session_id: str, content: str, call_id: str) -> None:
         # Each task gets its own context: set_session + set_journal_payload
@@ -309,7 +309,7 @@ async def test_concurrent_tasks_each_get_own_journal_payload():
             end_time=1.0,
         )
 
-    with patch("nooa.tracing._litellm_journal._post_json", side_effect=fake_post):
+    with patch("aster.tracing._litellm_journal._post_json", side_effect=fake_post):
         await asyncio.gather(
             one_call("sess-A", "alpha", "ca"),
             one_call("sess-B", "beta", "cb"),

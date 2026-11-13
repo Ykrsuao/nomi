@@ -8,7 +8,7 @@ import sys
 import pytest
 
 
-@pytest.mark.parametrize("statement", ["import nooa", "import nooa.runtime"])
+@pytest.mark.parametrize("statement", ["import aster", "import aster.runtime"])
 def test_policy_import_without_llm_or_media_dependencies(statement):
     code = f"""
 import importlib.abc
@@ -19,19 +19,19 @@ class MissingOptionalDependencies(importlib.abc.MetaPathFinder):
             raise ImportError('optional dependency intentionally unavailable')
 sys.meta_path.insert(0, MissingOptionalDependencies())
 {statement}
-from nooa.config.model_config import ModelConfig
+from aster.config.model_config import ModelConfig
 assert ModelConfig(media_inputs=['pdf']).media_inputs == ('pdf',)
 assert 'media_inputs' in ModelConfig.model_json_schema()['properties']
-assert not any(m in sys.modules for m in ('litellm', 'nooa.unifiedllm'))
+assert not any(m in sys.modules for m in ('litellm', 'aster.unifiedllm'))
 """
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
 
 
 def test_public_policy_types_retain_identity_and_validation():
-    from nooa import media_inputs as policy
-    from nooa.config.model_config import ModelConfig
-    from nooa.unifiedllm import media_inputs as public
+    from aster import media_inputs as policy
+    from aster.config.model_config import ModelConfig
+    from aster.unifiedllm import media_inputs as public
 
     assert public.MediaInputs is policy.MediaInputs
     assert public.validate_media_inputs is policy.validate_media_inputs

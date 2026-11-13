@@ -6,7 +6,7 @@ import json
 import httpx
 import pytest
 
-from nooa.decisions.client import (
+from aster.decisions.client import (
     BooleanAnswer,
     BooleanQuestion,
     ChoiceAnswer,
@@ -18,7 +18,7 @@ from nooa.decisions.client import (
     ScoreAnswer,
     ScoreQuestion,
 )
-from nooa.unifiedllm import RetryConfig
+from aster.unifiedllm import RetryConfig
 
 TEST_ENDPOINT = "https://decision.example/v1/decisions"
 

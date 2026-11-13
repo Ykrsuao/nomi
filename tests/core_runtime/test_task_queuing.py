@@ -15,8 +15,8 @@ import asyncio
 
 import pytest
 
-from nooa.agent import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster.agent import Agent
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM (can be overridden at instantiation)
 _TEST_LLM = FakeLLMClient()

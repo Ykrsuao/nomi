@@ -7,7 +7,7 @@ from dataclasses import asdict
 import httpx
 import pytest
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 from tests.unifiedllm.connect.connect_http import mock_http
 
 ENDPOINT = "https://hub.test/v1/decisions"

@@ -12,7 +12,7 @@ import time
 
 import pytest
 
-from nooa.tools._bash_session import BashSession
+from aster.tools._bash_session import BashSession
 
 
 def _alive(pid: int) -> bool:
@@ -152,7 +152,7 @@ def test_kept_job_can_write_after_owner_exits(tmp_path):
     pid_file = tmp_path / "job.pid"
     owner = f"""
 import asyncio
-from nooa.tools._bash_session import BashSession
+from aster.tools._bash_session import BashSession
 
 async def main():
     s = BashSession(cwd={str(tmp_path)!r}, keep_background_on_close=True)

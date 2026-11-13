@@ -7,7 +7,7 @@ from typing import Annotated
 
 import pytest
 
-from nooa import (
+from aster import (
     Agent,
     BooleanDecision,
     Context,
@@ -19,17 +19,17 @@ from nooa import (
     Threshold,
     strategy,
 )
-from nooa.context_blocks import ScopedContext
-from nooa.decisions.client import (
+from aster.context_blocks import ScopedContext
+from aster.decisions.client import (
     BooleanAnswer,
     BooleanQuestion,
     DecisionRequest,
     DecisionResponse,
 )
-from nooa.decisions.provenance import question_digest
-from nooa.events import DebugTrace, DecisionRecord, Error, EventBase, Message
-from nooa.runtime.middleware import DecisionCallContext
-from nooa.unifiedllm import AssistantText, FakeLLMClient, LLMResponse
+from aster.decisions.provenance import question_digest
+from aster.events import DebugTrace, DecisionRecord, Error, EventBase, Message
+from aster.runtime.middleware import DecisionCallContext
+from aster.unifiedllm import AssistantText, FakeLLMClient, LLMResponse
 
 
 class FakeDecisionClient:
@@ -261,7 +261,7 @@ async def test_standalone_decision_alias_is_resolved_once(monkeypatch) -> None:
         resolutions.append(alias)
         return client
 
-    monkeypatch.setattr("nooa.unifiedllm.get_decision_model", resolve)
+    monkeypatch.setattr("aster.unifiedllm.get_decision_model", resolve)
 
     @strategy(DecideStrategy(), decision_model="decisions")
     async def urgent(message: str) -> bool:
@@ -324,7 +324,7 @@ async def test_agent_resolves_configured_decision_model_alias(monkeypatch) -> No
         resolutions.append(alias)
         return client
 
-    monkeypatch.setattr("nooa.unifiedllm.get_decision_model", resolve)
+    monkeypatch.setattr("aster.unifiedllm.get_decision_model", resolve)
 
     class TriageAgent(Agent, llm=FakeLLMClient(), decision_model="decisions"):
         @strategy(DecideStrategy())
@@ -346,7 +346,7 @@ async def test_method_decision_alias_is_cached_per_agent(monkeypatch) -> None:
         resolutions.append(alias)
         return client
 
-    monkeypatch.setattr("nooa.unifiedllm.get_decision_model", resolve)
+    monkeypatch.setattr("aster.unifiedllm.get_decision_model", resolve)
 
     class TriageAgent(Agent, llm=FakeLLMClient()):
         @strategy(DecideStrategy(), decision_model="decisions")
@@ -599,7 +599,7 @@ def test_agent_without_llm_or_decision_model_still_fails() -> None:
 
 
 def test_child_of_decision_only_parent_needs_its_own_llm_without_decisions() -> None:
-    from nooa.runtime.context_vars import _parent_agent_var
+    from aster.runtime.context_vars import _parent_agent_var
 
     class Router(Agent, decision_model=FakeDecisionClient()):
         pass
@@ -628,7 +628,7 @@ async def test_agent_decision_alias_is_shared_per_class(monkeypatch) -> None:
         resolutions.append(alias)
         return FakeDecisionClient()
 
-    monkeypatch.setattr("nooa.unifiedllm.get_decision_model", resolve)
+    monkeypatch.setattr("aster.unifiedllm.get_decision_model", resolve)
 
     class TriageAgent(Agent, decision_model="decisions"):
         pass
@@ -770,7 +770,7 @@ async def test_call_site_decision_model_supports_alias_and_resolver(monkeypatch)
         resolutions.append(alias)
         return aliased
 
-    monkeypatch.setattr("nooa.unifiedllm.get_decision_model", resolve)
+    monkeypatch.setattr("aster.unifiedllm.get_decision_model", resolve)
 
     class TriageAgent(Agent, decision_model=FakeDecisionClient()):
         backup = resolved
@@ -846,7 +846,7 @@ async def test_standalone_call_site_decision_model(monkeypatch) -> None:
         resolutions.append(alias)
         return aliased
 
-    monkeypatch.setattr("nooa.unifiedllm.get_decision_model", resolve)
+    monkeypatch.setattr("aster.unifiedllm.get_decision_model", resolve)
 
     @strategy(DecideStrategy(), decision_model=decorated)
     async def urgent(message: str) -> bool:

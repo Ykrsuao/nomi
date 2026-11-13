@@ -20,9 +20,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from nooa.agentdoc import spec
-from nooa.config.truncation_config import FormatConfig, TruncationConfig
-from nooa.strategies.current_call import CurrentCall
+from aster.agentdoc import spec
+from aster.config.truncation_config import FormatConfig, TruncationConfig
+from aster.strategies.current_call import CurrentCall
 
 
 class _Demo:
@@ -145,7 +145,7 @@ class TestInspectInputsPrefillHonorsParamSpecs:
     def test_max_string_none_override_emits_none_literal(self):
         """spec(max_string=None) should produce ``pprint(content, ..., max_string=None, ...)``
         so the parameter is NOT truncated — this is the reported bug."""
-        from nooa.strategies.prefill import InspectInputsPrefill
+        from aster.strategies.prefill import InspectInputsPrefill
 
         call = _call(_NullStringDemo.process, {"content": "x" * 1000, "summary": "short"})
         prefill = InspectInputsPrefill()
@@ -158,7 +158,7 @@ class TestInspectInputsPrefillHonorsParamSpecs:
 
     def test_max_length_override_in_prefill(self):
         """spec(max_length=3) should override the config default in the prefill code."""
-        from nooa.strategies.prefill import InspectInputsPrefill
+        from aster.strategies.prefill import InspectInputsPrefill
 
         call = _call(_Demo.analyze, {"short": [1, 2, 3], "full": [4, 5, 6], "plain": [7, 8, 9]})
         prefill = InspectInputsPrefill()
@@ -181,9 +181,9 @@ async def test_top_level_agent_call_prefill_honors_param_specs():
     """
     import json
 
-    from nooa import Agent, strategy
-    from nooa.strategies import CodeActV2
-    from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+    from aster import Agent, strategy
+    from aster.strategies import CodeActV2
+    from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
     code = "return_result('done')"
     llm = FakeLLMClient(

@@ -6,10 +6,10 @@ import json  # noqa: F401 — used by test_sandbox_has_agent_module_imports (vis
 
 import pytest
 
-from nooa.agent import Agent
-from nooa.runtime.actor import ActorRuntime
-from nooa.runtime.code_validator import ValidationError, validate_code
-from nooa.unifiedllm import FakeLLMClient
+from aster.agent import Agent
+from aster.runtime.actor import ActorRuntime
+from aster.runtime.code_validator import ValidationError, validate_code
+from aster.unifiedllm import FakeLLMClient
 
 # Module-level test LLM (can be overridden at instantiation)
 _TEST_LLM = FakeLLMClient()

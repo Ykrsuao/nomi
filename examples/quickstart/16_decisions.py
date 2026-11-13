@@ -15,7 +15,7 @@ from typing import Annotated
 
 from pydantic import BaseModel
 
-from nooa import (
+from aster import (
     Agent,
     ChoiceDecision,
     Criteria,

@@ -12,13 +12,13 @@ import asyncio
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.context_blocks.models import Role
-from nooa.errors import GenerationError
-from nooa.events import LLMCallEnd, LLMCallStart
-from nooa.runtime.event_manager import EventManager
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, strategy
+from aster.context_blocks.models import Role
+from aster.errors import GenerationError
+from aster.events import LLMCallEnd, LLMCallStart
+from aster.runtime.event_manager import EventManager
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 
 def test_llmcall_events_are_runtime_events_never_recorded():

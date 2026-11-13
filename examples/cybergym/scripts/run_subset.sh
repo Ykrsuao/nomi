@@ -77,7 +77,8 @@ EOF
 fi
 
 echo "===== BUILD RUNNER IMAGE $(date -Is) ====="
-docker build -f "$AGENT_REPO/Dockerfile" -t "$RUNNER_IMAGE" "$AGENT_REPO"
+docker build -f "$AGENT_REPO/Dockerfile" -t "$RUNNER_IMAGE" \
+  --build-arg "ASTER_VERSION=$ASTER_VERSION" "$ASTER_SOURCE_ROOT"
 
 echo "===== RUN ${#TASKS[@]} TASKS $(date -Is) ====="
 for TASK_ID in "${TASKS[@]}"; do
@@ -86,7 +87,7 @@ for TASK_ID in "${TASKS[@]}"; do
   pull_task_images "$TASK_ID"
 
   set +e
-  python3 -m nooa_cybergym.run \
+  python3 -m aster_cybergym.run \
     --use-firewall \
     --model "$MODEL" \
     --reasoning-effort "$REASONING_EFFORT" \

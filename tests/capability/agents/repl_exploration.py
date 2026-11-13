@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """REPL Exploration Test Agent. Uses REPL exploration to find a secret message."""
 
-from nooa import Agent, CodeActStrategy, strategy
-from nooa.config import CodeActConfig
+from aster import Agent, CodeActStrategy, strategy
+from aster.config import CodeActConfig
 
 
 class ReplExplorationTestAgent(Agent):

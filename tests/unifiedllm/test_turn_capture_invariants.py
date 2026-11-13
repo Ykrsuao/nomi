@@ -6,11 +6,11 @@ import json
 
 import pytest
 
-from nooa.llm_types import AssistantReasoning, LLMResponse, ToolCall
-from nooa.storage.sqlite import SQLiteStorageManager
-from nooa.unifiedllm.chat_parts import capture_chat_parts, project_chat_turn
-from nooa.unifiedllm.replay_state import ReasoningReplayError
-from nooa.unifiedllm.response_parts import capture_parts, project_turn
+from aster.llm_types import AssistantReasoning, LLMResponse, ToolCall
+from aster.storage.sqlite import SQLiteStorageManager
+from aster.unifiedllm.chat_parts import capture_chat_parts, project_chat_turn
+from aster.unifiedllm.replay_state import ReasoningReplayError
+from aster.unifiedllm.response_parts import capture_parts, project_turn
 
 REASONING = {"type": "reasoning", "id": "rs_test", "encrypted_content": "ciphertext", "summary": []}
 INVALID_ITEMS = [

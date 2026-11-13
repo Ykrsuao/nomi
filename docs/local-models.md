@@ -1,6 +1,6 @@
 # Local Models
 
-NOOA uses LiteLLM model strings through `get_llm_client()`. Any
+Aster uses LiteLLM model strings through `get_llm_client()`. Any
 OpenAI-compatible endpoint can be used with an `openai/` model string,
 `api_base="<endpoint>/v1"`, and whatever API key that endpoint requires.
 
@@ -25,7 +25,7 @@ ollama pull qwen3.6:27b
 ```
 
 ```python
-from nooa.unifiedllm.registry import get_llm_client
+from aster.unifiedllm.registry import get_llm_client
 
 llm = get_llm_client(
     "ollama_chat/qwen3.6:27b",
@@ -48,7 +48,7 @@ curl http://localhost:8000/v1/models
 ```
 
 ```python
-from nooa.unifiedllm.registry import get_llm_client
+from aster.unifiedllm.registry import get_llm_client
 
 llm = get_llm_client(
     "hosted_vllm/Qwen/Qwen3.6-27B",
@@ -72,7 +72,7 @@ network access controls.
 
 ## Aliases
 
-Put repeated local config in `.nooa/llm_config.yaml`:
+Put repeated local config in `.aster/llm_config.yaml`:
 
 ```yaml
 models:

@@ -42,7 +42,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import datetime
 
-from nooa.atif import StepObject, Trajectory
+from aster.atif import StepObject, Trajectory
 
 
 class NormativeRuleError(AssertionError):

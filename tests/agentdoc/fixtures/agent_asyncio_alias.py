@@ -4,8 +4,8 @@
 
 import asyncio as aio
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 
 class AgentAsyncioAlias(Agent, llm=FakeLLMClient()):

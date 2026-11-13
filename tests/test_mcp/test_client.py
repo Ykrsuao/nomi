@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for mcp_nooa module."""
+"""Tests for mcp_aster module."""
 
 import asyncio
 import json
@@ -17,16 +17,16 @@ from unittest.mock import AsyncMock, MagicMock, patch  # noqa: E402
 
 from mcp.types import Tool as MCPRemoteTool  # noqa: E402
 
-from nooa.mcp import client as client_module  # noqa: E402
-from nooa.mcp import oauth  # noqa: E402
-from nooa.mcp.client import (  # noqa: E402
+from aster.mcp import client as client_module  # noqa: E402
+from aster.mcp import oauth  # noqa: E402
+from aster.mcp.client import (  # noqa: E402
     MCPBaseClient,
     MCPSSEClient,
     MCPStdioClient,
     MCPStreamableHTTPClient,
     create_mcp_client,
 )
-from nooa.mcp.tool import (  # noqa: E402
+from aster.mcp.tool import (  # noqa: E402
     MCPManager,
     MCPTool,
     MCPToolSpec,
@@ -344,8 +344,8 @@ def test_session_timeout_matches_mcp_sdk_contract(
 @pytest.mark.parametrize(
     "client_fixture, transport_patch",
     [
-        ("stdio_client", "nooa.mcp.client.stdio_client"),
-        ("sse_client", "nooa.mcp.client.sse_client"),
+        ("stdio_client", "aster.mcp.client.stdio_client"),
+        ("sse_client", "aster.mcp.client.sse_client"),
     ],
 )
 async def test_connect_context_manager(
@@ -365,7 +365,7 @@ async def test_connect_context_manager(
             mock_write,
         )
 
-        with patch("nooa.mcp.client.ClientSession") as mock_session_class:
+        with patch("aster.mcp.client.ClientSession") as mock_session_class:
             mock_session_class.return_value.__aenter__.return_value = mock_client_session
 
             async with client.connect_to_server() as session:
@@ -387,8 +387,8 @@ async def test_sse_headers_passed_to_transport(
     mock_read, mock_write = mock_mcp_transport
 
     with (
-        patch("nooa.mcp.client.sse_client") as mock_sse,
-        patch("nooa.mcp.client.ClientSession") as mock_session_class,
+        patch("aster.mcp.client.sse_client") as mock_sse,
+        patch("aster.mcp.client.ClientSession") as mock_session_class,
     ):
         mock_sse.return_value.__aenter__.return_value = (mock_read, mock_write)
         mock_session_class.return_value.__aenter__.return_value = mock_client_session
@@ -414,9 +414,9 @@ async def test_streamable_http_applies_tool_call_timeout(
     default no matter what tool_call_timeout says.
     """
     with (
-        patch("nooa.mcp.client.httpx.AsyncClient") as mock_async_client,
-        patch("nooa.mcp.client.streamable_http_client") as mock_http,
-        patch("nooa.mcp.client.ClientSession") as mock_session_class,
+        patch("aster.mcp.client.httpx.AsyncClient") as mock_async_client,
+        patch("aster.mcp.client.streamable_http_client") as mock_http,
+        patch("aster.mcp.client.ClientSession") as mock_session_class,
     ):
         mock_http.return_value.__aenter__.return_value = (MagicMock(), MagicMock(), MagicMock())
         mock_session_class.return_value.__aenter__.return_value = mock_client_session
@@ -438,8 +438,8 @@ async def test_streamable_http_applies_tool_call_timeout(
 @pytest.mark.parametrize(
     "client_fixture, transport_patch, expected_timeout",
     [
-        ("sse_client", "nooa.mcp.client.sse_client", timedelta(seconds=45)),
-        ("stdio_client", "nooa.mcp.client.stdio_client", timedelta(seconds=30)),
+        ("sse_client", "aster.mcp.client.sse_client", timedelta(seconds=45)),
+        ("stdio_client", "aster.mcp.client.stdio_client", timedelta(seconds=30)),
     ],
 )
 async def test_session_enforces_tool_call_timeout(
@@ -455,7 +455,7 @@ async def test_session_enforces_tool_call_timeout(
 
     with (
         patch(transport_patch) as mock_transport,
-        patch("nooa.mcp.client.ClientSession") as mock_session_class,
+        patch("aster.mcp.client.ClientSession") as mock_session_class,
     ):
         mock_transport.return_value.__aenter__.return_value = mock_mcp_transport
         mock_session_class.return_value.__aenter__.return_value = mock_client_session
@@ -498,10 +498,10 @@ async def test_streamable_http_connect_context_manager(
     if not provides_session_id:
         transport_streams = transport_streams[:2]
 
-    with patch("nooa.mcp.client.streamable_http_client") as mock_http:
+    with patch("aster.mcp.client.streamable_http_client") as mock_http:
         mock_http.return_value.__aenter__.return_value = transport_streams
 
-        with patch("nooa.mcp.client.ClientSession") as mock_session_class:
+        with patch("aster.mcp.client.ClientSession") as mock_session_class:
             mock_session_class.return_value.__aenter__.return_value = mock_client_session
 
             # Before connection, mcp_session_id should be None
@@ -534,11 +534,11 @@ async def test_streamable_http_headers_passed_to_httpx_client(
     """StreamableHTTPClient passes headers correctly to httpx.AsyncClient."""
     client: MCPStreamableHTTPClient = request.getfixturevalue(client_fixture)
 
-    with patch("nooa.mcp.client.httpx.AsyncClient") as mock_httpx_client:
+    with patch("aster.mcp.client.httpx.AsyncClient") as mock_httpx_client:
         mock_client_instance = AsyncMock()
         mock_httpx_client.return_value.__aenter__.return_value = mock_client_instance
 
-        with patch("nooa.mcp.client.streamable_http_client") as mock_http:
+        with patch("aster.mcp.client.streamable_http_client") as mock_http:
             mock_read = MagicMock()
             mock_write = MagicMock()
             mock_get_session_id = MagicMock(return_value=None)
@@ -548,7 +548,7 @@ async def test_streamable_http_headers_passed_to_httpx_client(
                 mock_get_session_id,
             )
 
-            with patch("nooa.mcp.client.ClientSession"):
+            with patch("aster.mcp.client.ClientSession"):
                 async with client.connect_to_server():
                     pass
 
@@ -613,11 +613,11 @@ def test_create_from_server_honors_configured_oauth_mode():
     }
 
     with (
-        patch("nooa.mcp.tool.create_mcp_client", side_effect=UnauthorizedClient),
-        patch("nooa.mcp.tool.handle_mcp_oauth") as mock_oauth,
+        patch("aster.mcp.tool.create_mcp_client", side_effect=UnauthorizedClient),
+        patch("aster.mcp.tool.handle_mcp_oauth") as mock_oauth,
     ):
         mock_oauth.return_value = oauth.OAuthToken(access_token="token")
-        from nooa.mcp.tool import MCPManager
+        from aster.mcp.tool import MCPManager
 
         MCPManager.create_from_server("jira", servers=servers)
 
@@ -662,8 +662,8 @@ def test_create_from_server_caller_headers_override_config():
         }
     }
 
-    with patch("nooa.mcp.tool.create_mcp_client", side_effect=RecordingClient):
-        from nooa.mcp.tool import MCPManager
+    with patch("aster.mcp.tool.create_mcp_client", side_effect=RecordingClient):
+        from aster.mcp.tool import MCPManager
 
         MCPManager.create_from_server(
             "jira",
@@ -720,8 +720,8 @@ def test_create_from_server_keeps_mcp_file_env_placeholders_literal_by_default(
     session.list_tools.return_value.tools = []
     client.connect_to_server.return_value.__aenter__.return_value = session
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client) as mock_create:
-        from nooa.mcp.tool import MCPManager
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client) as mock_create:
+        from aster.mcp.tool import MCPManager
 
         MCPManager.create_from_server("untrusted", mcp_file=mcp_file)
 
@@ -756,8 +756,8 @@ def test_create_from_server_ignores_config_env_expansion_self_authorization(tmp_
     session.list_tools.return_value.tools = []
     client.connect_to_server.return_value.__aenter__.return_value = session
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client) as mock_create:
-        from nooa.mcp.tool import MCPManager
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client) as mock_create:
+        from aster.mcp.tool import MCPManager
 
         MCPManager.create_from_server("untrusted", mcp_file=mcp_file)
 
@@ -789,8 +789,8 @@ def test_create_from_server_keeps_unset_environment_variable_literal(tmp_path, m
     session.list_tools.return_value.tools = []
     client.connect_to_server.return_value.__aenter__.return_value = session
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client) as mock_create:
-        from nooa.mcp.tool import MCPManager
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client) as mock_create:
+        from aster.mcp.tool import MCPManager
 
         MCPManager.create_from_server("trusted", mcp_file=mcp_file)
 
@@ -812,8 +812,8 @@ def test_create_from_server_keeps_and_copies_nested_inline_config(monkeypatch):
     session.list_tools.return_value.tools = []
     client.connect_to_server.return_value.__aenter__.return_value = session
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client) as mock_create:
-        from nooa.mcp.tool import MCPManager
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client) as mock_create:
+        from aster.mcp.tool import MCPManager
 
         MCPManager.create_from_server("trusted", servers={"trusted": server_config})
 
@@ -875,7 +875,7 @@ async def test_create_stdio_server_builds_tool_from_real_sdk_model():
     session.list_tools = record_loop
     caller_loop = asyncio.get_running_loop()
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client) as create:
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client) as create:
         tool = await MCPManager.create_stdio_server(
             "lookup", "lookup-server", args=["--stdio"], env={"TOKEN": "test"}
         )
@@ -917,7 +917,7 @@ async def test_create_url_server_builds_tool_from_explicit_client_config(transpo
     client.connect_to_server.return_value = Context()
     headers = {"Authorization": "Bearer test"}
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client) as create:
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client) as create:
         tool = await MCPManager.create_url_server(
             "everything",
             "https://mcp.example.test/mcp",
@@ -952,7 +952,7 @@ async def test_create_url_server_surfaces_nested_connection_error():
     client.connect_to_server.return_value = Context()
 
     with (
-        patch("nooa.mcp.tool.create_mcp_client", return_value=client),
+        patch("aster.mcp.tool.create_mcp_client", return_value=client),
         pytest.raises(RuntimeError) as exc_info,
     ):
         await MCPManager.create_url_server(
@@ -988,7 +988,7 @@ async def test_create_stdio_server_closes_connection_on_cancellation():
 
     client.connect_to_server.return_value = Context()
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client):
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client):
         task = asyncio.create_task(MCPManager.create_stdio_server("lookup", "lookup-server"))
         await asyncio.wait_for(started.wait(), timeout=1)
         task.cancel()
@@ -1023,7 +1023,7 @@ async def test_a_refreshed_client_keeps_the_configured_tool_call_timeout():
     client.connect_to_server.return_value = Context()
     configured = timedelta(seconds=300)
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client):
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client):
         tool = await MCPManager.create_url_server(
             "slow",
             "https://mcp.example.test/mcp",
@@ -1033,8 +1033,8 @@ async def test_a_refreshed_client_keeps_the_configured_tool_call_timeout():
 
     token = MagicMock(token_type="Bearer", access_token="refreshed")
     with (
-        patch("nooa.mcp.oauth.handle_mcp_oauth", new=AsyncMock(return_value=token)),
-        patch("nooa.mcp.tool.create_mcp_client", return_value=client) as rebuild,
+        patch("aster.mcp.oauth.handle_mcp_oauth", new=AsyncMock(return_value=token)),
+        patch("aster.mcp.tool.create_mcp_client", return_value=client) as rebuild,
     ):
         assert await tool._refresh_access_token() is True
 
@@ -1067,7 +1067,7 @@ async def test_create_url_server_copies_the_caller_headers():
     client.connect_to_server.return_value = Context()
     headers = {"Authorization": "Bearer test"}
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client) as create:
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client) as create:
         await MCPManager.create_url_server(
             "svc", "https://mcp.example.test/mcp", headers=headers, transport="sse"
         )
@@ -1102,7 +1102,7 @@ async def test_create_from_server_also_keeps_the_configured_timeout():
     client.connect_to_server.return_value = Context()
     configured = timedelta(seconds=300)
 
-    with patch("nooa.mcp.tool.create_mcp_client", return_value=client):
+    with patch("aster.mcp.tool.create_mcp_client", return_value=client):
         tool = MCPManager.create_from_server(
             "svc",
             url="https://mcp.example.test/mcp",

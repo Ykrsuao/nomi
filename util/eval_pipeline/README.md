@@ -1,6 +1,6 @@
 # eval_pipeline
 
-A flexible evaluation framework for nooa agents. Use it from **Python** or via **YAML config**.
+A flexible evaluation framework for aster agents. Use it from **Python** or via **YAML config**.
 
 ## Installation
 
@@ -22,7 +22,7 @@ tools. No separate installation step is needed.
 
 ```python
 from eval_pipeline import Evaluator, ExactMatchScorer
-from nooa.unifiedllm import CompletionClient
+from aster.unifiedllm import CompletionClient
 
 # Create your LLM clients
 gpt4 = CompletionClient(model="openai/gpt-4", api_key="...")
@@ -54,7 +54,7 @@ results = await evaluator.run(
 )
 
 print(results.summary())  # "15/18 passed (83.3%)"
-print(results.output_file)  # Path to .noo-eval.jsonl
+print(results.output_file)  # Path to .aster-eval.jsonl
 ```
 
 ### Option 2: YAML Config (Recommended for reproducibility)
@@ -137,7 +137,7 @@ results.passed       # Number passed
 results.total        # Total samples
 results.pass_rate    # Percentage (0-100)
 results.summary()    # "15/18 passed (83.3%)"
-results.output_file  # Path to .noo-eval.jsonl
+results.output_file  # Path to .aster-eval.jsonl
 results.results      # List of all result dicts
 ```
 
@@ -155,7 +155,7 @@ python -m eval_pipeline --config config.yaml -q              # Quiet mode
 ```text
 sentiment gpt-4: 4/4 ✓
 sentiment claude: 3/4 ✗
-TOTAL: 7/8 passed (87.5%) → experiments/my_eval_20251213_103000.noo-eval.jsonl
+TOTAL: 7/8 passed (87.5%) → experiments/my_eval_20251213_103000.aster-eval.jsonl
 ```
 
 ---
@@ -280,11 +280,11 @@ test_suite:
 
 ## Output Format
 
-Results are written to `.noo-eval.jsonl`:
+Results are written to `.aster-eval.jsonl`:
 
 ```text
 experiments/my_eval_20251213_103000/
-├── my_eval_20251213_103000.noo-eval.jsonl   # Results
+├── my_eval_20251213_103000.aster-eval.jsonl   # Results
 └── traces/
     └── *.jsonl                              # Per-sample traces
 ```
@@ -301,7 +301,7 @@ Each result includes:
 
 ## Trace export: OTLP vs disk
 
-The pipeline can send traces to an **OTLP API** (e.g. the nooa viewer) or write them to **disk** as `.jsonl` files. The choice is controlled by the **`OTLP_ENDPOINT`** environment variable.
+The pipeline can send traces to an **OTLP API** (e.g. the aster viewer) or write them to **disk** as `.jsonl` files. The choice is controlled by the **`OTLP_ENDPOINT`** environment variable.
 
 | `OTLP_ENDPOINT`   | Behavior |
 |-------------------|----------|
@@ -319,7 +319,7 @@ export OTLP_ENDPOINT=http://localhost:5001/v1/traces
 python -m eval_pipeline --config config.yaml --runs 3
 ```
 
-Start the viewer (e.g. `nooa start-dev` or the combined viewer on port 5001) before running so the endpoint is available. Experiments will appear in the eval viewer under distinct names (e.g. `capability_20260309_080455_207319_r3_p40`).
+Start the viewer (e.g. `aster start-dev` or the combined viewer on port 5001) before running so the endpoint is available. Experiments will appear in the eval viewer under distinct names (e.g. `capability_20260309_080455_207319_r3_p40`).
 
 **Example: traces to disk only (default)**
 
@@ -328,7 +328,7 @@ Start the viewer (e.g. `nooa start-dev` or the combined viewer on port 5001) bef
 python -m eval_pipeline --config config.yaml --runs 3
 ```
 
-Output directory will contain both the `.noo-eval.jsonl` results and a `traces/` folder with one `.jsonl` trace per sample.
+Output directory will contain both the `.aster-eval.jsonl` results and a `traces/` folder with one `.jsonl` trace per sample.
 
 ---
 
@@ -360,7 +360,7 @@ Evaluator
                                         │          │         │
                                         ▼          ▼         ▼
                                     Run agent   Apply     Append to
-                                    method     scorers   .noo-eval.jsonl
+                                    method     scorers   .aster-eval.jsonl
 ```
 
 Each sample runs independently with its own trace file, enabling:

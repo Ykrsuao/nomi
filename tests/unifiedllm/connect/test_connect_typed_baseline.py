@@ -10,9 +10,9 @@ import httpx
 import pytest
 from litellm import ContextWindowExceededError
 
-from nooa.unifiedllm import connect, registry
-from nooa.unifiedllm.connect._baseline import _TextBaseline, typed_baseline
-from nooa.unifiedllm.connect._records import text_baseline_passed
+from aster.unifiedllm import connect, registry
+from aster.unifiedllm.connect._baseline import _TextBaseline, typed_baseline
+from aster.unifiedllm.connect._records import text_baseline_passed
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -305,7 +305,7 @@ async def test_transient_native_agent_never_records_raw_reply(monkeypatch):
 
 
 async def test_adapter_dropped_selected_effort_is_not_baseline_success(monkeypatch):
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     original = CompletionClient._prepare_call_config
 

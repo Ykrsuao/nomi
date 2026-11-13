@@ -9,7 +9,7 @@ import sys
 
 import pytest
 
-from nooa.runtime.producers import monitor, tail
+from aster.runtime.producers import monitor, tail
 
 
 class TestTail:

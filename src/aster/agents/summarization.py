@@ -1,0 +1,969 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+"""Summarization agents for Aster.
+
+This module provides agent-based event summarization following the Aster pattern.
+Summarizers are proper agents that subscribe to a parent's event manager and use
+LLM-generated code to produce summaries.
+
+Example:
+    from aster import Agent
+    from aster.agents import TokenBudgetSummarizer
+
+    class MyAgent(Agent, llm=my_llm):
+        async def chat(self, message: str) -> str:
+            '''Process a chat message.'''
+            ...
+
+    # Create agent and install summarizer
+    agent = MyAgent()
+    from aster.config.summarizer_config import TokenBudgetConfig
+    TokenBudgetSummarizer.install(agent, config=TokenBudgetConfig(max_tokens=80_000))
+"""
+
+import asyncio
+import contextvars
+import json
+import logging
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Annotated, Any
+
+from aster.agent import Agent
+from aster.agentdoc import hidden
+from aster.config.strategy_config import PredictConfig
+from aster.decorators import strategy
+from aster.metaclass import no_trace
+from aster.strategies import PredictStrategy
+
+logger = logging.getLogger(__name__)
+
+# Inherited by the background task, never shared with concurrent parent work.
+_in_summary_fork = contextvars.ContextVar("in_summary_fork", default=False)
+
+
+@hidden
+def summary_fork_active() -> bool:
+    """Whether this model call is best-effort memory compaction, not parent execution.
+
+    Integrations can use this task-local marker to avoid treating a contained
+    summary transport failure as the parent's terminal failure.
+    """
+    return _in_summary_fork.get()
+
+
+def _copy_request_containers(value: Any) -> Any:
+    """Detach mutable JSON containers; borrow tools, responses and other objects."""
+    if isinstance(value, dict):
+        return {key: _copy_request_containers(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_copy_request_containers(item) for item in value]
+    return value
+
+
+if TYPE_CHECKING:
+    from aster.config.summarizer_config import MethodSummarizerConfig, TokenBudgetConfig
+    from aster.events import AfterTurn, EventBase
+    from aster.runtime.event_manager import EventManager
+    from aster.unifiedllm import UnifiedLLM
+
+
+class SummarizationAgent(Agent):
+    """Base class for summarization subagents.
+
+    Summarizers subscribe to a parent agent's event manager and produce
+    summaries when triggered. The actual summarization logic is LLM-generated.
+
+    Subclasses define:
+    - When to summarize (override _should_summarize)
+    - What range to summarize (override _compute_range)
+
+    The base class handles:
+    - Event subscription to target_event_manager
+    - Background task management
+    - Applying summaries at safe boundaries (before_turn)
+    - Clearing own events after each summarize() call (stateless)
+
+    Configuration uses Annotated types for self-documentation:
+        max_tokens: Annotated[int, "Description"] = 100_000
+    """
+
+    # Event manager whose events will be summarized. Wired automatically by the parent Agent.
+    target_event_manager: Annotated["EventManager | None", hidden] = None
+
+    # Parent agent. Used to read runtime-computed context stats for accurate
+    # token counting. Hidden from the LLM.
+    _target_agent: Annotated["Agent | None", hidden] = None
+
+    # Config must be set by subclasses (TokenBudgetSummarizer, MethodSummarizer set self.config
+    # in __init__). The base class provides this sentinel to prevent AttributeError if a
+    # subclass forgets to set it or if the base is instantiated directly.
+    config: Annotated[Any, hidden] = None
+
+    # Background task state
+    _pending_task: Annotated[asyncio.Task[Any] | None, hidden]
+    _pending_range: Annotated[tuple[str, str] | None, hidden]
+    _pending_summary: Annotated[str | None, hidden]
+    _unsub_before: Annotated[Callable[[], None] | None, hidden]
+    _unsub_after: Annotated[Callable[[], None] | None, hidden]
+    _unsub_close: Annotated[Callable[[], None] | None, hidden] = None
+
+    @classmethod
+    def install(cls, agent: Agent, **kwargs: Any) -> "SummarizationAgent":
+        """Install this summarizer on an agent.
+
+        The summarizer is stored on the agent, so you don't need to keep
+        a reference to it - its lifetime is tied to the agent's lifetime.
+
+        Args:
+            agent: Agent to attach to. The summarizer:
+                   - Follows the parent's current LLM (unless explicitly overridden)
+                   - Attaches to agent's event manager automatically
+            **kwargs: Passed to constructor (use config= on subclasses)
+
+        Returns:
+            The installed summarizer (usually not needed)
+
+        Example:
+            from aster.config.summarizer_config import TokenBudgetConfig
+            agent = MyAgent(llm=my_llm)
+            TokenBudgetSummarizer.install(agent, config=TokenBudgetConfig(max_tokens=80_000))
+        """
+        summarizer = cls(agent, **kwargs)
+
+        # Store on agent to prevent GC - lifetime tied to agent
+        if not hasattr(agent, "_summarizers"):
+            agent._summarizers = []  # type: ignore[attr-defined]
+        agent._summarizers.append(summarizer)  # type: ignore[attr-defined]
+
+        return summarizer
+
+    def __init__(self, agent: Agent, **kwargs: Any) -> None:
+        """Initialize summarization agent attached to a parent agent.
+
+        Prefer using the `install()` class method instead of direct construction.
+
+        Args:
+            agent: Parent agent to attach to. The summarizer:
+                   - Follows the parent's current LLM (unless explicitly overridden)
+                   - Attaches to agent's event manager automatically
+            **kwargs: Passed through to Agent.__init__ (e.g. llm=)
+        """
+        # Default summaries follow later parent model switches as well.
+        self._inherits_parent_llm = "llm" not in kwargs
+        kwargs.setdefault("llm", agent.llm)
+        self.target_event_manager = agent.event_manager
+        self._target_agent = agent
+        self._summary_llm_override: contextvars.ContextVar[UnifiedLLM | None] = (
+            contextvars.ContextVar(f"summary_llm_override_{id(self)}", default=None)
+        )
+
+        # Extract annotated class attributes from kwargs (max_tokens, preserve_recent, etc.)
+        # Skip descriptors (e.g. Agent's ``llm`` property): they are not summarizer
+        # config fields and must pass through to ``Agent.__init__`` (which resolves
+        # ``llm`` itself). Assigning to a read-only property would also raise.
+        for name in list(kwargs.keys()):
+            if hasattr(self.__class__, name) and not isinstance(
+                getattr(type(self), name, None), property
+            ):
+                setattr(self, name, kwargs.pop(name))
+
+        super().__init__(**kwargs)
+
+        # Background task state
+        self._pending_task: asyncio.Task[Any] | None = None
+        self._pending_range: tuple[str, str] | None = None
+        self._pending_summary: str | None = None
+
+        # Unsubscribe functions for cleanup
+        self._unsub_before: Callable[[], None] | None = None
+        self._unsub_after: Callable[[], None] | None = None
+
+        # Install event subscriptions
+        self._install()
+
+    @hidden
+    @no_trace
+    def set_llm(self, llm: "UnifiedLLM") -> None:
+        """Select a fixed summary client, opting out of parent model switches."""
+        super().set_llm(llm)
+        self._inherits_parent_llm = False
+
+    @hidden
+    @no_trace
+    def _summary_llm(self) -> "UnifiedLLM":
+        """Resolve the client for standalone summaries and their input budget."""
+        override = self._summary_llm_override.get()
+        if override is not None:
+            return override
+        return self._target_agent.llm if self._inherits_parent_llm else self.llm
+
+    @hidden
+    @no_trace
+    def _install(self) -> None:
+        """Subscribe to target event manager.
+
+        Called automatically if target_event_manager is set at creation,
+        or by parent Agent after wiring target_event_manager.
+        """
+        if self.target_event_manager is None:
+            raise ValueError("Cannot install: target_event_manager is None")
+
+        self._unsub_before = self.target_event_manager.on("BeforeTurn", self._handle_before_turn)
+        self._unsub_after = self.target_event_manager.on("AfterTurn", self._handle_after_turn)
+        self._unsub_close = self.target_event_manager.on_close(self.aclose)
+
+    @hidden
+    @no_trace
+    def _uninstall(self) -> None:
+        """Unsubscribe from target event manager and cancel pending tasks."""
+        if self._unsub_close:
+            self._unsub_close()
+            self._unsub_close = None
+        if self._unsub_before:
+            self._unsub_before()
+            self._unsub_before = None
+        if self._unsub_after:
+            self._unsub_after()
+            self._unsub_after = None
+        if self._pending_task and not self._pending_task.done():
+            self._pending_task.cancel()
+            self._pending_task = None
+
+    @hidden
+    @no_trace
+    async def aclose(self) -> None:
+        """Stop subscriptions and await cancellation before the shared client closes."""
+        task = self._pending_task
+        self._uninstall()
+        if task is not None:
+            await asyncio.gather(task, return_exceptions=True)
+        self._pending_task = None
+        self._pending_range = None
+        self._pending_summary = None
+
+    # -------------------------------------------------------------------------
+    # Event handlers
+    # -------------------------------------------------------------------------
+
+    @hidden
+    @no_trace
+    def _handle_before_turn(self, event: "EventBase") -> None:
+        """Apply any pending summary before the next turn."""
+        self._apply_pending_summary()
+
+    @hidden
+    @no_trace
+    def _handle_after_turn(self, event: "EventBase") -> None:
+        """Check whether to schedule a summarization.
+
+        Never applies pending summaries — that's ``_handle_before_turn``'s
+        job. Keeping the two phases separate means ``_should_summarize``
+        always reads ``agent.context_stats`` from the most recent
+        ``_build_messages()`` call, which reflects the actual event list
+        the LLM just saw. Applying a collapse inside this same handler (as
+        earlier versions did) left stats stale for the immediate
+        ``_should_summarize`` call and produced the cascade pattern where
+        a fresh summary was followed seconds later by another over a
+        handful of newly-added events.
+
+        Dedup guard skips while ANY pending state exists — running OR
+        done-but-not-yet-applied. Without this, a task that finished mid
+        -turn would be overwritten by a new schedule call, losing the
+        waiting-to-apply summary.
+        """
+        from aster.events import AfterTurn as _AfterTurn
+
+        if self._pending_task is not None:
+            return
+
+        if not isinstance(event, _AfterTurn):
+            return
+
+        if self._should_summarize(event):
+            range_result = self._compute_range(event)
+            if range_result is not None:
+                start_tag, end_tag = range_result
+                self._schedule_summarization(start_tag, end_tag)
+
+    # -------------------------------------------------------------------------
+    # Override in subclasses
+    # -------------------------------------------------------------------------
+
+    @hidden
+    @no_trace
+    def _should_summarize(self, event: "AfterTurn") -> bool:
+        """Decide if summarization is needed.
+
+        Override in subclasses to implement policy logic.
+
+        Args:
+            event: The AfterTurn that triggered this check
+
+        Returns:
+            True if summarization should be scheduled
+        """
+        return False
+
+    @hidden
+    @no_trace
+    def _compute_range(self, event: "AfterTurn") -> tuple[str, str] | None:
+        """Compute the range of events to summarize.
+
+        Override in subclasses to implement policy logic.
+
+        Args:
+            event: The AfterTurn that triggered this check
+
+        Returns:
+            (start_tag, end_tag) tuple, or None to skip summarization
+        """
+        return None
+
+    # -------------------------------------------------------------------------
+    # LLM-generated summarization
+    # -------------------------------------------------------------------------
+
+    # The source document is rendered explicitly by _render_range_to_markdown().
+    # Do not use a method-level unbounded TruncationConfig here: that would also
+    # re-render unrelated context events in this generation with unbounded event_format.
+    @strategy(
+        PredictStrategy(PredictConfig(max_param_chars=None)), llm=lambda self: self._summary_llm()
+    )
+    async def summarize(self, history_markdown: str, target_chars: int) -> str:
+        """Summarize the `history_markdown` parameter into approximately {target_chars} characters.
+
+        Structure your summary as:
+
+        **Summary:**
+
+        **Topics:** [2-4 bullet points]
+
+        **Outcomes:** [Decisions, conclusions - preserve exact numbers/terms]
+
+        **State:** [Current status, pending items]
+
+        KEEP: Decisions, numbers, technical terms, conclusions
+        COMPRESS: Discussions (themes only), Q&A (essence only)
+        OMIT: Greetings, process details, resolved errors
+
+        Target length: ~{target_chars} characters
+        """
+        # NOTE: Don't include {history_markdown} inline in the docstring - the
+        # strategy already shows all parameters in the "Input parameters" section.
+        # Including it here would duplicate the content and waste tokens.
+        ...
+
+    # -------------------------------------------------------------------------
+    # Background task management
+    # -------------------------------------------------------------------------
+
+    @hidden
+    @no_trace
+    def _schedule_summarization(self, start_tag: str, end_tag: str) -> None:
+        """Schedule async summarization as a background task."""
+        if self.target_event_manager is None:
+            return
+
+        self._pending_range = (start_tag, end_tag)
+        self._pending_task = asyncio.create_task(self._run_summarization(None, start_tag, end_tag))
+
+    @hidden
+    @no_trace
+    async def _run_summarization(
+        self, history_markdown: str | None, start_tag: str, end_tag: str
+    ) -> None:
+        """Render and summarize with one task-local resolved client."""
+        summary_llm = self._summary_llm()
+        override_token = self._summary_llm_override.set(summary_llm)
+        try:
+            if history_markdown is None:
+                history_markdown = self._render_range_to_markdown(start_tag, end_tag)
+            logger.debug(
+                f"Scheduling summarization: {start_tag} -> {end_tag} "
+                f"({len(history_markdown)} chars)"
+            )
+            summary = await self.summarize(history_markdown, self.config.target_chars)
+            self._pending_summary = summary
+            logger.debug(
+                f"Summarization complete: {start_tag} -> {end_tag} (summary: {len(summary)} chars)"
+            )
+        except Exception as e:
+            # Log error but don't crash - summarization is best-effort
+            logger.warning(f"Summarization failed: {e}")
+            self._pending_summary = None
+        finally:
+            self._summary_llm_override.reset(override_token)
+            # Clear our own events to stay stateless
+            self.event_manager.clear()
+
+    @hidden
+    @no_trace
+    def _apply_pending_summary(self) -> None:
+        """Apply a completed summary to the target event manager.
+
+        Called only from ``_handle_before_turn``. Running exclusively at
+        the turn boundary guarantees the next ``_build_messages()`` sees
+        the collapsed event list, so the subsequent ``_should_summarize``
+        check at AfterTurn reads fresh stats — no cascade from stale
+        cached totals possible.
+        """
+        if self._pending_task is None:
+            return
+
+        if not self._pending_task.done():
+            return
+
+        # Get the result (summary is stored in _pending_summary by _run_summarization)
+        if self._pending_summary is not None and self._pending_range is not None:
+            start_tag, end_tag = self._pending_range
+            try:
+                assert self.target_event_manager is not None
+                self.target_event_manager.collapse(start_tag, end_tag, self._pending_summary)
+                logger.debug(f"Applied summary: {start_tag} -> {end_tag}")
+            except Exception as e:
+                logger.warning(f"Failed to apply summary: {e}")
+
+        # Clear pending state
+        self._pending_task = None
+        self._pending_range = None
+        self._pending_summary = None
+
+    # -------------------------------------------------------------------------
+    # Utility methods
+    # -------------------------------------------------------------------------
+
+    @hidden
+    @no_trace
+    def _get_events_in_range(self, start_tag: str, end_tag: str) -> list[tuple[str, "EventBase"]]:
+        """Get events between start_tag and end_tag (inclusive).
+
+        Internal ``@hidden`` helper for the agent's own Python methods to
+        investigate raw events. Not part of the generated-code surface (the
+        agent runs single-shot PredictStrategy, which executes no code).
+
+        Args:
+            start_tag: First event tag in the range
+            end_tag: Last event tag in the range
+
+        Returns:
+            List of (tag, event) tuples
+        """
+        if self.target_event_manager is None:
+            return []
+
+        result = []
+        # keys() returns tags in chronological (insertion) order
+        tags = self.target_event_manager.keys()
+
+        in_range = False
+        for tag in tags:
+            if tag == start_tag:
+                in_range = True
+            if in_range:
+                event = self.target_event_manager[tag]
+                result.append((tag, event))
+            if tag == end_tag:
+                break
+
+        return result
+
+    @hidden
+    @no_trace
+    def _render_range_to_markdown(self, start_tag: str, end_tag: str) -> str:
+        """Render events in range to markdown for LLM consumption.
+
+        Uses context-blocks MarkdownBlockFormatter for consistent rendering
+        with proper truncation and pformat handling.
+
+        Args:
+            start_tag: First event tag in the range
+            end_tag: Last event tag in the range
+
+        Returns:
+            Markdown-formatted events section
+        """
+        if self.target_event_manager is None:
+            return ""
+
+        events = self._get_events_in_range(start_tag, end_tag)
+
+        if not events:
+            return ""
+
+        from aster.context_blocks import (
+            BlockMetadata,
+            ResolvedBlock,
+            Role,
+            format_message_content,
+        )
+        from aster.context_blocks.utils import truncating_pformat
+
+        event_format = None
+        if self._target_agent is not None:
+            target_truncation = getattr(self._target_agent, "_truncation", None)
+            if target_truncation is not None:
+                event_format = target_truncation.event_format
+        format_kwargs = event_format.model_dump() if event_format is not None else {}
+
+        rendered: list[str] = []
+        for tag, event in events:
+            event_role = getattr(event, "_role", Role.USER)
+            body = truncating_pformat(event, **format_kwargs)
+            block = ResolvedBlock(
+                key=f"event_{tag}",
+                content=body,
+                role=event_role,
+                metadata=BlockMetadata(expr=f'self.events["{tag}"]', tag=str(tag)),
+            )
+            rendered.append(format_message_content(block, "markdown"))
+
+        # Total-input cap. Per-event ``event_format`` bounds each event's fields,
+        # but the SUM across a long range can still exceed the summarizer's own
+        # model context window — the summarize() call then 400s ("prompt is too
+        # long") and compaction can never make progress. Keep the NEWEST events
+        # (most relevant to a resume summary) under a token budget and head-drop
+        # the oldest with an explicit marker, so the single summarize() call
+        # always fits. See _input_token_budget for the budget derivation.
+        budget = self._input_token_budget()
+        if budget is not None:
+            count = self._input_token_counter()
+            kept: list[str] = []
+            used = 0
+            dropped = 0
+            sep = 4  # "\n\n" between parts, counted approximately
+            # Walk newest -> oldest so the most recent survive the cap.
+            for part in reversed(rendered):
+                cost = count(part) + sep
+                if used + cost > budget and kept:
+                    dropped = len(rendered) - len(kept)
+                    break
+                kept.append(part)
+                used += cost
+            if dropped:
+                kept.reverse()
+                marker = (
+                    f"[... {dropped} older event(s) omitted to fit the summarizer's "
+                    f"input budget; summarize what remains ...]"
+                )
+                return "\n\n".join([marker, *kept])
+            # No drop: kept is newest-first; restore chronological order.
+            rendered = list(reversed(kept))
+
+        return "\n\n".join(rendered)
+
+    @hidden
+    @no_trace
+    def _input_token_counter(self) -> "Callable[[str], int]":
+        """Token counter for sizing the summarizer's own input.
+
+        Prefer the summarizer LLM's ``count_tokens``; fall back to the shared
+        char-approximate counter so the cap still applies when no counter is set.
+        """
+        llm = self._summary_llm()
+        counter = getattr(llm, "count_tokens", None)
+        if callable(counter):
+            return counter
+        from aster.token_counter import char_approximate_token_counter
+
+        return char_approximate_token_counter
+
+    @hidden
+    @no_trace
+    def _input_token_budget(self) -> int | None:
+        """Max tokens for the rendered summarization input (history_markdown).
+
+        ~70% of the summarizer model's usable input window, leaving headroom for the
+        summarize() method's own prompt scaffolding (docstring, instructions,
+        target_chars) and the completion. ``None`` (no cap) when the model
+        window can't be determined — never wipe the input on a misconfig; the
+        API error path is still the backstop."""
+        return context_budget(self._summary_llm(), percent=0.7, fallback=None)
+
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
+def context_budget(
+    llm: Any,
+    percent: float = 0.8,
+    fallback: int | None = 100_000,
+    *,
+    request_params: dict[str, Any] | None = None,
+    fallback_reserve: int = 0,
+) -> int | None:
+    """Calculate a percentage of the usable input window, after the reply reserve.
+
+    Args:
+        llm: LLM instance with ``context_window`` attribute (``context_limit``
+             also accepted for historical callers)
+        percent: Fraction of context to use (0.0-1.0), default 0.8 (80%)
+        fallback: Value returned when the LLM doesn't expose either attribute
+        request_params: Effective per-call settings, including reasoning level.
+        fallback_reserve: Planning reserve when no reply limit is configured.
+
+    Returns:
+        Token budget as integer.
+
+    Example:
+        TokenBudgetSummarizer.install(
+            agent, config=TokenBudgetConfig(max_tokens=context_budget(my_llm, 0.8))
+        )
+    """
+    if percent <= 0:
+        raise ValueError("percent must be > 0")
+
+    from aster.unifiedllm.limits import context_limits_for
+
+    limit = context_limits_for(
+        llm, request_params, fallback_reserve=fallback_reserve
+    ).usable_input_tokens
+    return max(1, int(limit * percent)) if limit is not None else fallback
+
+
+# =============================================================================
+# Example Summarizers (Good Defaults)
+# =============================================================================
+class TokenBudgetSummarizer(SummarizationAgent):
+    """Summarize old events before the agent continues when input exceeds the budget.
+
+    Fork the completed parent request with a trailing summary
+    instruction. History, tool definitions, output schema, model settings,
+    cache key and tool choice stay unchanged so the provider can reuse its prefix.
+    The appended instruction requests text; executable-tool replies are rejected.
+    Only events present before that request are eligible for collapse; the latest
+    response/tool work stays active.
+
+    The fork never executes tools. A nonempty string returned through one
+    return_result call is read as data. Failed or unusable replies leave history
+    unchanged; there is no standalone retry. Filtered history is skipped because
+    the request cannot explain all events selected for collapse. Structured
+    parents retain their output schema to preserve the rendered prefix; the
+    summary must also satisfy that contract.
+
+    The parent awaits the summary before returning its response to the agent.
+    Completed summaries apply at BeforeTurn, provided the selected event IDs
+    still match. Owners should await aclose() before closing the shared client.
+
+    Example:
+        from aster.config.summarizer_config import TokenBudgetConfig
+        # Absolute limit
+        TokenBudgetSummarizer.install(agent, config=TokenBudgetConfig(max_tokens=80_000))
+
+        # Percentage of LLM context
+        TokenBudgetSummarizer.install(agent, config=TokenBudgetConfig(max_tokens=context_budget(my_llm, 0.8)))
+    """
+
+    _unsub_llm: Annotated[Callable[[], None] | None, hidden] = None
+    _pending_source: Annotated[tuple[tuple[str, str], ...] | None, hidden] = None
+    _warned_filtered: Annotated[bool, hidden] = False
+    _failed_forks: Annotated[int, hidden] = 0
+    _automatic_context_budget: Annotated[bool, hidden] = False
+    _automatic_context_budget_percent: Annotated[float, hidden] = 0.8
+
+    @hidden
+    @no_trace
+    def _install(self) -> None:
+        if self.target_event_manager is None:
+            raise ValueError("Cannot install: target_event_manager is None")
+        self._unsub_before = self.target_event_manager.on("BeforeTurn", self._handle_before_turn)
+        self._unsub_llm = self.target_event_manager.intercept("llm_call", self._fork_after_call)
+        self._unsub_close = self.target_event_manager.on_close(self.aclose)
+        if (
+            self._target_agent.event_query is not None
+            or self.target_event_manager.get_event_query() is not None
+        ):
+            self._warn_filtered_history()
+
+    @hidden
+    @no_trace
+    def _warn_filtered_history(self) -> None:
+        if not self._warned_filtered:
+            logger.warning(
+                "Skipping token-budget summaries for filtered history; unseen events cannot be collapsed. The context overflow safety net still applies."
+            )
+            self._warned_filtered = True
+
+    @hidden
+    @no_trace
+    def _uninstall(self) -> None:
+        if self._unsub_llm:
+            self._unsub_llm()
+            self._unsub_llm = None
+        super()._uninstall()
+
+    @hidden
+    @no_trace
+    async def _fork_after_call(self, ctx: Any, nxt: Any) -> Any:
+        """Branch the completed request; never clone or execute the parent agent.
+
+        The request already contains the parent tools, rendered history and live
+        context. Appending an instruction preserves the cached prefix, including
+        its native responses. The source range is chosen before dispatch: the
+        response and tool work produced by this turn must not be collapsed by a
+        summary that never saw them.
+        """
+        if _in_summary_fork.get() or self._pending_task is not None:
+            return await nxt(ctx)
+        tags = self.target_event_manager.keys()
+        selected = tags[: -self.config.preserve_recent] if self.config.preserve_recent else tags
+        source = tuple((tag, self.target_event_manager[tag].id) for tag in selected)
+        ctx = await nxt(ctx)
+        if self._automatic_context_budget and ctx.client is not None:
+            budget = context_budget(
+                ctx.client,
+                self._automatic_context_budget_percent,
+                request_params=ctx.params,
+                fallback_reserve=ctx.runtime.truncation_config.response_reserve_tokens,
+            )
+            self.config = self.config.model_copy(update={"max_tokens": budget})
+        usage = ctx.response.usage if ctx.response is not None else None
+        if (
+            self._pending_task is not None
+            or not source
+            or usage is None
+            or usage.input_tokens <= self.config.max_tokens
+        ):
+            return ctx
+        start, end = source[0][0], source[-1][0]
+        if ctx.filtered_history:
+            self._warn_filtered_history()
+            return ctx
+        if ctx.client is None:
+            logger.warning("Skipping summary fork: no effective client; history is unchanged.")
+            return ctx
+
+        # Allocate only at a fork, not every parent turn. Strings remain shared;
+        # dictionaries belong to the fork; read-only response/boundary objects
+        # travel unchanged so their provider state is not flattened or copied.
+        try:
+            messages = _copy_request_containers(ctx.messages)
+            params = _copy_request_containers(ctx.params)
+            params.setdefault("output_model", None)
+        except Exception:
+            logger.warning(
+                "Could not snapshot summary fork; parent call is unchanged", exc_info=True
+            )
+            return ctx
+        messages.append(
+            {
+                "role": "user",
+                "content": (
+                    f"Background memory compaction: summarize only events {start} through {end} "
+                    f"in approximately {self.config.target_chars} characters. Other events are "
+                    "context only. Preserve decisions, exact numbers, outcomes, files, failed "
+                    "approaches and pending work. Distinguish completed work from proposals. "
+                    "For this request only, produce a memory summary rather than continuing "
+                    "the original task. Respond directly with the summary as text. Do not call "
+                    "python_cell, execute_python, return_result, or any other tool; do not "
+                    "write code to produce the summary. Earlier execution instructions are "
+                    "historical context for this isolated summary turn."
+                ),
+            }
+        )
+        fork = ctx.model_copy(
+            update={
+                "messages": messages,
+                "params": params,
+                "response": None,
+            }
+        )
+        self._pending_source = source
+        self._pending_range = (start, end)
+        self._pending_task = asyncio.create_task(self._run_fork(fork))
+        # Pause this agent until compaction finishes. Keep the completed task
+        # pending so history is still replaced at the next BeforeTurn boundary.
+        await self._pending_task
+        return ctx
+
+    @hidden
+    @no_trace
+    async def _run_fork(self, ctx: Any) -> None:
+        """Use the same policy chain; read a final answer without executing tools."""
+        token = _in_summary_fork.set(True)
+        # Keep the exact snapshotted prefix/contracts through final rendering.
+        # Middleware still observes the fork, but cannot rewrite its prompt,
+        # effective client or tool/schema settings at the final dispatch boundary.
+        client = ctx.client
+        messages = _copy_request_containers(ctx.messages)
+        params = _copy_request_containers(ctx.params)
+        try:
+
+            async def dispatch(request: Any) -> Any:
+                request.response = await client.acall(
+                    _copy_request_containers(messages), **_copy_request_containers(params)
+                )
+                return request
+
+            result = await self.target_event_manager.run_middleware("llm_call", ctx, dispatch)
+            response = result.response
+            if response is None:
+                raise ValueError("Summary middleware returned no response")
+            text = response.content
+            if response.tool_calls:
+                # Read CodeAct's final value as data, never as an invocation.
+                if len(response.tool_calls) != 1 or response.tool_calls[0].name != "return_result":
+                    raise ValueError("Summary fork requested executable tools")
+                text = json.loads(response.tool_calls[0].arguments).get("result")
+            if not isinstance(text, str) or not text.strip():
+                raise ValueError("Summary fork must return nonempty text")
+            if response.finish_reason in {"length", "error"}:
+                raise ValueError(f"Summary fork did not complete: {response.finish_reason}")
+            self._pending_summary = text
+            self._failed_forks = 0
+        except Exception:
+            logger.warning("Summary fork failed; history is unchanged", exc_info=True)
+            self._pending_summary = None
+            self._failed_forks += 1
+            if self._failed_forks >= 2 and self._unsub_llm is not None:
+                self._unsub_llm()
+                self._unsub_llm = None
+                logger.warning(
+                    "Token-budget summarization disabled after two consecutive failed forks; history is unchanged. Fix the reported failure before reinstalling."
+                )
+        finally:
+            _in_summary_fork.reset(token)
+            self.event_manager.clear()
+
+    @hidden
+    @no_trace
+    def _apply_pending_summary(self) -> None:
+        if self._pending_task is not None and self._pending_task.done():
+            if self._pending_source and self._pending_range:
+                current = tuple(
+                    (tag, event.id)
+                    for tag, event in self._get_events_in_range(*self._pending_range)
+                )
+                if current != self._pending_source:
+                    logger.warning(
+                        "Discarding stale summary: source events changed during the fork"
+                    )
+                    self._pending_summary = None
+            self._pending_source = None
+        super()._apply_pending_summary()
+
+    @classmethod
+    def install(
+        cls, agent: Agent, *, config: "TokenBudgetConfig | None" = None, **kwargs: Any
+    ) -> SummarizationAgent:
+        """Install with a TokenBudgetConfig.
+
+        Args:
+            agent: Agent to attach to.
+            config: TokenBudgetConfig instance. Use TokenBudgetConfig(field=value) to override.
+            **kwargs: Unsupported; the fork always uses the parent's effective client.
+        """
+        unknown = set(kwargs)
+        if unknown:
+            raise TypeError(
+                f"TokenBudgetSummarizer.install() got unexpected keyword arguments: "
+                f"{sorted(unknown)}. Use config=TokenBudgetConfig(...); the client comes from the parent."
+            )
+        return super().install(agent, config=config, **kwargs)
+
+    def __init__(self, agent: Agent, **kwargs: Any) -> None:
+        from aster.config.summarizer_config import TokenBudgetConfig as _TBC
+
+        config = kwargs.pop("config", None)
+        if "llm" in kwargs:
+            raise TypeError("TokenBudgetSummarizer uses the parent's effective client; remove llm=")
+        self.config = config or _TBC()
+        super().__init__(agent, **kwargs)
+
+
+class MethodSummarizer(SummarizationAgent):
+    """Summarize after each method call completes.
+
+    Trigger: event.is_final == True (method completed)
+    Action: Summarize all events from that method's generation_id
+
+    This method-completion summarizer still uses the base class's standalone
+    render path: unlike the token-budget summarizer, it has no parent request
+    to fork. It is not a fallback for TokenBudgetSummarizer.
+
+    Example:
+        from aster.config.summarizer_config import MethodSummarizerConfig
+        agent = MyAgent(llm=my_llm)
+        MethodSummarizer.install(agent, config=MethodSummarizerConfig(min_events=5))
+    """
+
+    @classmethod
+    def install(
+        cls, agent: Agent, *, config: "MethodSummarizerConfig | None" = None, **kwargs: Any
+    ) -> SummarizationAgent:
+        """Install with a MethodSummarizerConfig.
+
+        Args:
+            agent: Agent to attach to.
+            config: MethodSummarizerConfig instance.
+            **kwargs: Only 'llm' is allowed; all other flat kwargs raise TypeError.
+        """
+        unknown = set(kwargs) - {"llm"}
+        if unknown:
+            raise TypeError(
+                f"MethodSummarizer.install() got unexpected keyword arguments: "
+                f"{sorted(unknown)}. Use config=MethodSummarizerConfig(...) instead."
+            )
+        return super().install(agent, config=config, **kwargs)
+
+    def __init__(self, agent: Agent, **kwargs: Any) -> None:
+        from aster.config.summarizer_config import MethodSummarizerConfig as _MSC
+
+        config = kwargs.pop("config", None)
+        self.config = config or _MSC()
+        super().__init__(agent, **kwargs)
+
+    @hidden
+    @no_trace
+    def _should_summarize(self, event: "AfterTurn") -> bool:
+        """Trigger on method completion."""
+        if not event.is_final:
+            return False
+
+        # Optionally exclude root calls
+        if self.config.exclude_root and self._is_root_call(event):
+            return False
+
+        return True
+
+    @hidden
+    @no_trace
+    def _compute_range(self, event: "AfterTurn") -> tuple[str, str] | None:
+        """Summarize all events from this method invocation (including children).
+
+        Uses call_id from event metadata to find the range. Child method calls
+        (nested call_ids) are included because they fall chronologically between
+        the first and last event with the parent call_id.
+        """
+        if self.target_event_manager is None:
+            return None
+
+        call_id = event.metadata.get("call_id")
+        if call_id is None:
+            return None
+
+        # Find first and last tags with this call_id.
+        # Events from child calls (different call_ids) are interleaved
+        # chronologically, so the range naturally includes them.
+        first_tag: str | None = None
+        last_tag: str | None = None
+        match_count = 0
+        for tag in self.target_event_manager.keys():
+            evt = self.target_event_manager[tag]
+            if evt.metadata.get("call_id") == call_id:
+                if first_tag is None:
+                    first_tag = tag
+                last_tag = tag
+                match_count += 1
+
+        if match_count < self.config.min_events:
+            return None
+
+        return (first_tag, last_tag)  # type: ignore[return-value]
+
+    @hidden
+    @no_trace
+    def _is_root_call(self, event: "AfterTurn") -> bool:
+        """Check if this is a root (top-level) method call."""
+        # Root calls typically don't have a parent generation context
+        # This is a heuristic - could be refined based on actual context
+        return event.turn_number == 1 and event.is_final

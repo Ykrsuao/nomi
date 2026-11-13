@@ -9,11 +9,11 @@ from typing import Any, cast
 
 import pytest
 
-from nooa import Agent, DecideStrategy, strategy
-from nooa.decisions.client import BooleanAnswer, DecisionRequest, DecisionResponse
-from nooa.runtime.hooks import set_hooks
-from nooa.strategies import CurrentCall, GenerationStrategy, PredictStrategy, RuntimeServices
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent, DecideStrategy, strategy
+from aster.decisions.client import BooleanAnswer, DecisionRequest, DecisionResponse
+from aster.runtime.hooks import set_hooks
+from aster.strategies import CurrentCall, GenerationStrategy, PredictStrategy, RuntimeServices
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def _resp(value: str) -> LLMResponse:

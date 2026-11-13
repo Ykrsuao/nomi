@@ -3,14 +3,15 @@
 """Review regressions exercise persistence and actual configured requests."""
 
 import json
+import os
 from dataclasses import replace
 
 import httpx
 import pytest
 import yaml
 
-from nooa.secrets import write_secret_env
-from nooa.unifiedllm import connect
+from aster.secrets import write_secret_env
+from aster.unifiedllm import connect
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -56,26 +57,42 @@ def test_repeated_saves_keep_line_endings_under_windows_text_mode(tmp_path, monk
     assert {"one", "two"} <= set(models)
 
 
-def test_writers_follow_symlinks_and_registry_preserves_mode_and_newlines(tmp_path):
+@pytest.mark.parametrize("use_symlinks", [False, True], ids=["direct", "symlink"])
+def test_writers_follow_symlinks_and_registry_preserves_mode_and_newlines(tmp_path, use_symlinks):
     target = tmp_path / "real.yaml"
     target.write_bytes(b"# preserved\r\nmodels: {}\r\n")
     target.chmod(0o640)
-    link = tmp_path / "linked.yaml"
-    link.symlink_to(target)
-    connect.write(proposal().entry, link, alias="test")
-    assert link.is_symlink()
-    assert "test" in yaml.safe_load(target.read_text())["models"]
-    assert target.stat().st_mode & 0o777 == 0o640
-    assert target.read_bytes().startswith(b"# preserved\r\n")
-    assert b"\n" not in target.read_bytes().replace(b"\r\n", b"")
+    # Windows exposes the read-only flag, not POSIX group/other mode bits.
+    expected_mode = target.stat().st_mode & 0o777 if os.name == "nt" else 0o640
     secret_target = tmp_path / "real-secrets.yaml"
     secret_target.write_text("env: {}\n")
-    secret_link = tmp_path / "secrets.yaml"
-    secret_link.symlink_to(secret_target)
-    write_secret_env(secret_link, "TEST_KEY", "test-only-value")
-    assert secret_link.is_symlink()
+    registry_path, secret_path = target, secret_target
+    if use_symlinks:
+        registry_path = tmp_path / "linked.yaml"
+        secret_path = tmp_path / "secrets.yaml"
+        try:
+            registry_path.symlink_to(target)
+            secret_path.symlink_to(secret_target)
+        except OSError as exc:
+            if os.name == "nt" and exc.winerror == 1314:
+                pytest.skip("This Windows process lacks symbolic-link creation permission")
+            raise
+
+    connect.write(proposal().entry, registry_path, alias="test")
+    if use_symlinks:
+        assert registry_path.is_symlink()
+    assert "test" in yaml.safe_load(target.read_text())["models"]
+    assert target.stat().st_mode & 0o777 == expected_mode
+    assert target.read_bytes().startswith(b"# preserved\r\n")
+    assert b"\n" not in target.read_bytes().replace(b"\r\n", b"")
+    write_secret_env(secret_path, "TEST_KEY", "test-only-value")
+    if use_symlinks:
+        assert secret_path.is_symlink()
     assert yaml.safe_load(secret_target.read_text())["env"]["TEST_KEY"] == "test-only-value"
-    assert secret_target.stat().st_mode & 0o777 == 0o600
+    if os.name == "nt":
+        assert os.access(secret_target, os.R_OK | os.W_OK)
+    else:
+        assert secret_target.stat().st_mode & 0o777 == 0o600
 
 
 def test_null_models_mapping_is_an_empty_registry(tmp_path):

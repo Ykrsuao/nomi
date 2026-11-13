@@ -1,5 +1,5 @@
 [project]
-name = "nooa"
+name = "aster"
 # Version is derived from git tags at build time by uv-dynamic-versioning
 # (see [build-system] and [tool.uv-dynamic-versioning] below). On a tag
 # `vX.Y.Z` the published wheel is `X.Y.Z`; between tags, dunamai produces
@@ -9,10 +9,10 @@ description = "Code-generating agent orchestration system with event sourcing an
 license = {text = "Apache-2.0"}
 readme = "README.md"
 authors = [
-    {name = "NVIDIA NeMo Team"}
+    {name = "Aster contributors"}
 ]
 requires-python = ">=3.12,<3.14"
-keywords = ["agents", "llm", "codeact", "event-sourcing", "orchestration", "nemo"]
+keywords = ["agents", "llm", "codeact", "event-sourcing", "orchestration", "aster"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -23,8 +23,8 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.14",
-    # context_blocks + unifiedllm now ship as nooa.context_blocks /
-    # nooa.unifiedllm subpackages — pull their formerly-external deps in.
+    # context_blocks + unifiedllm now ship as aster.context_blocks /
+    # aster.unifiedllm subpackages — pull their formerly-external deps in.
     # >=1.97.0: routes GPT-5.4 tool calls through Responses and replays reasoning_items;
     # also stays past CVE-2026-49468 and the yanked 1.82.7/1.82.8 backdoor.
     # These released versions import optional MCP dependencies for ordinary tool calls.
@@ -37,11 +37,11 @@ dependencies = [
         !=1.106.6,!=1.106.7,!=1.107.0.dev1,!=1.107.0.dev2,\
         !=1.107.0.dev3,!=1.107.0rc1,!=1.107.0rc2,!=1.107.0rc3,\
         !=1.108.0rc1,!=1.108.0,!=1.108.1""",
-    # from mcp-nemo-oo-agents (now internal)
+    # from mcp-aster (now internal)
     "httpx>=0.27.0",
     "openinference-instrumentation-litellm>=0.1.30",
     "msgpack>=1.2.1",
-    # `nooa connect` locks its registry with fcntl on POSIX and with filelock on
+    # `aster connect` locks its registry with fcntl on POSIX and with filelock on
     # native Windows (no fcntl there). Only filelock's Windows lock is used, so
     # CVE-2026-112940 (ReadWriteLock) and CVE-2026-112909 (UnixFileLock) do not apply.
     "filelock>=3.29.4; sys_platform == 'win32'",
@@ -53,42 +53,36 @@ dependencies = [
     "urllib3>=2.8.0",
 ]
 
-[project.urls]
-Homepage = "https://github.com/NVIDIA-NeMo/labs-OO-Agents"
-Repository = "https://github.com/NVIDIA-NeMo/labs-OO-Agents"
-Changelog = "https://github.com/NVIDIA-NeMo/labs-OO-Agents/blob/main/CHANGELOG.md"
-Issues = "https://github.com/NVIDIA-NeMo/labs-OO-Agents/issues"
 
 [project.scripts]
-trace-explorer = "nooa.trace_explorer:main"
+trace-explorer = "aster.trace_explorer:main"
 
-[project.entry-points."nooa.skills"]
-"nemo.shell" = "nooa.tools.shell_tools:ShellTools"
-"nemo.todo" = "nooa.tools.todo:TodoManager"
-"nemo.context" = "nooa.runtime.context:ContextApi"
-"nemo.events" = "nooa.runtime.events:EventsApi"
-"nemo.producers" = "nooa.runtime.producers_skill:ProducersSkill"
-"nemo.web" = "nooa.tools.web_publisher:WebPublisher"
-"nemo.libwriting" = "nooa.tools.library_writing_lib:SkillWriting"
-"nemo.methodwriting" = "nooa.tools.method_writing_lib:MethodWriting"
+[project.entry-points."aster.skills"]
+"aster.shell" = "aster.tools.shell_tools:ShellTools"
+"aster.todo" = "aster.tools.todo:TodoManager"
+"aster.context" = "aster.runtime.context:ContextApi"
+"aster.events" = "aster.runtime.events:EventsApi"
+"aster.producers" = "aster.runtime.producers_skill:ProducersSkill"
+"aster.web" = "aster.tools.web_publisher:WebPublisher"
+"aster.libwriting" = "aster.tools.library_writing_lib:SkillWriting"
+"aster.methodwriting" = "aster.tools.method_writing_lib:MethodWriting"
 
 [tool.uv.sources]
 eval_pipeline = { workspace = true }
-nooa-cli = { workspace = true }
-nooa-acp = { workspace = true }
-nooa-memory = { workspace = true }
-nooa-bench = { workspace = true }
+aster-cli = { workspace = true }
+aster-acp = { workspace = true }
+aster-memory = { workspace = true }
+aster-bench = { workspace = true }
 
 [tool.uv]
 # Extra index URLs to search for packages (in addition to PyPI)
 # Ignore packages uploaded less than 7 days ago to mitigate supply-chain attacks
 exclude-newer = "2026-10-21T00:00:00Z"
-exclude-newer-package = { microsandbox = "2026-11-07T23:59:59Z" }
-# Newer LiteLLM/OpenInference releases export opaque provider reasoning state
-# in OTLP spans, and mcp 2.x stops raising MCP tool-level errors. Hold them
-# until NOOA is adapted; mcp 1.30 carries the 1.x security fix.
+# LiteLLM 使用已验证的稳定版，单独放行它及必需 AWS SDK 的发布时间。
+# OpenInference 的新版会导出不透明的推理状态，mcp 2.x 不再抛出工具级错误，
+# 因此继续保留这两项约束；mcp 1.30 包含 1.x 的安全修复。
 constraint-dependencies = [
-    "litellm==1.97.0",
+    "litellm==1.109.1",
     "openinference-instrumentation==0.1.54",
     "openinference-instrumentation-litellm==0.1.34",
     "mcp>=1.30,<2",
@@ -96,30 +90,37 @@ constraint-dependencies = [
     "ruff==0.15.20",
 ]
 
+[tool.uv.exclude-newer-package]
+microsandbox = "2026-11-13T23:59:59Z"
+litellm = "2026-11-13T23:59:59Z"
+boto3 = "2026-11-13T23:59:59Z"
+botocore = "2026-11-13T23:59:59Z"
+
 [tool.uv.workspace]
 members = [
     "util/eval_pipeline",
-    "packages/nooa-cli",
-    "packages/nooa-acp",
-    "packages/nooa-memory",
-    "packages/nooa-bench",
+    "packages/aster-cli",
+    "packages/aster-acp",
+    "packages/aster-memory",
+    "packages/aster-bench",
 ]
 
 
 [project.optional-dependencies]
 # Convenience aliases for the sibling distributions, so `uv add
-# nooa[cli]` does what a user reasonably expects. Without these, that command
+# aster[cli]` does what a user reasonably expects. Without these, that command
 # *succeeds* with only a warning and silently installs no CLI.
 #
-# These are deliberately circular (nooa[cli] -> nooa-cli -> nooa); pip and uv
+# These are deliberately circular (aster[cli] -> aster-cli -> aster); pip and uv
 # both resolve that fine, and it is the standard pattern for a split
 # core/plugin distribution. No version floor, matching the existing policy in
 # packages/*/pyproject.toml: published wheels declare what they actually need
 # rather than being locked to their co-released version.
-cli = ["nooa-cli"]
-memory = ["nooa-memory"]
-bench = ["nooa-bench"]
-acp = ["nooa-acp"]
+cli = ["aster-cli"]
+tui = ["aster-cli[tui]"]
+memory = ["aster-memory"]
+bench = ["aster-bench"]
+acp = ["aster-acp"]
 # ARC-AGI-3 example agent (examples/arc_agi_3): the public ARC-AGI-3 SDK + deps.
 # Install from the repo root with `uv sync --extra arc`.
 arc = [
@@ -141,18 +142,18 @@ viewer = [
     "python-dotenv>=1.0.0",
     "python-multipart>=0.0.5",
 ]
-# trace_explorer is now nooa.trace_explorer (internal, no extra deps)
+# trace_explorer is now aster.trace_explorer (internal, no extra deps)
 sandbox = [
     "cloudpickle>=3.1,<4",
-    "microsandbox>=0.7.13,<0.8",
+    "microsandbox>=0.7.15,<0.8",
 ]
-# mcp lives at nooa.mcp; install with `uv sync --extra mcp`
+# mcp lives at aster.mcp; install with `uv sync --extra mcp`
 # (kept optional so glibc<2.28 hosts can `uv sync` without pulling
 # pydantic-core wheels that only target manylinux_2_28). See issue 189.
 mcp = [
     # 1.30 carries the 1.x security fix (and has the cursor-based discovery
-    # and streamable_http_client API nooa.mcp needs, added in 1.24). mcp 2.x
-    # stops raising tool-level errors, so stay on 1.x until NOOA is adapted;
+    # and streamable_http_client API aster.mcp needs, added in 1.24). mcp 2.x
+    # stops raising tool-level errors, so stay on 1.x until ASTER is adapted;
     # this matches the workspace constraint in [tool.uv].
     "mcp>=1.30,<2",
     # mcp pulls in PyJWT[crypto]; floor it and cryptography past the versions
@@ -163,7 +164,7 @@ mcp = [
 ]
 # NeMo Relay integration (guardrails, intercepts, event subscribers, ATIF
 # export).
-# See src/nooa/nemo_relay_middleware.py and examples/quickstart/15_nemo_relay.py.
+# See src/aster/nemo_relay_middleware.py and examples/quickstart/15_nemo_relay.py.
 #
 # Floor is 0.6: LLM request intercepts must return `LLMRequestInterceptOutcome`
 # (0.5+) rather than a `(request, annotated)` tuple, and that type does not
@@ -179,8 +180,8 @@ nemo-relay = [
     "nemo-relay>=0.6,<0.7",
 ]
 
-# CLI ships as a separate package: `uv add nooa-cli`.
-# Data-science stack for the LLM REPL: `uv add nooa-cli[datascience]`.
+# CLI ships as a separate package: `uv add aster-cli`.
+# Data-science stack for the LLM REPL: `uv add aster-cli[datascience]`.
 
 [build-system]
 requires = ["hatchling>=1.26.0", "uv-dynamic-versioning>=0.14.0"]
@@ -205,7 +206,7 @@ metadata = false
 fallback-version = "0.0.6"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/nooa"]
+packages = ["src/aster"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "THIRD_PARTY_NOTICES.md" = "THIRD_PARTY_NOTICES.md"
@@ -231,16 +232,15 @@ dev = [
     "opentelemetry-exporter-otlp-proto-http>=1.39.1",
     "eval_pipeline",
     # Workspace packages — keep acp + bench + cli + memory installed/editable in dev sync
-    "nooa-cli",
-    "nooa-acp",
-    "nooa-memory",
-    "nooa-bench",
+    "aster-cli",
+    "aster-acp",
+    "aster-memory",
+    "aster-bench",
     "pre-commit>=4.5.0",
     "pyright>=1.1.408",
     "pytest-cov>=7.1.0",
     # Data-science libs exercised by core tests (REPL scoping, return-type
-    # adapters, doc adapters). Previously installed transitively via the
-    # benchmarks package, which moved to nooa-dev.
+    # adapters, doc adapters) are explicit development dependencies.
     "pandas>=2.0.0",
     "matplotlib>=3.8.0",
 ]
@@ -261,14 +261,14 @@ testpaths = [
     "tests/unifiedllm",
     "tests/tracing",
     "tests/test_mcp",
-    "packages/nooa-cli/tests",
-    "packages/nooa-acp/tests",
-    "packages/nooa-bench/tests",
+    "packages/aster-cli/tests",
+    "packages/aster-acp/tests",
+    "packages/aster-bench/tests",
     "tests/trace_explorer",
 ]
 pythonpath = [
     "src",
-    "packages/nooa-cli/src",
+    "packages/aster-cli/src",
 ]
 addopts = "-v --tb=short --import-mode=importlib -m 'not integration and not stress and not sandbox'"
 markers = [
@@ -283,11 +283,11 @@ filterwarnings = [
     "ignore::DeprecationWarning:aiohttp.*",
     "ignore:coroutine.*was never awaited:RuntimeWarning",
     "ignore:Pydantic serializer warnings:UserWarning",
-    "ignore::FutureWarning:nooa.strategies",
+    "ignore::FutureWarning:aster.strategies",
 ]
 
 [tool.coverage.run]
-source = ["src/nooa", "packages/nooa-cli/src/nooa_cli"]
+source = ["src/aster", "packages/aster-cli/src/aster_cli"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",
@@ -352,7 +352,7 @@ ignore = [
 # to verify that _get_complex_type() handles those annotation forms correctly.
 "tests/test_pure_functions_gl105.py" = ["UP007", "UP045", "UP046"]
 [tool.ruff.lint.isort]
-known-first-party = ["nooa", "eval_pipeline", "evaluation", "agentdoc"]
+known-first-party = ["aster", "eval_pipeline", "evaluation", "agentdoc"]
 
 [tool.pyright]
 pythonVersion = "3.12"
@@ -361,7 +361,7 @@ venv = ".venv"
 # Resolve workspace packages when IDE uses project root (same as pytest pythonpath)
 extraPaths = [
     "src",
-    "packages/nooa-cli/src",
+    "packages/aster-cli/src",
 ]
 include = [
     "src",
@@ -371,7 +371,7 @@ include = [
 # - cli: pre-existing typing debt that surfaces when CLI is type-checked as
 #   its own package.
 exclude = [
-    "packages/nooa-cli",
+    "packages/aster-cli",
 ]
 # Pydantic discriminated unions require narrowing event_type in subclasses
 reportIncompatibleVariableOverride = false

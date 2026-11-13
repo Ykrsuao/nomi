@@ -5,7 +5,7 @@
 These agents are used to test model capabilities via the evaluation pipeline.
 """
 
-from nooa import Agent
+from aster import Agent
 
 
 class SentimentAgent(Agent):

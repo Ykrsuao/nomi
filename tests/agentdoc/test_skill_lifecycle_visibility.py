@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Skill lifecycle hooks are framework plumbing, not model-facing tools."""
 
-from nooa.agentdoc import doc
-from nooa.skill import Skill
+from aster.agentdoc import doc
+from aster.skill import Skill
 
 
 class ExampleSkill(Skill):

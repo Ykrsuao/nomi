@@ -13,7 +13,7 @@ import webbrowser
 
 import pytest
 
-import nooa.mcp.oauth as oauth
+import aster.mcp.oauth as oauth
 
 
 @pytest.fixture(autouse=True)

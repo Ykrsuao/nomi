@@ -11,7 +11,7 @@ class TestRole:
 
     def test_role_values(self):
         """Role enum has expected values."""
-        from nooa.context_blocks.models import Role
+        from aster.context_blocks.models import Role
 
         assert Role.SYSTEM == "system"
         assert Role.USER == "user"
@@ -21,7 +21,7 @@ class TestRole:
 
     def test_role_is_string(self):
         """Role values are strings (str enum)."""
-        from nooa.context_blocks.models import Role
+        from aster.context_blocks.models import Role
 
         assert isinstance(Role.SYSTEM, str)
         assert Role.SYSTEM == "system"
@@ -32,51 +32,51 @@ class TestDynamicContext:
 
     def test_create_with_valid_expr(self):
         """DynamicContext accepts valid Python expression."""
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.models import DynamicContext
 
         d = DynamicContext("self.format_status()")
         assert d.expr == "self.format_status()"
 
     def test_create_with_simple_expr(self):
         """DynamicContext accepts simple expressions."""
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.models import DynamicContext
 
         d = DynamicContext("1 + 2")
         assert d.expr == "1 + 2"
 
     def test_create_with_complex_expr(self):
         """DynamicContext accepts complex Python expressions."""
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.models import DynamicContext
 
         d = DynamicContext("doc(self.context, concise=True)")
         assert d.expr == "doc(self.context, concise=True)"
 
     def test_create_with_invalid_expr_raises(self):
         """DynamicContext raises BlockSyntaxError for invalid Python syntax."""
-        from nooa.context_blocks.exceptions import BlockSyntaxError
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.exceptions import BlockSyntaxError
+        from aster.context_blocks.models import DynamicContext
 
         with pytest.raises(BlockSyntaxError):
             DynamicContext("this is not valid python!!!")
 
     def test_create_with_statement_raises(self):
         """DynamicContext raises for Python statements (not expressions)."""
-        from nooa.context_blocks.exceptions import BlockSyntaxError
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.exceptions import BlockSyntaxError
+        from aster.context_blocks.models import DynamicContext
 
         with pytest.raises(BlockSyntaxError):
             DynamicContext("x = 5")
 
     def test_repr(self):
         """DynamicContext has a clear repr."""
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.models import DynamicContext
 
         d = DynamicContext("self.value")
         assert repr(d) == "DynamicContext('self.value')"
 
     def test_equality(self):
         """DynamicContext supports equality comparison."""
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.models import DynamicContext
 
         d1 = DynamicContext("self.value")
         d2 = DynamicContext("self.value")
@@ -87,7 +87,7 @@ class TestDynamicContext:
 
     def test_hash(self):
         """DynamicContext is hashable (can be used in sets/dicts)."""
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.models import DynamicContext
 
         d1 = DynamicContext("self.value")
         d2 = DynamicContext("self.value")
@@ -97,7 +97,7 @@ class TestDynamicContext:
 
     def test_not_equal_to_string(self):
         """DynamicContext is not equal to a plain string."""
-        from nooa.context_blocks.models import DynamicContext
+        from aster.context_blocks.models import DynamicContext
 
         d = DynamicContext("self.value")
         assert d != "self.value"
@@ -108,7 +108,7 @@ class TestBlockMetadata:
 
     def test_default_values(self):
         """BlockMetadata has sensible defaults."""
-        from nooa.context_blocks.models import BlockMetadata
+        from aster.context_blocks.models import BlockMetadata
 
         meta = BlockMetadata()
         assert meta.expr is None
@@ -117,14 +117,14 @@ class TestBlockMetadata:
 
     def test_with_expr(self):
         """BlockMetadata with expr field."""
-        from nooa.context_blocks.models import BlockMetadata
+        from aster.context_blocks.models import BlockMetadata
 
         meta = BlockMetadata(expr="self.context['notes']")
         assert meta.expr == "self.context['notes']"
 
     def test_frozen(self):
         """BlockMetadata is immutable (frozen)."""
-        from nooa.context_blocks.models import BlockMetadata
+        from aster.context_blocks.models import BlockMetadata
 
         meta = BlockMetadata(expr="test")
         with pytest.raises(ValidationError):
@@ -132,7 +132,7 @@ class TestBlockMetadata:
 
     def test_model_copy(self):
         """BlockMetadata supports model_copy for updates."""
-        from nooa.context_blocks.models import BlockMetadata
+        from aster.context_blocks.models import BlockMetadata
 
         meta = BlockMetadata(expr="test")
         updated = meta.model_copy(update={"truncated": True})
@@ -146,7 +146,7 @@ class TestResolvedBlock:
 
     def test_create_minimal(self):
         """ResolvedBlock with just key and content."""
-        from nooa.context_blocks.models import BlockMetadata, ResolvedBlock, Role
+        from aster.context_blocks.models import BlockMetadata, ResolvedBlock, Role
 
         block = ResolvedBlock(key="test", content="hello")
         assert block.key == "test"
@@ -156,14 +156,14 @@ class TestResolvedBlock:
 
     def test_create_with_role(self):
         """ResolvedBlock with explicit role."""
-        from nooa.context_blocks.models import ResolvedBlock, Role
+        from aster.context_blocks.models import ResolvedBlock, Role
 
         block = ResolvedBlock(key="msg", content="hi", role=Role.USER)
         assert block.role == Role.USER
 
     def test_create_with_metadata(self):
         """ResolvedBlock with BlockMetadata."""
-        from nooa.context_blocks.models import BlockMetadata, ResolvedBlock
+        from aster.context_blocks.models import BlockMetadata, ResolvedBlock
 
         block = ResolvedBlock(
             key="test",
@@ -175,7 +175,7 @@ class TestResolvedBlock:
 
     def test_metadata_default_is_independent(self):
         """Each ResolvedBlock gets its own default BlockMetadata instance."""
-        from nooa.context_blocks.models import ResolvedBlock
+        from aster.context_blocks.models import ResolvedBlock
 
         b1 = ResolvedBlock(key="a", content="a")
         b2 = ResolvedBlock(key="b", content="b")
@@ -186,7 +186,7 @@ class TestResolvedBlock:
 
     def test_model_copy(self):
         """ResolvedBlock supports model_copy for updates."""
-        from nooa.context_blocks.models import ResolvedBlock
+        from aster.context_blocks.models import ResolvedBlock
 
         block = ResolvedBlock(key="test", content="original")
         updated = block.model_copy(update={"content": "updated"})

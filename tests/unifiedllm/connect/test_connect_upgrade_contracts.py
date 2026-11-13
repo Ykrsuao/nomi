@@ -9,8 +9,8 @@ import httpx
 import pytest
 import yaml
 
-from nooa.unifiedllm import connect, registry
-from nooa.unifiedllm.connect._records import text_baseline_passed
+from aster.unifiedllm import connect, registry
+from aster.unifiedllm.connect._records import text_baseline_passed
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 

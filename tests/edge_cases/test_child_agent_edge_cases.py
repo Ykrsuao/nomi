@@ -11,10 +11,10 @@ Focus on:
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.agent import _parent_agent_var
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent, strategy
+from aster.agent import _parent_agent_var
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def _resp(content: str) -> LLMResponse:

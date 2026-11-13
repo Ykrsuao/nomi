@@ -10,16 +10,16 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from nooa.media import Image
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.media import Image
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 @pytest.fixture
 def example(monkeypatch):
     # Even a fake Agent otherwise probes the local tracing endpoint.
-    monkeypatch.setattr("nooa.agent._try_auto_enable_tracing", lambda: None)
+    monkeypatch.setattr("aster.agent._try_auto_enable_tracing", lambda: None)
     construct = Mock(side_effect=AssertionError("client constructed during import"))
-    monkeypatch.setattr("nooa.unifiedllm.get_llm_client", construct)
+    monkeypatch.setattr("aster.unifiedllm.get_llm_client", construct)
     path = Path(__file__).resolve().parents[1] / "examples/quickstart/13_multimodal.py"
     spec = importlib.util.spec_from_file_location("quickstart_multimodal_test", path)
     module = importlib.util.module_from_spec(spec)

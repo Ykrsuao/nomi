@@ -15,8 +15,8 @@ Run it::
 from pathlib import Path
 from typing import Literal
 
-from nooa.atif import enable_atif
-from nooa.util.quickstart import *  # noqa: F403
+from aster.atif import enable_atif
+from aster.util.quickstart import *  # noqa: F403
 
 # Categories defined once and reused as the contract for both the
 # per-ticket classifier and the aggregate counts.

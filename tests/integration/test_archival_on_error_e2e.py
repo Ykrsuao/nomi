@@ -23,10 +23,10 @@ from pathlib import Path
 
 import pytest
 
-from nooa import Agent
-from nooa.context_blocks.events import ToolCallEvent
-from nooa.events import PythonOutput
-from nooa.unifiedllm import CompletionClient
+from aster import Agent
+from aster.context_blocks.events import ToolCallEvent
+from aster.events import PythonOutput
+from aster.unifiedllm import CompletionClient
 
 _FIXTURE_PATH = Path(__file__).parent / "fixtures" / "archival_95pct.json.gz"
 _API_BASE = "https://inference-api.nvidia.com/v1"

@@ -4,7 +4,7 @@
 
 import pytest
 
-from nooa.runtime.hooks import (
+from aster.runtime.hooks import (
     InstrumentationHooks,
     activate_agent_call_context,
     call_after_hook,
@@ -309,9 +309,9 @@ class TestTraceableSkipsHooks:
         """execute_nested must NOT call generation hooks when strategy.traceable is False."""
         from unittest.mock import Mock
 
-        from nooa.runtime.actor import ActorRuntime
-        from nooa.strategies.current_call import CurrentCall
-        from nooa.strategies.template import TemplateStrategy
+        from aster.runtime.actor import ActorRuntime
+        from aster.strategies.current_call import CurrentCall
+        from aster.strategies.template import TemplateStrategy
         from tests.strategies.test_template_strategy import MockRuntime
 
         mock_hooks = MockHooks()
@@ -347,9 +347,9 @@ class TestTraceableSkipsHooks:
         """Control test: traceable=True strategy DOES call generation hooks via execute_nested."""
         from unittest.mock import Mock
 
-        from nooa.runtime.actor import ActorRuntime
-        from nooa.strategies.base import GenerationStrategy
-        from nooa.strategies.current_call import CurrentCall
+        from aster.runtime.actor import ActorRuntime
+        from aster.strategies.base import GenerationStrategy
+        from aster.strategies.current_call import CurrentCall
 
         class TraceableStrategy(GenerationStrategy):
             async def execute(self, runtime, call):
@@ -496,7 +496,7 @@ class TestHookDispatchMetrics:
         set_hooks(None)
 
     def test_before_and_after_hooks_record_tracing_overhead(self):
-        from nooa.runtime.harness_metrics import harness_metrics_session
+        from aster.runtime.harness_metrics import harness_metrics_session
 
         mock = MockHooks()
         set_hooks(mock)
@@ -526,7 +526,7 @@ class TestHookDispatchMetrics:
             assert attrs["harness.time.tracing_overhead.count"] == 2
 
     def test_failing_hook_still_records_tracing_overhead(self):
-        from nooa.runtime.harness_metrics import harness_metrics_session
+        from aster.runtime.harness_metrics import harness_metrics_session
 
         set_hooks(FailingHooks())
 

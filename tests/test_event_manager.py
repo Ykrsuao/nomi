@@ -6,9 +6,9 @@ import re
 
 import pytest
 
-from nooa.events import Error, Feedback, LLMResponse, Task
-from nooa.runtime.event_backend import InMemoryBackend, _tag_max_num
-from nooa.runtime.event_manager import EventManager
+from aster.events import Error, Feedback, LLMResponse, Task
+from aster.runtime.event_backend import InMemoryBackend, _tag_max_num
+from aster.runtime.event_manager import EventManager
 
 
 @pytest.mark.parametrize("text", ["hello", "line one\nline two", "'quoted'"])
@@ -239,7 +239,7 @@ def test_in_memory_backend_max_tag_num_empty():
 
 
 def test_in_memory_backend_max_tag_num_simple_tags():
-    from nooa.events import EventBase
+    from aster.events import EventBase
 
     backend = InMemoryBackend()
     backend.store("1", EventBase())
@@ -249,7 +249,7 @@ def test_in_memory_backend_max_tag_num_simple_tags():
 
 
 def test_in_memory_backend_max_tag_num_with_range_tag():
-    from nooa.events import EventBase
+    from aster.events import EventBase
 
     backend = InMemoryBackend()
     backend.store("1", EventBase())
@@ -260,7 +260,7 @@ def test_in_memory_backend_max_tag_num_with_range_tag():
 
 def test_event_manager_init_syncs_from_prepopulated_backend():
     """A backend that already has events must hand out tag = max+1 next."""
-    from nooa.events import EventBase
+    from aster.events import EventBase
 
     backend = InMemoryBackend()
     backend.store("1", EventBase())
@@ -505,7 +505,7 @@ def test_parse_tag_end_defensive():
 
 def test_before_turn_event_first_turn():
     """Test BeforeTurn can identify first turn (turn_number=1)."""
-    from nooa.events import BeforeTurn
+    from aster.events import BeforeTurn
 
     # First turn
     event = BeforeTurn(
@@ -523,7 +523,7 @@ def test_before_turn_event_first_turn():
 
 def test_after_turn_event_intermediate():
     """Test AfterTurn for intermediate turns (is_final=False)."""
-    from nooa.events import AfterTurn
+    from aster.events import AfterTurn
 
     # Intermediate turn - method continues
     event = AfterTurn(
@@ -541,7 +541,7 @@ def test_after_turn_event_intermediate():
 
 def test_after_turn_event_final_success():
     """Test AfterTurn for final turn with successful return."""
-    from nooa.events import AfterTurn
+    from aster.events import AfterTurn
 
     # Final turn - method completed successfully
     event = AfterTurn(
@@ -565,7 +565,7 @@ def test_after_turn_event_final_success():
 
 def test_after_turn_event_final_failure():
     """Test AfterTurn for final turn with exception."""
-    from nooa.events import AfterTurn
+    from aster.events import AfterTurn
 
     # Final turn - method failed with exception
     event = AfterTurn(
@@ -590,7 +590,7 @@ def test_after_turn_event_final_failure():
 
 def test_turn_events_symmetry():
     """Test that BeforeTurn and AfterTurn have symmetric fields."""
-    from nooa.events import AfterTurn, BeforeTurn
+    from aster.events import AfterTurn, BeforeTurn
 
     # Create matching before/after events for the same turn
     before = BeforeTurn(
@@ -628,7 +628,7 @@ def test_turn_events_symmetry():
 
 def test_custom_backend_can_be_injected():
     """Test that a custom backend can be provided to EventManager."""
-    from nooa.runtime.event_backend import InMemoryBackend
+    from aster.runtime.event_backend import InMemoryBackend
 
     # Create a custom backend instance
     backend = InMemoryBackend()
@@ -646,7 +646,7 @@ def test_custom_backend_can_be_injected():
 
 def test_backend_protocol_is_runtime_checkable():
     """Test that EventBackend protocol is runtime checkable."""
-    from nooa.runtime.event_backend import EventBackend, InMemoryBackend
+    from aster.runtime.event_backend import EventBackend, InMemoryBackend
 
     backend = InMemoryBackend()
     assert isinstance(backend, EventBackend)
@@ -657,7 +657,7 @@ def test_backend_protocol_is_runtime_checkable():
 
 def test_turn_events_not_recorded_in_history():
     """Verify turn events are not recorded in event_manager when record=False."""
-    from nooa.events import BeforeTurn
+    from aster.events import BeforeTurn
 
     hm = EventManager()
 
@@ -675,7 +675,7 @@ def test_turn_events_not_recorded_in_history():
 
 def test_inmemory_backend_update_merges_metadata():
     """Verify metadata update merges rather than replaces."""
-    from nooa.runtime.event_backend import InMemoryBackend
+    from aster.runtime.event_backend import InMemoryBackend
 
     backend = InMemoryBackend()
     event = Task(prompt="test")
@@ -691,7 +691,7 @@ def test_inmemory_backend_update_merges_metadata():
 
 def test_inmemory_backend_get_by_id_not_found():
     """Verify get_by_id returns None for non-existent event."""
-    from nooa.runtime.event_backend import InMemoryBackend
+    from aster.runtime.event_backend import InMemoryBackend
 
     backend = InMemoryBackend()
     backend.store("1", Task(prompt="test"))
@@ -702,7 +702,7 @@ def test_inmemory_backend_get_by_id_not_found():
 
 def test_inmemory_backend_set_status_transitions():
     """Verify set_status correctly transitions between states."""
-    from nooa.runtime.event_backend import InMemoryBackend
+    from aster.runtime.event_backend import InMemoryBackend
 
     backend = InMemoryBackend()
     event = Task(prompt="test")
@@ -1110,7 +1110,7 @@ def test_direct_store_keeps_tag_counter_coherent():
     ``allocate_next_tag()`` or a direct ``store()`` (e.g. snapshot
     re-hydration, tests, or any caller that pre-assigns a tag).
     """
-    from nooa.events import EventBase
+    from aster.events import EventBase
 
     backend = InMemoryBackend()
     em = EventManager(backend=backend)

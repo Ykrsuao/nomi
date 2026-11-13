@@ -6,7 +6,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel
 
-from nooa import Agent
+from aster import Agent
 
 
 class ErrorCode(StrEnum):

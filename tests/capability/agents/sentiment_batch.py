@@ -4,8 +4,8 @@
 
 from typing import Annotated, Literal
 
-from nooa import Agent
-from nooa.tools.method_writing_lib import MethodWriting
+from aster import Agent
+from aster.tools.method_writing_lib import MethodWriting
 
 
 class SentimentBatchAgent(Agent):

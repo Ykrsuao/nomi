@@ -6,9 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from nooa.llm_types import LLMResponse, LLMUsage
-from nooa.unifiedllm import ResponsesClient
-from nooa.unifiedllm.response_parts import project_turn
+from aster.llm_types import LLMResponse, LLMUsage
+from aster.unifiedllm import ResponsesClient
+from aster.unifiedllm.response_parts import project_turn
 
 
 @pytest.mark.parametrize("is_async", [False, True])
@@ -41,7 +41,7 @@ async def test_builtin_output_and_refusal_keep_readable_outcome(
         return raw
 
     monkeypatch.setattr("litellm.aresponses", respond)
-    monkeypatch.setattr("nooa.unifiedllm.unifiedllm._extract_usage", lambda _: LLMUsage())
+    monkeypatch.setattr("aster.unifiedllm.unifiedllm._extract_usage", lambda _: LLMUsage())
     async with ResponsesClient("openai/gpt-5.6", api_key="test") as client:
         result = await client.acall([]) if is_async else client.call([])
     assert result.content == text
@@ -58,7 +58,7 @@ async def test_builtin_output_and_refusal_keep_readable_outcome(
 @pytest.mark.parametrize("is_async", [False, True])
 @pytest.mark.asyncio
 async def test_responses_calibration_counts_instructions(monkeypatch, is_async):
-    from nooa.unifiedllm import unifiedllm as implementation
+    from aster.unifiedllm import unifiedllm as implementation
 
     calibration = implementation.TokenCalibration()
     monkeypatch.setattr(implementation, "_token_calibration", calibration)
@@ -91,8 +91,8 @@ async def test_responses_calibration_counts_instructions(monkeypatch, is_async):
 
 @pytest.mark.parametrize("bad", [None, 42, {}])
 def test_malformed_refusal_still_raises(bad):
-    from nooa.unifiedllm.errors import ReasoningReplayError
-    from nooa.unifiedllm.response_parts import capture_parts
+    from aster.unifiedllm.errors import ReasoningReplayError
+    from aster.unifiedllm.response_parts import capture_parts
 
     with pytest.raises(ReasoningReplayError, match="text must be a string"):
         capture_parts(
@@ -108,7 +108,7 @@ def test_calibration_survives_input_text_wrapped_content(monkeypatch):
     calibration ratio to absurd multiples (observed ~41x) from one call. The
     estimate must survive the real (unmocked) litellm.token_counter.
     """
-    from nooa.unifiedllm import unifiedllm as implementation
+    from aster.unifiedllm import unifiedllm as implementation
 
     calibration = implementation.TokenCalibration()
     monkeypatch.setattr(implementation, "_token_calibration", calibration)
@@ -138,7 +138,7 @@ def test_calibration_counts_wrapped_tool_output_text():
     """
     import litellm
 
-    from nooa.unifiedllm import unifiedllm as implementation
+    from aster.unifiedllm import unifiedllm as implementation
 
     short = [
         {"role": "user", "content": "hi"},
@@ -178,7 +178,7 @@ def test_calibration_counts_wrapped_input_image_blocks():
     """
     import litellm
 
-    from nooa.unifiedllm import unifiedllm as implementation
+    from aster.unifiedllm import unifiedllm as implementation
 
     no_image = [{"role": "user", "content": [{"type": "input_text", "text": "describe this"}]}]
     with_image = [

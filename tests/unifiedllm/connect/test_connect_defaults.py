@@ -8,7 +8,7 @@ import httpx
 import pytest
 import yaml
 
-from nooa.unifiedllm import connect, registry
+from aster.unifiedllm import connect, registry
 from tests.unifiedllm.connect.connect_http import mock_http, response_body
 
 
@@ -144,7 +144,7 @@ def test_preserved_cap_updates_stale_provenance():
 
 @pytest.mark.parametrize("base_key", ["max_tokens", "max_output_tokens"])
 def test_responses_reply_alias_precedence(base_key):
-    from nooa.unifiedllm import ResponsesClient
+    from aster.unifiedllm import ResponsesClient
 
     with ResponsesClient(
         "openai/gpt-5.1",
@@ -168,7 +168,7 @@ def test_responses_reply_alias_precedence(base_key):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("saved,tested", [(1024, 1024), (8192, 8192)])
 async def test_session_reports_the_cap_actually_tested(monkeypatch, saved, tested):
-    from nooa.unifiedllm.connect._session import TOKEN_RESERVATION, session_steps
+    from aster.unifiedllm.connect._session import TOKEN_RESERVATION, session_steps
 
     bodies = []
 

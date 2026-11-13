@@ -64,6 +64,7 @@ import re
 from datetime import UTC, datetime
 from pathlib import Path
 
+from _run_layout import canonical_team
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
 # LLM span names -- identical set to viewer_trace_exporter.ViewerMessageExporter so the
@@ -174,7 +175,8 @@ def _functions_used(code: str) -> list[str]:
 class ViewerEventExporter(SpanExporter):
     """Appends reference-schema events derived from live trace spans to events.jsonl."""
 
-    def __init__(self, run_dir: str | Path, team: str = "nemo", role: str = "team_leader"):
+    def __init__(self, run_dir: str | Path, team: str = "aster", role: str = "team_leader"):
+        team = canonical_team(team)
         self.events_path = Path(run_dir) / "agent_logs" / team / role / "events.jsonl"
         self.events_path.parent.mkdir(parents=True, exist_ok=True)
         self._agent_id = role

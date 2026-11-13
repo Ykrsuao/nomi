@@ -23,8 +23,8 @@ from eval_pipeline.scoring import (
 
 def _make_trace(code: str):
     """Create a minimal TraceExplorer with a single ExecutionTurn."""
-    from nooa.trace_explorer import TraceExplorer
-    from nooa.trace_explorer.explorer import AgentSession, ExecutionTurn
+    from aster.trace_explorer import TraceExplorer
+    from aster.trace_explorer.explorer import AgentSession, ExecutionTurn
 
     session = AgentSession(
         session_id="test",

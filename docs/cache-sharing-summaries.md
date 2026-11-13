@@ -9,8 +9,8 @@ execute tools.
 ## Use it
 
 ```python
-from nooa.agents import TokenBudgetSummarizer
-from nooa.config.summarizer_config import TokenBudgetConfig
+from aster.agents import TokenBudgetSummarizer
+from aster.config.summarizer_config import TokenBudgetConfig
 
 TokenBudgetSummarizer.install(
     agent, config=TokenBudgetConfig(max_tokens=80_000, preserve_recent=10)
@@ -70,14 +70,14 @@ rendered input; it is not used as a token-budget fallback.
 
 ## Code walkthrough: what and why
 
-- `src/nooa/agents/summarization.py`: intercepts the completed request so the
+- `src/aster/agents/summarization.py`: intercepts the completed request so the
   fork uses the actual parent prefix, without re-rendering it. Copies only dict
   and list containers, sharing tools and immutable response/boundary objects.
   Checks failure, cancellation and event identities before collapsing history.
-- `src/nooa/runtime/actor.py` and `middleware.py`: expose the effective client,
+- `src/aster/runtime/actor.py` and `middleware.py`: expose the effective client,
   cache key and filtered-history status at the existing middleware boundary.
   The fork uses the same middleware chain, with a task-local recursion guard.
-- `src/nooa/runtime/event_manager.py`: awaits registered close callbacks, so
+- `src/aster/runtime/event_manager.py`: awaits registered close callbacks, so
   the agent does not need to know which background components are installed.
 - `tests/agents/test_forked_summarizer*.py`: check parent-request parity, HTTP
   prefix equality, blocking execution, ownership, safe output handling and
@@ -96,7 +96,7 @@ turn, preservation of three handoff identifiers, access to the raw archived
 events, and a cache read on the summary request. It also checks the outgoing
 request prefix and that the fork adds no parent events or tool executions.
 
-This paid test is opt-in (`NOOA_RUN_SUMMARIZER_E2E=1`) and resolves the
+This paid test is opt-in (`ASTER_RUN_SUMMARIZER_E2E=1`) and resolves the
 `release-gate-openai` and `release-gate-anthropic` registry aliases. Missing
 aliases skip; a skip is not successful release evidence. It allows three
 requests per provider, caps each at 2,048 output tokens, and disables provider

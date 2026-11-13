@@ -4,8 +4,8 @@
 
 import pytest
 
-from nooa.llm_types import LLMUsage
-from nooa.unifiedllm.unifiedllm import (
+from aster.llm_types import LLMUsage
+from aster.unifiedllm.unifiedllm import (
     TokenCalibration,
     _token_calibration,
     _update_token_calibration,

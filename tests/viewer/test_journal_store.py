@@ -97,7 +97,7 @@ def store(monkeypatch):
     _get_db() and _get_write_db() return the same in-memory connection
     instead of opening file-based connections from DB_PATH.
     """
-    import nooa.viewer.otlp_store as store_mod
+    import aster.viewer.otlp_store as store_mod
 
     db = _make_db()
     monkeypatch.setattr(store_mod, "_db", db)
@@ -702,7 +702,7 @@ class TestGetSessionSpansAugment:
 
 class TestMigrationSpanId:
     def test_init_db_adds_span_id_if_missing(self, tmp_path, monkeypatch):
-        import nooa.viewer.otlp_store as store_mod
+        import aster.viewer.otlp_store as store_mod
 
         db_path = tmp_path / "old.db"
         monkeypatch.setattr(store_mod, "DB_PATH", db_path)

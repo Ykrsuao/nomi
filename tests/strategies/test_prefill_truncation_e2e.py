@@ -7,14 +7,14 @@ from typing import Annotated
 
 import pytest
 
-from nooa import Agent, CodeActStrategy, spec, strategy
-from nooa.config.strategy_config import CodeActConfig
-from nooa.config.truncation_config import CaptureConfig, FormatConfig, TruncationConfig
-from nooa.prompts import build_prompt_data
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.strategies.prefill import PrefillTruncationWarning
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent, CodeActStrategy, spec, strategy
+from aster.config.strategy_config import CodeActConfig
+from aster.config.truncation_config import CaptureConfig, FormatConfig, TruncationConfig
+from aster.prompts import build_prompt_data
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.strategies.prefill import PrefillTruncationWarning
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient
 
 
 def _sandbox_codeact():

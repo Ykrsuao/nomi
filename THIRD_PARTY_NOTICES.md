@@ -1,3 +1,17 @@
+# Aster attribution
+
+Aster is a modified distribution derived from the Apache-2.0-licensed
+[NVIDIA OO Agents](https://github.com/NVIDIA-NeMo/labs-OO-Agents) project.
+Original copyright and SPDX notices remain attached to the corresponding source.
+The product has been renamed and its terminal interface, launcher, configuration,
+and integrations have been modified. Upstream authorship does not imply
+endorsement of Aster.
+
+The original third-party notices below are retained verbatim. Their historical
+product and package names identify the original components and attributions.
+
+---
+
 # Third-Party Notices
 
 NVIDIA OO Agents includes and depends on third-party software. This notice

@@ -9,7 +9,7 @@ import httpx
 import pytest
 from pydantic import BaseModel
 
-from nooa import (
+from aster import (
     Agent,
     BooleanDecision,
     ChoiceDecision,
@@ -19,9 +19,9 @@ from nooa import (
     Instructions,
     strategy,
 )
-from nooa.decisions.client import ChoiceAnswer, DecisionResponse
-from nooa.events import DecisionRecord
-from nooa.runtime.middleware import DecisionCallContext
+from aster.decisions.client import ChoiceAnswer, DecisionResponse
+from aster.events import DecisionRecord
+from aster.runtime.middleware import DecisionCallContext
 
 ENDPOINT = "https://decision.example/v1/decisions"
 METADATA = {"probabilities": "one-hot", "calibration": "none"}

@@ -22,8 +22,8 @@ from __future__ import annotations
 
 import json
 
-from nooa.context_blocks.models import RenderedMessage, Role, ToolCallInfo
-from nooa.tracing._journal_builder import (
+from aster.context_blocks.models import RenderedMessage, Role, ToolCallInfo
+from aster.tracing._journal_builder import (
     build_journal_payload as _build_journal_payload,
 )
 
@@ -106,7 +106,7 @@ class TestAssistantToolCallWireShape:
         emits ``llm.input_messages.N.message.tool_calls.0.*`` attrs
         with the real code body — not an empty string.
         """
-        from nooa.viewer.otlp_store import (
+        from aster.viewer.otlp_store import (
             _flatten_msg_to_attrs,
             _resolve_message,
         )
@@ -149,7 +149,7 @@ class TestAssistantToolCallWireShape:
         now lives in the blocks dict behind a single-part block-ref, so the
         viewer's ``_resolve_message`` reconstructs the original
         ``content`` verbatim on read."""
-        from nooa.viewer.otlp_store import _resolve_message
+        from aster.viewer.otlp_store import _resolve_message
 
         msg = RenderedMessage(role=Role.TOOL, content="status: complete", tool_call_id="call_abc")
         payload = _build_journal_payload([msg])
@@ -180,7 +180,7 @@ class TestPartsAndBlocks:
         the repeated-turn case and the /v1/journal/calls payloads stop
         growing with the conversation.
         """
-        from nooa.viewer.otlp_store import _resolve_message
+        from aster.viewer.otlp_store import _resolve_message
 
         payload = _build_journal_payload([_text_msg(Role.USER, "hello")])
         assert payload is not None
@@ -204,7 +204,7 @@ class TestPartsAndBlocks:
         ``_resolve_message`` restores the original ``images`` list
         (including dict shape) byte-for-byte.
         """
-        from nooa.viewer.otlp_store import _resolve_message
+        from aster.viewer.otlp_store import _resolve_message
 
         def _image(tag: str, body_char: str) -> dict:
             return {
@@ -267,7 +267,7 @@ class TestPartsAndBlocks:
         """Block-aware formatters emit ``parts``; the payload replaces block
         content with ``{block_hash, key}`` refs and accumulates the blocks
         dict for dedup across turns."""
-        from nooa.context_blocks.models import BlockPart, TextPart
+        from aster.context_blocks.models import BlockPart, TextPart
 
         msg = RenderedMessage(
             role=Role.SYSTEM,

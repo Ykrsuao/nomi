@@ -19,6 +19,8 @@ import sys
 import time
 from pathlib import Path
 
+from _run_layout import canonical_group, read_workspace
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_DIR = Path(__file__).resolve().parent
 VARIANTS = ["memory", "mdfiles"]
@@ -87,7 +89,7 @@ def find_run(group_dir: Path, variant: str, tag: str) -> Path | None:
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--game", required=True)
-    p.add_argument("--group", default="nemo_solver")
+    p.add_argument("--group", type=canonical_group, default="aster_solver")
     p.add_argument("--max-turns", default=None, help="max agent turns; None/unlimited by default")
     p.add_argument("--max-env-steps", type=int, default=5000)
     p.add_argument(
@@ -165,7 +167,7 @@ def main() -> None:
                 effort_ladder=args.effort_ladder,
                 model=args.model,
                 reasoning_effort=args.reasoning_effort,
-                seed_from=prior / "team_nemo" / "shared",
+                seed_from=read_workspace(prior),
             )
             if args.serial:
                 wait_all({v: procs.pop(v)})

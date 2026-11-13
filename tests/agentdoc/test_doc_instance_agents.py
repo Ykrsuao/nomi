@@ -16,7 +16,7 @@ import pytest
 # Ensure tests/capability/agents is importable
 sys.path.insert(0, str(Path(__file__).parents[2] / "tests"))
 
-from nooa.agentdoc import doc
+from aster.agentdoc import doc
 
 # ---------------------------------------------------------------------------
 # Helpers

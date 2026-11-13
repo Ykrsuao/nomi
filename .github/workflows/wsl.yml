@@ -1,6 +1,6 @@
 name: WSL
 
-# WSL 2 is the supported way to run nooa on Windows: a quick check on every PR,
+# WSL 2 is the supported way to run aster on Windows: a quick check on every PR,
 # the full suite nightly, on manual runs, and on PRs labelled `wsl-full`.
 # No third-party actions (the org's action allow-list blocks setup-wsl): import
 # a pinned Ubuntu WSL rootfs with `wsl --import` and run scripts/wsl_ci.sh in it.
@@ -82,9 +82,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Fail "wsl --update failed ($LASTEXITCODE)" $upd }
           $out = (wsl --set-default-version 2 2>&1 | Out-String) -replace "`0", ""
           if ($LASTEXITCODE -ne 0) { Fail "wsl --set-default-version 2 failed ($LASTEXITCODE)" $out }
-          $out = (wsl --import nooa-ubuntu (Join-Path $env:RUNNER_TEMP "wsl") $rootfs --version 2 2>&1 | Out-String)
+          $out = (wsl --import aster-ubuntu (Join-Path $env:RUNNER_TEMP "wsl") $rootfs --version 2 2>&1 | Out-String)
           if ($LASTEXITCODE -ne 0) { Fail "wsl --import failed ($LASTEXITCODE)" $out }
           wsl --list --verbose
       - name: Tests inside WSL 2 (${{ env.MODE }})
         # The script installs packages as root, then runs the tests as a normal user.
-        run: wsl --cd "$env:GITHUB_WORKSPACE" -d nooa-ubuntu -u root -- bash scripts/wsl_ci.sh $env:MODE
+        run: wsl --cd "$env:GITHUB_WORKSPACE" -d aster-ubuntu -u root -- bash scripts/wsl_ci.sh $env:MODE

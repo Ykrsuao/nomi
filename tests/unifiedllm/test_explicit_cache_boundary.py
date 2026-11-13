@@ -11,24 +11,24 @@ import httpx
 import litellm
 import pytest
 
-from nooa.context_blocks.events import UserEvent
-from nooa.context_blocks.formatter import OpenAIProviderFormatter
-from nooa.context_blocks.models import (
+from aster.context_blocks.events import UserEvent
+from aster.context_blocks.formatter import OpenAIProviderFormatter
+from aster.context_blocks.models import (
     BlockMetadata,
     RenderedMessage,
     ResolvedBlock,
     Role,
 )
-from nooa.context_blocks.renderer import RenderResult, render_context
-from nooa.context_blocks.renderers.cached import CachedBlockFormatter
-from nooa.llm_types import AssistantReasoning, LLMResponse
-from nooa.unifiedllm import CacheBoundary, CompletionClient, ResponsesClient
-from nooa.unifiedllm.chat_parts import capture_chat_parts
-from nooa.unifiedllm.replay_state import (
+from aster.context_blocks.renderer import RenderResult, render_context
+from aster.context_blocks.renderers.cached import CachedBlockFormatter
+from aster.llm_types import AssistantReasoning, LLMResponse
+from aster.unifiedllm import CacheBoundary, CompletionClient, ResponsesClient
+from aster.unifiedllm.chat_parts import capture_chat_parts
+from aster.unifiedllm.replay_state import (
     prepare_chat_messages,
     replay_scope,
 )
-from nooa.unifiedllm.response_parts import capture_parts
+from aster.unifiedllm.response_parts import capture_parts
 
 
 def _render_result(dynamic: str) -> RenderResult:
@@ -85,7 +85,7 @@ def test_cached_renderer_passes_a_typed_boundary_with_a_public_json_view() -> No
     messages = _render("state-a")
 
     assert messages[-2] == CacheBoundary()
-    assert "nooa_cache_boundary" not in messages[-1]
+    assert "aster_cache_boundary" not in messages[-1]
     assert "state-a" in messages[-1]["content"]
     assert json.loads(json.dumps([dict(m) for m in messages]))[-2] == dict(messages[-2])
 
@@ -109,7 +109,7 @@ def test_boundary_has_the_same_sdk_and_mapping_surface_as_its_public_dict():
     from pydantic import ValidationError
 
     boundary = CacheBoundary()
-    public = {"role": "metadata", "nooa_cache_boundary": True}
+    public = {"role": "metadata", "aster_cache_boundary": True}
     assert isinstance(boundary, Mapping)
     assert dict(boundary) == boundary.model_dump() == public
     assert json.loads(boundary.model_dump_json()) == public
@@ -130,7 +130,7 @@ def test_boundary_has_the_same_sdk_and_mapping_surface_as_its_public_dict():
 
 @pytest.mark.parametrize("asynchronous", [False, True])
 async def test_fake_client_consumes_boundaries_like_provider_clients(asynchronous):
-    from nooa.unifiedllm import FakeLLMClient
+    from aster.unifiedllm import FakeLLMClient
 
     client = FakeLLMClient()
     message = {"role": "user", "content": "live"}
@@ -145,11 +145,11 @@ async def test_fake_client_consumes_boundaries_like_provider_clients(asynchronou
 
 
 def test_edited_relay_boundary_is_not_reinterpreted_as_cache_policy():
-    from nooa.nemo_relay_middleware import _reconcile_messages
+    from aster.nemo_relay_middleware import _reconcile_messages
 
     boundary = CacheBoundary()
     public = boundary.public_message()
-    public["nooa_cache_boundary"] = False
+    public["aster_cache_boundary"] = False
     messages = _reconcile_messages([boundary], [public])
     assert messages[0] is public
     with ResponsesClient("openai/gpt-5.6") as client:
@@ -304,7 +304,7 @@ def test_boundary_consumption_preserves_ordinary_empty_messages_and_private_stat
     assert enabled is True
     assert messages[0] == {}
     assert type(messages[1]) is dict
-    assert "nooa_cache_boundary" not in messages[1]
+    assert "aster_cache_boundary" not in messages[1]
 
 
 def test_multiple_cache_boundaries_fail_loudly() -> None:
@@ -338,23 +338,22 @@ async def test_cache_mapping_rejects_per_call_model_overrides(api_style: str) ->
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("extra_body", "message"),
+    ("options", "message"),
     [
-        ([], "extra_body must be a mapping"),
+        ({"extra_body": []}, "extra_body must be a mapping"),
+        ({"prompt_cache_options": "explicit"}, "prompt_cache_options must be a mapping"),
         (
-            {"prompt_cache_options": "explicit"},
+            {"extra_body": {"prompt_cache_options": "explicit"}},
             "extra_body.prompt_cache_options must be a mapping",
         ),
     ],
 )
-async def test_openai_cache_config_rejects_malformed_mappings(
-    extra_body: object, message: str
-) -> None:
+async def test_openai_cache_config_rejects_malformed_mappings(options: dict, message: str) -> None:
     client = ResponsesClient(model="openai/gpt-5.6", cache_breakpoint="openai")
     try:
         with patch("litellm.aresponses", new_callable=AsyncMock) as request:
             with pytest.raises(ValueError, match=message):
-                await client.acall(_render("state-a"), extra_body=extra_body)
+                await client.acall(_render("state-a"), **options)
         request.assert_not_awaited()
     finally:
         await client.aclose()
@@ -390,7 +389,7 @@ async def test_boundary_is_inert_with_explicit_marker_opt_out() -> None:
         sent = request.await_args.kwargs
         assert "extra_body" not in sent
         assert "prompt_cache_breakpoint" not in repr(sent["input"])
-        assert not any("nooa_cache_boundary" in item for item in sent["input"])
+        assert not any("aster_cache_boundary" in item for item in sent["input"])
     finally:
         await client.aclose()
 
@@ -821,7 +820,7 @@ def test_gemini_gets_no_invented_inline_cache_field() -> None:
     assert enabled is False
     assert "cache_control" not in repr(messages)
     assert "prompt_cache_breakpoint" not in repr(messages)
-    assert not any("nooa_cache_boundary" in item for item in messages)
+    assert not any("aster_cache_boundary" in item for item in messages)
 
 
 @pytest.mark.asyncio
@@ -849,7 +848,7 @@ async def test_gemini_boundary_is_inert_on_the_actual_call_path() -> None:
         sent = request.await_args.kwargs["messages"]
         assert "cache_control" not in repr(sent)
         assert "prompt_cache_breakpoint" not in repr(sent)
-        assert not any("nooa_cache_boundary" in item for item in sent)
+        assert not any("aster_cache_boundary" in item for item in sent)
     finally:
         await client.aclose()
 
@@ -922,7 +921,7 @@ async def test_openai_serialized_growing_requests_retain_recent_checkpoints():
         ]
         assert marked == list(range(max(0, size - 80), size))
         assert "prompt_cache_breakpoint" not in repr(body["input"][-1])
-        assert "nooa_cache_boundary" not in repr(body)
+        assert "aster_cache_boundary" not in repr(body)
     # Below the cap, the entire old marked prefix is retained on growth.
     assert bodies[0]["input"][:-1] == bodies[1]["input"][:6]
     # Above the cap, only the oldest marker drops; recent warmed endpoints remain.
@@ -935,10 +934,10 @@ async def test_openai_serialized_growing_requests_retain_recent_checkpoints():
 async def test_codeact_v2_runtime_growing_http_prefix_retains_checkpoints(
     prefix_repetitions, tmp_path
 ):
-    from nooa import Agent, Context, strategy
-    from nooa.config import CodeActConfig, TruncationConfig
-    from nooa.storage import SQLiteStorageManager
-    from nooa.strategies.codeact_v2 import CodeActV2
+    from aster import Agent, Context, strategy
+    from aster.config import CodeActConfig, TruncationConfig
+    from aster.storage import SQLiteStorageManager
+    from aster.strategies.codeact_v2 import CodeActV2
 
     bodies = []
     # Synthetic tokenizer assumption: one token per " alpha" repetition, not
@@ -1074,7 +1073,7 @@ async def test_codeact_v2_runtime_growing_http_prefix_retains_checkpoints(
         assert prefix in body.get("instructions", "") or any(
             prefix in text for text in strings(body["input"][: marked[-1] + 1])
         )
-        assert "nooa_cache_boundary" not in body
+        assert "aster_cache_boundary" not in body
         endpoints.append(marked)
         suffix = body["input"][marked[-1] + 1 :]
         live_block = f'<live_reference expr="self._live_state">\n{live}\n</live_reference>'

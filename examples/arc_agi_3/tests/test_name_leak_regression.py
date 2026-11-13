@@ -3,7 +3,7 @@
 """Regression test for red-team finding F-A: the real game name must never reach
 the agent via a file path.
 
-The leak: the agent writes world-model helpers under ``<run_dir>/team_nemo/shared/
+The leak: the agent writes world-model helpers under ``<run_dir>/team_aster/shared/
 helpers/*.py`` and loads them with ``importlib.util.spec_from_file_location`` (see
 ``ArcSolverBase.load_helpers``). A loaded helper's ``__file__`` is its ABSOLUTE
 path, so when a cell calls ``self.h.model.<fn>()`` and the helper raises, the
@@ -37,7 +37,7 @@ _HELPER_SRC = "def encode(x):\n    raise ValueError('unexpected sparse symbol')\
 def _traceback_from_helper(run_dir: Path) -> str:
     """Replicate ArcSolverBase.write_helper + load_helpers + a raising call, and
     return the traceback string that would feed the next prompt."""
-    helpers = run_dir / "team_nemo" / "shared" / "helpers"
+    helpers = run_dir / "team_aster" / "shared" / "helpers"
     helpers.mkdir(parents=True, exist_ok=True)
     helper = helpers / "model.py"
     helper.write_text(_HELPER_SRC)  # write_helper
@@ -67,7 +67,7 @@ def test_game_named_layout_leaks_the_name(tmp_path: Path) -> None:
     helper traceback — proving the traceback carries the file path, so the test
     below is meaningful (not vacuously green)."""
     ts = "20260714_215959"
-    game_named = tmp_path / "results" / "arc_agi_3" / "nemo_solver" / f"{ts}_{GAME}_memory"
+    game_named = tmp_path / "results" / "arc_agi_3" / "aster_solver" / f"{ts}_{GAME}_memory"
     tb = _traceback_from_helper(game_named)
     assert GAME in tb, "expected the old game-named layout to leak the name in the traceback"
 
@@ -92,7 +92,7 @@ def test_run_solver_neutral_path_is_game_name_free() -> None:
     only from ts/variant/tag, never from the game), while the OLD results run_name
     did. Locks in the layout guarantee behind the fix."""
     ts, variant = "20260714_215959", "memory"
-    old_run_name = f"{ts}_{GAME}_{variant}"  # results/.../nemo_solver/<this>
+    old_run_name = f"{ts}_{GAME}_{variant}"  # results/.../aster_solver/<this>
     assert GAME in old_run_name  # the old layout embedded the game
 
     neutral = _neutral_run_dir()

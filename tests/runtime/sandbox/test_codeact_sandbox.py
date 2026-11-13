@@ -15,13 +15,13 @@ from typing import Any
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.events import PythonOutput, ResultStatus
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.guards import probe_capabilities
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.events import PythonOutput, ResultStatus
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.guards import probe_capabilities
+from aster.strategies.codeact import CodeActStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 pytestmark = pytest.mark.sandbox
 
@@ -208,7 +208,7 @@ async def test_custom_formatter_receives_worker_rendered_diagnostic():
             max_error=None,
             tail_chars=None,
         ):
-            from nooa.runtime.sandbox.errors import SandboxExecutionError
+            from aster.runtime.sandbox.errors import SandboxExecutionError
 
             assert isinstance(error, SandboxExecutionError)
             assert isinstance(error.original_error, ValueError)

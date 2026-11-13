@@ -1,12 +1,12 @@
-# Configure a model with NOOA Connect
+# Configure a model with Aster Connect
 
-**Agents: start with [nooa-connect](../skills/nooa-connect/SKILL.md), the canonical
+**Agents: start with [aster-connect](../skills/aster-connect/SKILL.md), the canonical
 permission-first headless guide.** Obtain scoped permission before configuration,
 network/media checks and file/alias writes. Use `--stage`, not piped wizard
 answers or unattended masked-key prompts. This page also covers guided human
 setup and the library reference.
 
-`nooa connect` configures a model so your agents can run smoothly. It suggests
+`aster connect` configures a model so your agents can run smoothly. It suggests
 and saves a reply/output token limit, records the context window when known
 (or supplied by you), and lists your chosen media formats. It tests the route,
 tools, reasoning, and caching, then saves a named entry (an *alias*) in
@@ -22,7 +22,7 @@ see [Model configuration](model-configuration.md).
 Run the guided setup:
 
 ```sh
-uv run nooa connect
+uv run aster connect
 ```
 
 Choose a provider (NVIDIA, NVIDIA Inference Hub, OpenAI, Anthropic,
@@ -109,7 +109,7 @@ To prefill the connection details, pass the answers as flags. The wizard still
 asks about media choices, testing, changes, and saving unless you use `--yes`:
 
 ```sh
-uv run nooa connect your-model --as my-model \
+uv run aster connect your-model --as my-model \
   --endpoint https://gateway.example/v1 --api-style chat \
   --api-key-env MY_MODEL_KEY
 ```
@@ -129,12 +129,12 @@ uv run nooa connect your-model --as my-model \
 - `--api-key-env` is the name of the environment variable that holds the key,
   never the key itself. Use `--api-key-env ''` for a local server with no key.
 - `--prompt-key` lets you paste a masked key instead (even with `--yes`). At the
-  end Connect offers to save it in NOOA's `secrets.yaml`; persisting a key
+  end Connect offers to save it in Aster's `secrets.yaml`; persisting a key
   requires a separate confirmation; `--yes` does not save a newly pasted key.
 - `--yes` confirms the test requests and saving without asking. It needs
   `MODEL`, `--as`, and either `--provider` or `--endpoint` plus `--api-style`.
 
-Run `uv run nooa connect --help` for all options.
+Run `uv run aster connect --help` for all options.
 
 ### Model details from this server
 
@@ -202,12 +202,12 @@ works; without MODEL, `--no-catalogue` can still request the model picker.
 
 ```sh
 # Metadata only: no inference and no registry/key writes.
-uv run nooa connect exact-model --stage model-info \
+uv run aster connect exact-model --stage model-info \
   --endpoint https://gateway.example/v1 --api-style chat \
   --api-key-env MODEL_KEY --server-metadata litellm
 
 # Exact connection; review and decide whether to test, without any metadata GETs.
-uv run nooa connect exact-model --as work \
+uv run aster connect exact-model --as work \
   --endpoint https://gateway.example/v1 --api-style chat \
   --api-key-env MODEL_KEY --no-metadata
 ```
@@ -224,7 +224,7 @@ variable (or `-` for no authentication). Neither `--no-metadata` nor
 `all` remain metadata-independent; **plan is always offline**, even with
 `--server-metadata litellm`. Model-info is explicit, never inserted into `all`.
 
-The public library API is `await nooa.unifiedllm.connect.server_details(endpoint,
+The public library API is `await aster.unifiedllm.connect.server_details(endpoint,
 model_id, ...) -> ModelDetails`. Pass a fetched `Discovery` as `listing` to avoid
 another GET, `litellm=True` to authorize validated group enrichment, or
 `metadata=False` for a complete bypass. `api_style`/`listing_style` choose known
@@ -256,7 +256,7 @@ full decisions request URL.
 For a System One endpoint:
 
 ```sh
-uv run nooa connect typesafe/jev-1.13 --as decisions \
+uv run aster connect typesafe/jev-1.13 --as decisions \
   --endpoint https://openrouter.ai/api/alpha/decisions \
   --api-style systemone --api-key-env OPENROUTER_API_KEY
 ```
@@ -264,7 +264,7 @@ uv run nooa connect typesafe/jev-1.13 --as decisions \
 For OpenAI's Decisions API:
 
 ```sh
-uv run nooa connect gpt-6-luna --as openai-decisions \
+uv run aster connect gpt-6-luna --as openai-decisions \
   --endpoint https://api.openai.com/v1/decisions \
   --api-style openai --api-key-env OPENAI_API_KEY
 ```
@@ -294,14 +294,14 @@ access result, and the correct known color. A reported-access answer with the wr
 can be reused during setup; fresh accuracy and image tests cannot.
 
 ```sh
-uv run nooa connect decision-model --stage decision --as decisions \
+uv run aster connect decision-model --stage decision --as decisions \
   --endpoint https://hub.example/v1/decisions --api-style openai --api-key-env MODEL_KEY
 
-uv run nooa connect decision-model --stage media --as decisions \
+uv run aster connect decision-model --stage media --as decisions \
   --endpoint https://hub.example/v1/decisions --api-style openai --api-key-env MODEL_KEY \
   --test-media-inputs image
 
-uv run nooa connect typesafe-model --as decisions --endpoint https://typesafe.example/systemone \
+uv run aster connect typesafe-model --as decisions --endpoint https://typesafe.example/systemone \
   --api-style systemone --api-key-env MODEL_KEY --test-media-inputs image \
   --decision-image-transport typesafe_multipart --typesafe-danger-zone-images --yes
 ```
@@ -368,12 +368,12 @@ The wizard's `--provider hub` preset uses its shared `/v1/models` catalogue whil
 keeping your explicit `--endpoint` unchanged.
 
 ```sh
-uv run nooa connect --stage discover \
+uv run aster connect --stage discover \
   --endpoint https://hub.example/v1/decisions --api-style systemone \
   --models-url https://hub.example/v1/models --listing-style chat \
   --api-key-env HUB_KEY > models.json
 
-uv run nooa connect decision-model --stage plan --as decisions \
+uv run aster connect decision-model --stage plan --as decisions \
   --endpoint https://hub.example/v1/decisions --api-style systemone \
   --models-url https://hub.example/v1/models --discovery-file models.json \
   --api-key-env HUB_KEY
@@ -401,7 +401,7 @@ For chat-family routes, the default `--probe all` runs:
 
 1. **Connection.** Discover sends one routing request per candidate API style
    (and reasoning checks for chat styles); a known interface is checked alone.
-2. **Text baseline.** Asks the model for `17 * 19` as a typed NOOA result. The
+2. **Text baseline.** Asks the model for `17 * 19` as a typed Aster result. The
    model must return `323` as structured output. Without this pass, the
    wizard does not save.
 3. **Tools.** Checks that the model makes a requested tool call. The call is
@@ -508,7 +508,7 @@ compiled JSON Schema as **top-level**
 `text.format`, legacy `output_format` or schema-surrogate tools/tool choice.
 Combining tools/tool choice with a native `output_model` is rejected rather than
 using a schema-tool surrogate. Ordinary tool calls without an output model are
-unaffected. NOOA validates the original output model and requires a final-stop
+unaffected. Aster validates the original output model and requires a final-stop
 answer; this is not a raw-text ping or tool-based replacement for Predict.
 
 The shape agrees with the official Anthropic SDK **0.109.2** source contract
@@ -517,7 +517,7 @@ The shape agrees with the official Anthropic SDK **0.109.2** source contract
 `schema`, while output config can also carry effort; `create` serializes top-level
 `output_config`, and `parse` merges its transformed schema format with that config.
 This is source-contract evidence, **not** proof that a particular gateway accepts
-the schema or implements the SDK helpers' schema-subset transforms. NOOA's bounded
+the schema or implements the SDK helpers' schema-subset transforms. Aster's bounded
 compiler preserves the model contract rather than guessing gateway restrictions.
 No universal gateway acceptance is claimed. The runtime verifies the final SDK
 HTTP carrier before send and raises if a downstream adapter changes or drops the
@@ -579,7 +579,7 @@ A different server or metadata mapping does not import that profile. To supply
 your own known settings:
 
 ```sh
-uv run nooa connect gateway/model --as work-model \
+uv run aster connect gateway/model --as work-model \
   --endpoint https://gateway.example/v1 --api-style chat \
   --api-key-env MY_MODEL_KEY --no-catalogue \
   --reasoning-template effort --levels low,medium,high
@@ -594,7 +594,7 @@ Model details come from exact endpoint listing facts and the public OpenRouter
 catalogue, with server facts taking priority. Foreign-route reasoning defaults,
 reply recommendations and prices remain descriptive rather than request settings. Use `--catalogue-model ID` to pick the public entry, or `--no-catalogue`
 to skip public and automatic limit lookups. Missing limits stay unknown in the
-proposal; continue with NOOA defaults or choose **Change settings** to enter
+proposal; continue with Aster defaults or choose **Change settings** to enter
 known limits. The proposal names its source; edits are your settings, not
 verified capabilities.
 
@@ -610,16 +610,16 @@ Agents can use a public metadata GET, an offline proposal, then an approved save
 
 ```sh
 # Public OpenRouter metadata, no inference key or generation request.
-uv run nooa connect openai/example-model --stage catalogue > catalogue.json
+uv run aster connect openai/example-model --stage catalogue > catalogue.json
 
 # Exact native model and an explicit OpenRouter metadata mapping; no network.
-uv run nooa connect example-model --stage plan --as work \
+uv run aster connect example-model --stage plan --as work \
   --endpoint https://api.openai.com/v1 --api-style responses \
   --api-key-env OPENAI_API_KEY --catalogue-file catalogue.json \
   --catalogue-model openai/example-model > model-plan.json
 
 # Save only after reviewing/approving the proposal. No model calls.
-uv run nooa connect --stage save --input model-plan.json --output llm_config.yaml
+uv run aster connect --stage save --input model-plan.json --output llm_config.yaml
 ```
 
 These IDs are examples, not universal profiles. `--catalogue-file` is opt-in and
@@ -654,7 +654,7 @@ source, then explicitly choose which inputs to enable before saving.
 Checks are optional. With permission for those calls, repeat the same metadata
 and settings options for the chosen check stage; do not automatically run `all`.
 Saving to an existing alias still requires replacement approval and `--yes` in
-stage mode. The canonical [Connect skill](../skills/nooa-connect/SKILL.md) covers
+stage mode. The canonical [Connect skill](../skills/aster-connect/SKILL.md) covers
 permissions, manual suggestions versus generated checks, source validation and
 headless review. Full checks remain available for unknown shared hubs.
 
@@ -686,7 +686,7 @@ interface. Jev Router is a separate model whose declared output is text.
 
 ## Independent stages for agents
 
-Agents should follow the [nooa-connect skill](../skills/nooa-connect/SKILL.md)
+Agents should follow the [aster-connect skill](../skills/aster-connect/SKILL.md)
 for the complete headless workflow. Get the user's permission to configure the
 model and agree on checks and writes before running Connect.
 
@@ -714,7 +714,7 @@ a masked credential on endpoint checks; use `--api-key-env` for unattended use.
 Minimal approved routing example (not an automatic save pipeline):
 
 ```sh
-uv run nooa connect your-model --stage routing --as work \
+uv run aster connect your-model --stage routing --as work \
   --endpoint https://gateway.example/v1 --api-style chat \
   --api-key-env MODEL_KEY --max-tokens 1024 --budget-tokens 4096 > result.json
 ```
@@ -723,9 +723,9 @@ Review `ok`, `checks`, `warnings` and the entry, then confirm file/alias writes
 are authorized. Save as a separate step:
 
 ```sh
-uv run nooa connect --stage save --input result.json --output llm_config.yaml
+uv run aster connect --stage save --input result.json --output llm_config.yaml
 # Register this explicit output path for the application:
-export NEMO_OO_LLM_CONFIG="$PWD/llm_config.yaml"
+export ASTER_LLM_CONFIG="$PWD/llm_config.yaml"
 ```
 
 - Pass `--endpoint`, `--api-style`, and `--api-key-env` explicitly.
@@ -759,33 +759,33 @@ export NEMO_OO_LLM_CONFIG="$PWD/llm_config.yaml"
 | Endpoint rejects `include` or `encrypted_content` (Responses) | Set `include: []` in the entry, then rerun the checks. Saving stays blocked until the baseline passes. |
 | Reply cut off | Raise `--max-tokens` and rerun the affected stage. |
 | Reasoning not shown | Some servers hide reasoning. Try another API style or check server settings. |
-| Saved alias has no effect | A later config file overrides it. Check `nooa.llm_config.llm_config_chain()`. |
+| Saved alias has no effect | A later config file overrides it. Check `aster.llm_config.llm_config_chain()`. |
 | Budget ran out | Rerun with a larger `--budget-tokens`. |
 
 Add `--show-diagnostics` in the wizard to see full details.
 
 ## Files and reconnecting
 
-- Connect saves to `llm_config.yaml` in NOOA's user configuration directory.
+- Connect saves to `llm_config.yaml` in Aster's user configuration directory.
   Use `--output FILE` for another file, or `-w DIR` for the project file
-  `DIR/.nooa/llm_config.yaml`.
+  `DIR/.aster/llm_config.yaml`.
 - Other aliases and comments are kept. Connect asks before replacing an alias.
 - The entry stores the key's variable name (`api_key_env`), never the key.
 - A key saved in `secrets.yaml` is overridden by an exported environment
   variable with the same name.
-- To edit a saved model, run `uv run nooa connect --edit-model NAME`. Omit NAME
+- To edit a saved model, run `uv run aster connect --edit-model NAME`. Omit NAME
   to pick from a list. Edits normally go back into the file that defines the
   model. Use `--output FILE` to choose another file.
-- After saving to a custom file, set `NEMO_OO_LLM_CONFIG` to its path or load it
-  with `reload_registry(Path(...))`. `-w DIR` saves to `DIR/.nooa/llm_config.yaml`.
+- After saving to a custom file, set `ASTER_LLM_CONFIG` to its path or load it
+  with `reload_registry(Path(...))`. `-w DIR` saves to `DIR/.aster/llm_config.yaml`.
 - Editing a saved model runs fresh checks. Keep diagnostic reports separately
   if you need a record of earlier results.
-- To load a config file from another path, add it to `NEMO_OO_LLM_CONFIG`.
+- To load a config file from another path, add it to `ASTER_LLM_CONFIG`.
 
 ## Choose media inputs during setup
 
 A model receives images, audio, video, or PDFs only if its entry lists them in
-`media_inputs`. NOOA assumes new entries are text-only (`media_inputs: []`)
+`media_inputs`. Aster assumes new entries are text-only (`media_inputs: []`)
 until you choose formats. See the [media guide](media.md) for examples and
 [migration](model-configuration.md#explicit-media-inputs-migration).
 
@@ -858,7 +858,7 @@ From the command line:
 
 ```sh
 # Test formats and enable those that pass:
-uv run nooa connect your-model --as vision --endpoint https://gateway.example/v1 \
+uv run aster connect your-model --as vision --endpoint https://gateway.example/v1 \
   --api-style chat --api-key-env MODEL_KEY --test-media-inputs image,audio,video,pdf \
   --yes
 
@@ -867,7 +867,7 @@ uv run nooa connect your-model --as vision --endpoint https://gateway.example/v1
 For agents, first authorize generated formats/samples and the check allowance:
 
 ```sh
-uv run nooa connect your-model --stage media --as vision \
+uv run aster connect your-model --stage media --as vision \
   --endpoint https://gateway.example/v1 --api-style chat --api-key-env MODEL_KEY \
   --max-tokens 1024 --budget-tokens 16384 --test-media-inputs image,pdf > result.json
 ```
@@ -882,13 +882,13 @@ Rules:
   or `--probe minimal` / `--probe none`.
 - In stage mode, `--test-media-inputs` works only with `plan`, `media`, and `all`.
 
-## Library calls from NOOA agents
+## Library calls from Aster agents
 
-The CLI is a front end for `nooa.unifiedllm.connect`. Agent code can call it
+The CLI is a front end for `aster.unifiedllm.connect`. Agent code can call it
 directly:
 
 ```python
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 
 proposal = connect.plan(
     "work", "your-model", "chat", "https://gateway.example/v1", "MODEL_KEY",

@@ -48,7 +48,7 @@ class SandboxSpec:
         venv = self.repo_root / ".venv"
         return [
             ("rw", self.run_dir / "ipc", self.run_dir / "ipc"),
-            ("rw", self.run_dir / "team_nemo" / "shared", self.run_dir / "team_nemo" / "shared"),
+            ("rw", self.run_dir / "team_aster" / "shared", self.run_dir / "team_aster" / "shared"),
             # The launcher writes its OWN logs + traces here, so these are rw (the
             # caller pre-creates both so bwrap's bind has an existing source).
             ("rw", self.run_dir / "agent_logs", self.run_dir / "agent_logs"),

@@ -6,14 +6,14 @@ Verifies that PythonOutput events with images produce multi-part content
 using LiteLLM's universal image_url format — no provider-specific conversion.
 """
 
-from nooa.context_blocks.events import ResultStatus
-from nooa.context_blocks.formatter import (
+from aster.context_blocks.events import ResultStatus
+from aster.context_blocks.formatter import (
     OpenAIProviderFormatter,
     XMLBlockFormatter,
 )
-from nooa.context_blocks.models import BlockMetadata, ResolvedBlock, Role
-from nooa.context_blocks.renderer import render_context
-from nooa.events import PythonOutput
+from aster.context_blocks.models import BlockMetadata, ResolvedBlock, Role
+from aster.context_blocks.renderer import render_context
+from aster.events import PythonOutput
 
 
 def _render_openai(blocks: list[ResolvedBlock]) -> list[dict]:
@@ -81,7 +81,7 @@ class TestPlainFormatterExcludesImages:
     """Verify that repr=False on PythonOutput.images excludes them from text rendering."""
 
     def test_images_excluded_from_plain_format(self):
-        from nooa.plain_formatter import PlainBlockFormatter
+        from aster.plain_formatter import PlainBlockFormatter
 
         event = PythonOutput(
             tool_call_id="tc_1",

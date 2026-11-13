@@ -6,8 +6,8 @@ from copy import deepcopy
 
 import pytest
 
-from nooa.unifiedllm import connect
-from nooa.unifiedllm.registry import client_from_config
+from aster.unifiedllm import connect
+from aster.unifiedllm.registry import client_from_config
 
 OLD = {
     "model_name": "openai/model",

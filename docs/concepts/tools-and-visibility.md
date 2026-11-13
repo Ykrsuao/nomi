@@ -1,6 +1,6 @@
 # Tools and visibility
 
-In NOOA, a tool is usually a visible Python capability on the agent. Regular
+In Aster, a tool is usually a visible Python capability on the agent. Regular
 methods, helper objects, skills, and MCP clients all appear through `self`
 rather than through a separate tool-registration layer.
 
@@ -24,7 +24,7 @@ separate schema from drifting.
 ## Attach stateful tools per instance
 
 ```python
-from nooa.tools import ShellTools, TodoManager
+from aster.tools import ShellTools, TodoManager
 
 
 class DeveloperAgent(Agent, llm=llm):
@@ -38,7 +38,7 @@ class DeveloperAgent(Agent, llm=llm):
         ...
 ```
 
-NOOA reads ordinary `self.<field> = DirectConstructor(...)` assignments from
+Aster reads ordinary `self.<field> = DirectConstructor(...)` assignments from
 `__init__`, so `shell` and `todos` become part of the documented agent API
 without duplicate class-level declarations. Constructing them in `__init__`
 gives every agent its own shell session, working directory, locks, and task
@@ -75,7 +75,7 @@ Hide plumbing and secrets explicitly:
 ```python
 from typing import Annotated
 
-from nooa import hidden
+from aster import hidden
 
 
 class SearchAgent(Agent, llm=llm):
@@ -96,7 +96,7 @@ whether tracing can record it.
 
 ## Progressive disclosure with `doc()`
 
-NOOA renders the agent's visible API with `doc(type(self))`. CodeAct also has a
+Aster renders the agent's visible API with `doc(type(self))`. CodeAct also has a
 `doc(obj)` helper for discovering an unfamiliar object when it becomes
 relevant:
 
@@ -125,7 +125,7 @@ clean error boundary.
 ## Common mistakes
 
 - Constructing a stateful tool on the class and unintentionally sharing it.
-- Expecting NOOA to infer a tool type from a factory or injected value without
+- Expecting Aster to infer a tool type from a factory or injected value without
   an inline or class-level annotation.
 - Exposing credentials, storage managers, or unrestricted clients.
 - Using a lambda or dynamically attached function where a documented class

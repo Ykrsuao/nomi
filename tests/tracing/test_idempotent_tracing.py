@@ -18,8 +18,8 @@ class TestEnableTracingIdempotency:
 
     def test_no_arg_calls_are_noop_after_first(self):
         """No-arg enable_tracing() is a no-op once tracing is enabled."""
-        import nooa.tracing as module
-        from nooa.tracing import enable_tracing, exporters
+        import aster.tracing as module
+        from aster.tracing import enable_tracing, exporters
 
         with tempfile.TemporaryDirectory() as tmpdir:
             enable_tracing(exporters=[exporters.jsonl(tmpdir)])
@@ -34,7 +34,7 @@ class TestEnableTracingIdempotency:
 
     def test_explicit_exporters_replace_after_enabled(self):
         """Calling with explicit exporters after enabled replaces the old ones."""
-        from nooa.tracing import enable_tracing, exporters
+        from aster.tracing import enable_tracing, exporters
 
         with (
             tempfile.TemporaryDirectory() as dir1,
@@ -52,7 +52,7 @@ class TestEnableTracingIdempotency:
             with tracer.start_as_current_span("replace_test_span"):
                 pass
 
-            from nooa.tracing import flush_traces
+            from aster.tracing import flush_traces
 
             flush_traces()
 
@@ -71,9 +71,9 @@ class TestEnableTracingIdempotency:
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-        from nooa.tracing._otlp_file_exporter import OtlpJsonFileExporter
-        from nooa.tracing._session import set_session
-        from nooa.tracing._session_processor import SessionSpanProcessor
+        from aster.tracing._otlp_file_exporter import OtlpJsonFileExporter
+        from aster.tracing._session import set_session
+        from aster.tracing._session_processor import SessionSpanProcessor
 
         with tempfile.TemporaryDirectory() as tmpdir:
             exporter = OtlpJsonFileExporter(tmpdir)
@@ -105,19 +105,19 @@ class TestFlushAndShutdown:
 
     def test_flush_traces_no_op_when_not_enabled(self):
         """flush_traces() should be safe to call when tracing is not enabled."""
-        from nooa.tracing import flush_traces
+        from aster.tracing import flush_traces
 
         flush_traces()  # Should not raise
 
     def test_shutdown_traces_no_op_when_not_enabled(self):
         """shutdown_traces() should be safe to call when tracing is not enabled."""
-        from nooa.tracing import shutdown_traces
+        from aster.tracing import shutdown_traces
 
         shutdown_traces()  # Should not raise
 
     def test_flush_traces_after_enable(self):
         """flush_traces() should work after enable_tracing()."""
-        from nooa.tracing import enable_tracing, exporters, flush_traces
+        from aster.tracing import enable_tracing, exporters, flush_traces
 
         with tempfile.TemporaryDirectory() as tmpdir:
             enable_tracing(exporters=[exporters.jsonl(tmpdir)])
@@ -127,14 +127,14 @@ class TestFlushAndShutdown:
 def test_instrumentor_composes_with_and_restores_existing_hooks() -> None:
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import CompositeInstrumentationHooks, get_hooks, set_hooks
-    from nooa.tracing import NOOAInstrumentor
+    from aster.runtime.hooks import CompositeInstrumentationHooks, get_hooks, set_hooks
+    from aster.tracing import ASTERInstrumentor
 
     existing = MagicMock()
     provider = MagicMock()
     set_hooks(existing)
     try:
-        instrumentor = NOOAInstrumentor()
+        instrumentor = ASTERInstrumentor()
         instrumentor.instrument(tracer_provider=provider)
         active = get_hooks()
         assert isinstance(active, CompositeInstrumentationHooks)
@@ -150,12 +150,12 @@ def test_instrumentor_composes_with_and_restores_existing_hooks() -> None:
 def test_instrumentors_can_be_uninstrumented_out_of_order() -> None:
     from unittest.mock import MagicMock
 
-    from nooa.runtime.hooks import CompositeInstrumentationHooks, get_hooks, set_hooks
-    from nooa.tracing import NOOAInstrumentor
+    from aster.runtime.hooks import CompositeInstrumentationHooks, get_hooks, set_hooks
+    from aster.tracing import ASTERInstrumentor
 
     provider = MagicMock()
-    first = NOOAInstrumentor()
-    second = NOOAInstrumentor()
+    first = ASTERInstrumentor()
+    second = ASTERInstrumentor()
     set_hooks(None)
     try:
         first.instrument(tracer_provider=provider)

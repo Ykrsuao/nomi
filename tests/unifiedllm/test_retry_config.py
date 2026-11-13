@@ -5,7 +5,7 @@ import asyncio
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from nooa.unifiedllm.retry_config import RetryConfig
+from aster.unifiedllm.retry_config import RetryConfig
 
 
 def test_retry_config_is_pydantic_model():

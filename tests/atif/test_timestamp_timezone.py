@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from nooa.atif.exporter import _iso8601_utc
+from aster.atif.exporter import _iso8601_utc
 
 
 def _hour(stamp: str) -> int:

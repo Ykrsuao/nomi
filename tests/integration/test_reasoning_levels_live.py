@@ -9,25 +9,25 @@ import httpx
 import litellm
 import pytest
 
-from nooa.unifiedllm import RetryConfig, get_llm_client
+from aster.unifiedllm import RetryConfig, get_llm_client
 
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(
-        os.getenv("NOOA_RUN_REASONING_LEVELS_LIVE") != "1", reason="opt-in paid provider test"
+        os.getenv("ASTER_RUN_REASONING_LEVELS_LIVE") != "1", reason="opt-in paid provider test"
     ),
 ]
 ALIASES = [
     alias.strip()
-    for alias in os.getenv("NOOA_REASONING_TEST_MODELS", "").split(",")
+    for alias in os.getenv("ASTER_REASONING_TEST_MODELS", "").split(",")
     if alias.strip()
 ]
 
 
 @pytest.mark.parametrize("alias", ALIASES)
 async def test_low_effort_on_configured_route(alias, monkeypatch):
-    from nooa.secrets import load_secrets_into_env
-    from nooa.unifiedllm import registry
+    from aster.secrets import load_secrets_into_env
+    from aster.unifiedllm import registry
 
     load_secrets_into_env()
     config = registry.get_registry_config(alias)

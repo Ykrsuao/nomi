@@ -3,12 +3,12 @@
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from nooa.context_blocks.formatter import (
+from aster.context_blocks.formatter import (
     MarkdownBlockFormatter,
     OpenAIProviderFormatter,
 )
-from nooa.context_blocks.render_config import RenderConfig
-from nooa.context_blocks.renderers import CachedBlockFormatter
+from aster.context_blocks.render_config import RenderConfig
+from aster.context_blocks.renderers import CachedBlockFormatter
 
 
 def test_render_config_is_pydantic_model():

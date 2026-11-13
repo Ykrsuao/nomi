@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Multi-game TUI viewer for the nemo-oo ARC-AGI-3 solver — nested-hierarchy variant.
+"""Multi-game TUI viewer for the aster ARC-AGI-3 solver — nested-hierarchy variant.
 
 Thin wrapper over ``arc_agi_3.tui_multi_game_viewer.MultiGameTUI`` (run in the
 progressive-learning venv) that reuses ALL of the reference dashboard + per-game
@@ -18,7 +18,7 @@ game/variant nesting is transparent. The status/tab key stays slash-free
 
 Usage (normally started by run_multi.py):
     progressive-learning/.venv/bin/python examples/arc_agi_3/tui_multi_game_viewer.py \
-        results/arc_agi_3/nemo_solver/<container>/ --watch team_leader
+        results/arc_agi_3/aster_solver/<container>/ --watch team_leader
 """
 
 from __future__ import annotations
@@ -51,7 +51,7 @@ _ATTACHABLE = ("running", "completed", "failed", "crashed", "terminated")
 
 # Newer progressive-learning checkouts hard-index ``model_uri`` / int cache
 # fields on llm_call events in update_state; events from older runs of the
-# nemo-oo exporter may lack them. Default them so token/cost accounting works
+# aster exporter may lack them. Default them so token/cost accounting works
 # on every generation; rebind in the reference module so its tail threads use
 # it. No-op setdefaults on generations that don't need it.
 _ref_update_state = _ref_mod.update_state

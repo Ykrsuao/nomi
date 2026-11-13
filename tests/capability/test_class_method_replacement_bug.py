@@ -19,10 +19,10 @@ import asyncio
 
 import pytest
 
-from nooa import Agent
-from nooa.errors import DynamicMethodAdditionError
-from nooa.runtime.context_vars import _parent_agent_var
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent
+from aster.errors import DynamicMethodAdditionError
+from aster.runtime.context_vars import _parent_agent_var
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 
 
 def make_fake_llm() -> FakeLLMClient:
@@ -94,8 +94,8 @@ class TestGuardPreventsClassMutation:
 
     def test_validator_rejects_class_attribute_assignment(self):
         """AST-level: ClassAssignmentValidator catches the same patterns before exec."""
-        from nooa.errors import RestrictedCodeError
-        from nooa.runtime.code_validator import (
+        from aster.errors import RestrictedCodeError
+        from aster.runtime.code_validator import (
             UnifiedCodeValidator,
             ValidationContext,
         )

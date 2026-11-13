@@ -290,7 +290,7 @@ class Wrapped:
         # (slice-keys / items wrapper) applies recursively per container level
         # via the framework's existing dispatch, so we just let it run.
         if self._type_tag == "nested":
-            from nooa.agentdoc import pformat
+            from aster.agentdoc import pformat
 
             return pformat(self._data, max_length=10, max_string=200, max_depth=4)
         return render(self._data, self._type_tag, self._fmt)

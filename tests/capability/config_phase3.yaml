@@ -3,13 +3,13 @@
 # Tests: task_decomposition, refinement, employee_lookup
 #
 # Run:
-#   nooa eval --config tests/capability/config_phase3.yaml --runs 3
+#   aster eval --config tests/capability/config_phase3.yaml --runs 3
 #
 # Single model:
-#   nooa eval --config tests/capability/config_phase3.yaml --models claude-haiku-azure
+#   aster eval --config tests/capability/config_phase3.yaml --models claude-haiku-azure
 #
 # Debug single test:
-#   nooa eval --config tests/capability/config_phase3.yaml --test refinement --limit 1
+#   aster eval --config tests/capability/config_phase3.yaml --test refinement --limit 1
 
 name: capability-phase3
 no_cache: true
@@ -17,7 +17,8 @@ description: "Phase 3 advanced capability tests — helper reuse, iterative refi
 
 # =============================================================================
 # MODELS — resolved from the unifiedllm registry.
-# NVIDIA aliases ship in the nemo-oo-agents-nvidia package — install it (or the [nvidia] extra). No env var needed.
+# Configure these aliases with `uv run aster connect` or .aster/llm_config.yaml.
+# Set the credentials required by your chosen provider; aliases are not bundled.
 # =============================================================================
 
 agent_models:

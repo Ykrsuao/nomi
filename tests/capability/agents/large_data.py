@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Large data handling agent - tests truncation system."""
 
-from nooa import Agent
+from aster import Agent
 
 
 class LargeDataAgent(Agent):

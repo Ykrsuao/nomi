@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 @pytest.mark.asyncio

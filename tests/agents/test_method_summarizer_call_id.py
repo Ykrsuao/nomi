@@ -19,14 +19,14 @@ import json
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.agents import MethodSummarizer
-from nooa.config import CodeActConfig
-from nooa.config.summarizer_config import MethodSummarizerConfig
-from nooa.events import AfterTurn
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.agents import MethodSummarizer
+from aster.config import CodeActConfig
+from aster.config.summarizer_config import MethodSummarizerConfig
+from aster.events import AfterTurn
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # =============================================================================
 # Helpers
@@ -318,7 +318,7 @@ class TestExceptionMidCallCallId:
     @pytest.mark.asyncio
     async def test_error_events_have_call_id_on_exhaustion(self):
         """When max_retries exhausted, all events (including errors) have call_id."""
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class MyAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig(max_retries=1, max_iterations=5)))
@@ -350,7 +350,7 @@ class TestExceptionMidCallCallId:
     @pytest.mark.asyncio
     async def test_compute_range_works_after_exception(self):
         """MethodSummarizer can compute range even for methods that raised."""
-        from nooa.errors import GenerationError
+        from aster.errors import GenerationError
 
         class MyAgent(Agent, llm=_TEST_LLM):
             @strategy(CodeActStrategy(config=CodeActConfig(max_retries=1, max_iterations=5)))

@@ -6,7 +6,7 @@ import asyncio
 
 import pytest
 
-from nooa.tools._bash_session import BashSession
+from aster.tools._bash_session import BashSession
 
 
 class TestRunWithTimeoutFlag:

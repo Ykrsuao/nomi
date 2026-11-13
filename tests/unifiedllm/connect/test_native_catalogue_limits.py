@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import pytest
 
-from nooa.unifiedllm import connect
+from aster.unifiedllm import connect
 
 MODEL = "nvidia/nemotron-3-ultra-550b-a55b"
 PUBLIC = {
@@ -59,7 +59,7 @@ def test_native_reported_limits_win_and_explicit_reply_cap_is_kept():
 
 
 def test_native_wizard_does_not_apply_openrouter_deployment_limits(monkeypatch):
-    from nooa_cli.commands._connect_wizard import WizardState, configure_checks, prepare_metadata
+    from aster_cli.commands._connect_wizard import WizardState, configure_checks, prepare_metadata
 
     async def server(*args, **kwargs):
         return connect.ModelDetails(

@@ -14,16 +14,16 @@ import json
 import httpx
 import pytest
 
-from nooa.context_blocks.events import ToolCallEvent, ToolResult, UserEvent
-from nooa.context_blocks.formatter import OpenAIProviderFormatter
-from nooa.context_blocks.models import BlockMetadata, ResolvedBlock, Role
-from nooa.context_blocks.renderer import render_context
-from nooa.context_blocks.renderers.cached import CachedBlockFormatter
-from nooa.nemo_relay_middleware import _reconcile_messages
-from nooa.storage import SQLiteStorageManager
-from nooa.unifiedllm import CompletionClient, ResponsesClient, Tool
-from nooa.unifiedllm.retry_config import RetryConfig
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster.context_blocks.events import ToolCallEvent, ToolResult, UserEvent
+from aster.context_blocks.formatter import OpenAIProviderFormatter
+from aster.context_blocks.models import BlockMetadata, ResolvedBlock, Role
+from aster.context_blocks.renderer import render_context
+from aster.context_blocks.renderers.cached import CachedBlockFormatter
+from aster.nemo_relay_middleware import _reconcile_messages
+from aster.storage import SQLiteStorageManager
+from aster.unifiedllm import CompletionClient, ResponsesClient, Tool
+from aster.unifiedllm.retry_config import RetryConfig
+from aster.unifiedllm.unifiedllm import _ClientHttp
 
 MODELS = {
     "responses": "openai/gpt-5.6",
@@ -287,7 +287,7 @@ def _assert_replay(body, family):
             assert call["provider_specific_fields"] == {"thought_signature": SECRET}
         result = next(item for item in body["messages"] if item["role"] == "tool")
         assert result["tool_call_id"] == expected_id
-    assert "nooa_cache_boundary" not in json.dumps(body)
+    assert "aster_cache_boundary" not in json.dumps(body)
 
 
 @pytest.mark.parametrize("family", MODELS)

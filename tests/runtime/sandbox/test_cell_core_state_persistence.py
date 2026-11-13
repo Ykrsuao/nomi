@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import pytest
 
-from nooa.events import ExecutionSignal
-from nooa.runtime.sandbox.cell_core import run_cell_source
+from aster.events import ExecutionSignal
+from aster.runtime.sandbox.cell_core import run_cell_source
 
 
 @pytest.mark.asyncio

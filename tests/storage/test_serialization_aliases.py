@@ -21,9 +21,9 @@ from pydantic import (
 )
 from typing_extensions import TypedDict
 
-from nooa.errors.storage import DeserializationError
-from nooa.storage.markers import snapshotable
-from nooa.storage.serialization import deserialize, serialize
+from aster.errors.storage import DeserializationError
+from aster.storage.markers import snapshotable
+from aster.storage.serialization import deserialize, serialize
 
 
 class _RequiredAlias(BaseModel):

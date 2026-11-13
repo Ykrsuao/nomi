@@ -6,8 +6,8 @@ from copy import deepcopy
 
 import pytest
 
-from nooa.config import ModelConfig
-from nooa.unifiedllm import CompletionClient, ResponsesClient, registry
+from aster.config import ModelConfig
+from aster.unifiedllm import CompletionClient, ResponsesClient, registry
 
 MODEL = "openai/offline-route-context"
 BASE = "https://gateway.test/v1"
@@ -184,7 +184,7 @@ def test_direct_lookup_compares_the_entry_resolved_key(monkeypatch):
 
 def test_endpoint_whitespace_is_not_a_route_change():
     """Surrounding whitespace in an endpoint does not change the route."""
-    from nooa.unifiedllm.route_identity import endpoint_changed, normalize_endpoint
+    from aster.unifiedllm.route_identity import endpoint_changed, normalize_endpoint
 
     assert normalize_endpoint(BASE + " ") == normalize_endpoint(BASE)
     assert not endpoint_changed({"api_base": BASE}, {"api_base": BASE + " "})
@@ -193,8 +193,8 @@ def test_endpoint_whitespace_is_not_a_route_change():
 
 
 def test_endpoint_or_provider_changed_is_shared_by_reasoning_and_registry():
-    from nooa.unifiedllm import reasoning
-    from nooa.unifiedllm.route_identity import endpoint_or_provider_changed
+    from aster.unifiedllm import reasoning
+    from aster.unifiedllm.route_identity import endpoint_or_provider_changed
 
     configured = {"api_base": BASE, "custom_llm_provider": "openai"}
     assert not endpoint_or_provider_changed(configured, {"base_url": BASE + "/"})
@@ -213,7 +213,7 @@ def test_route_override_warns_once_per_alias_what_it_dropped(caplog):
         api_key="secret-key",
     )
     other = "https://user:pw@other.test/v1"
-    with caplog.at_level("WARNING", logger="nooa.unifiedllm.registry"):
+    with caplog.at_level("WARNING", logger="aster.unifiedllm.registry"):
         registry.client_from_config("local", deepcopy(raw), api_base=other).close()
         registry.client_from_config("local", deepcopy(raw), api_base=other).close()
         registry.client_from_config("same", deepcopy(raw), base_url=BASE).close()
@@ -357,7 +357,7 @@ async def test_timeout_defaults_and_caller_overrides_on_mock_wire(monkeypatch, i
 
     import httpx
 
-    from nooa.unifiedllm.unifiedllm import _ClientHttp
+    from aster.unifiedllm.unifiedllm import _ClientHttp
 
     bodies, paths, timeouts = [], [], []
 

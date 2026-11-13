@@ -4,13 +4,13 @@
 #   sentiment_single, calculate_simple, calculate_complex, json_qa_lookup, json_qa_reasoning, error_recovery
 #
 # Run:
-#   nooa eval --config tests/capability/config_phase1.yaml --runs 3
+#   aster eval --config tests/capability/config_phase1.yaml --runs 3
 #
 # Single model:
-#   nooa eval --config tests/capability/config_phase1.yaml --models claude-haiku-azure
+#   aster eval --config tests/capability/config_phase1.yaml --models claude-haiku-azure
 #
 # Debug single test:
-#   nooa eval --config tests/capability/config_phase1.yaml --test sentiment_single --limit 1
+#   aster eval --config tests/capability/config_phase1.yaml --test sentiment_single --limit 1
 
 name: capability-phase1
 no_cache: true
@@ -18,7 +18,8 @@ description: "Phase 1 trusted subset — validate foundation before expanding"
 
 # =============================================================================
 # MODELS — resolved from the unifiedllm registry.
-# NVIDIA aliases ship in the nemo-oo-agents-nvidia package — install it (or the [nvidia] extra). No env var needed.
+# Configure these aliases with `uv run aster connect` or .aster/llm_config.yaml.
+# Set the credentials required by your chosen provider; aliases are not bundled.
 # =============================================================================
 
 agent_models:

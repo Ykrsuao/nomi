@@ -13,9 +13,9 @@ from openinference.instrumentation import litellm as instrumentation
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-from nooa.tracing._litellm_patch import apply_litellm_patch
-from nooa.tracing._otlp_http_exporter import OtlpJsonHttpExporter
-from nooa.tracing._secret_scrubber import SecretScrubSpanProcessor
+from aster.tracing._litellm_patch import apply_litellm_patch
+from aster.tracing._otlp_http_exporter import OtlpJsonHttpExporter
+from aster.tracing._secret_scrubber import SecretScrubSpanProcessor
 
 REASONING = "Check the evidence before answering."
 OPAQUE = "opaque-provider-state-must-not-leave"
@@ -26,7 +26,7 @@ OPAQUE = "opaque-provider-state-must-not-leave"
 def test_plain_reasoning_reaches_serialized_otlp_without_opaque_state(
     shape, strip_messages, monkeypatch
 ):
-    monkeypatch.delenv("NEMO_TRACE_KEEP_LLM_VALUES", raising=False)
+    monkeypatch.delenv("ASTER_TRACE_KEEP_LLM_VALUES", raising=False)
     captured = []
 
     def send(request, timeout):

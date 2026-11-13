@@ -18,7 +18,7 @@ Test strategy:
 
 Existing coverage (not duplicated here):
   - stdout/stderr buffer isolation: tests/runtime/test_async_output_capture.py
-  - agent call stack / generation ID stack: src/nooa/runtime/tests/test_stack_isolation.py
+  - agent call stack / generation ID stack: src/aster/runtime/tests/test_stack_isolation.py
   - _in_agent_context set/reset: tests/unit/test_remaining_gaps.py::TestAsyncSafety
   - basic _parent_agent_var lifecycle: tests/capability/test_class_method_replacement_bug.py
 """
@@ -28,14 +28,14 @@ import contextvars
 
 import pytest
 
-from nooa import Agent
-from nooa.runtime.context_vars import (
+from aster import Agent
+from aster.runtime.context_vars import (
     _agent_call_stack_var,
     _parent_agent_var,
     _pop_agent_call_id,
     _push_agent_call_id,
 )
-from nooa.unifiedllm import FakeLLMClient
+from aster.unifiedllm import FakeLLMClient
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -420,14 +420,14 @@ class TestCurrentAgentVarLifecycle:
     implementations and reset in a finally block."""
 
     async def test_current_agent_var_is_none_outside_execution(self):
-        from nooa.util._context import _current_agent_var, _current_runtime_var
+        from aster.util._context import _current_agent_var, _current_runtime_var
 
         assert _current_agent_var.get() is None
         assert _current_runtime_var.get() is None
 
     async def test_set_and_reset_token_correctness(self):
         """Token-based reset restores the default after set."""
-        from nooa.util._context import _current_agent_var
+        from aster.util._context import _current_agent_var
 
         agent = _SimpleAgent(llm=_make_llm())
         token = _current_agent_var.set(agent)
@@ -437,7 +437,7 @@ class TestCurrentAgentVarLifecycle:
 
     async def test_nested_set_reset_restores_outer(self):
         """Nested token reset restores outer value, not the default."""
-        from nooa.util._context import _current_agent_var
+        from aster.util._context import _current_agent_var
 
         agent_outer = _SimpleAgent(llm=_make_llm())
         agent_inner = _SimpleAgent(llm=_make_llm())
@@ -452,14 +452,14 @@ class TestCurrentAgentVarLifecycle:
 
     async def test_current_agent_raises_outside_context(self):
         """_current_agent() raises RuntimeError when called outside execution context."""
-        from nooa.util._context import _current_agent
+        from aster.util._context import _current_agent
 
         with pytest.raises(RuntimeError, match="No agent in context"):
             _current_agent()
 
     async def test_current_agent_returns_agent_inside_context(self):
         """_current_agent() returns the agent when context is set."""
-        from nooa.util._context import _current_agent, _current_agent_var
+        from aster.util._context import _current_agent, _current_agent_var
 
         agent = _SimpleAgent(llm=_make_llm())
         token = _current_agent_var.set(agent)
@@ -479,13 +479,13 @@ class TestInGenerationSessionVar:
     """_in_generation_session prevents deadlocks from nested generation calls."""
 
     async def test_default_is_false(self):
-        from nooa.runtime.actor import _in_generation_session
+        from aster.runtime.actor import _in_generation_session
 
         assert _in_generation_session.get() is False
 
     async def test_set_and_reset(self):
         """Manual set/reset cycle works correctly."""
-        from nooa.runtime.actor import _in_generation_session
+        from aster.runtime.actor import _in_generation_session
 
         token = _in_generation_session.set(True)
         assert _in_generation_session.get() is True
@@ -494,7 +494,7 @@ class TestInGenerationSessionVar:
 
     async def test_nested_restore_previous_not_default(self):
         """Nested set/reset restores the previous value (True → True), not default."""
-        from nooa.runtime.actor import _in_generation_session
+        from aster.runtime.actor import _in_generation_session
 
         # Outer: True
         outer_token = _in_generation_session.set(True)
@@ -511,7 +511,7 @@ class TestInGenerationSessionVar:
 
     async def test_isolated_between_concurrent_tasks(self):
         """Two concurrent tasks each have their own _in_generation_session value."""
-        from nooa.runtime.actor import _in_generation_session
+        from aster.runtime.actor import _in_generation_session
 
         a_set = asyncio.Event()
         b_checked = asyncio.Event()
@@ -543,7 +543,7 @@ class TestDefaultStrategyVarGlobalPattern:
 
     def test_default_is_codeact_strategy(self):
         """By default (var=None), get_default_strategy() returns a CodeActStrategy."""
-        from nooa.strategies import (
+        from aster.strategies import (
             CodeActStrategy,
             get_default_strategy,
             set_default_strategy,
@@ -555,11 +555,11 @@ class TestDefaultStrategyVarGlobalPattern:
 
     def test_set_override_is_visible(self):
         """set_default_strategy() overrides the default for the current context."""
-        from nooa.strategies import (
+        from aster.strategies import (
             get_default_strategy,
             set_default_strategy,
         )
-        from nooa.strategies.pure_python import PurePythonStrategy
+        from aster.strategies.pure_python import PurePythonStrategy
 
         set_default_strategy(PurePythonStrategy())
         try:
@@ -569,12 +569,12 @@ class TestDefaultStrategyVarGlobalPattern:
 
     def test_set_none_restores_codeact_default(self):
         """set_default_strategy(None) restores the CodeActStrategy default."""
-        from nooa.strategies import (
+        from aster.strategies import (
             CodeActStrategy,
             get_default_strategy,
             set_default_strategy,
         )
-        from nooa.strategies.pure_python import PurePythonStrategy
+        from aster.strategies.pure_python import PurePythonStrategy
 
         set_default_strategy(PurePythonStrategy())
         set_default_strategy(None)
@@ -588,12 +588,12 @@ class TestDefaultStrategyVarGlobalPattern:
         the task gets a COPY of the context at creation time — so the override
         is visible in the task if it was set BEFORE the task was created.
         """
-        from nooa.strategies import (
+        from aster.strategies import (
             CodeActStrategy,
             get_default_strategy,
             set_default_strategy,
         )
-        from nooa.strategies.pure_python import PurePythonStrategy
+        from aster.strategies.pure_python import PurePythonStrategy
 
         saw_in_task: list = []
         task_done = asyncio.Event()
@@ -630,12 +630,12 @@ class TestInExecMiddlewareVar:
     """_in_exec_middleware prevents infinite recursion in middleware chains."""
 
     def test_default_is_empty_frozenset(self):
-        from nooa.runtime.actor import _in_exec_middleware
+        from aster.runtime.actor import _in_exec_middleware
 
         assert _in_exec_middleware.get() == frozenset()
 
     def test_set_and_reset(self):
-        from nooa.runtime.actor import _in_exec_middleware
+        from aster.runtime.actor import _in_exec_middleware
 
         token = _in_exec_middleware.set(frozenset({1, 2}))
         assert _in_exec_middleware.get() == frozenset({1, 2})
@@ -644,7 +644,7 @@ class TestInExecMiddlewareVar:
 
     async def test_isolated_between_concurrent_tasks(self):
         """Two concurrent tasks each manage their own middleware re-entry state."""
-        from nooa.runtime.actor import _in_exec_middleware
+        from aster.runtime.actor import _in_exec_middleware
 
         a_set = asyncio.Event()
         b_checked = asyncio.Event()
@@ -675,13 +675,13 @@ class TestBlockStdinVarLifecycle:
     """_block_stdin_var is set True inside execute_code and reset in finally."""
 
     async def test_is_false_outside_execute_code(self):
-        from nooa.runtime.actor import _block_stdin_var
+        from aster.runtime.actor import _block_stdin_var
 
         assert _block_stdin_var.get() is False
 
     async def test_reset_after_execute_code(self):
         """_block_stdin_var is False after execute_code completes normally."""
-        from nooa.runtime.actor import _block_stdin_var
+        from aster.runtime.actor import _block_stdin_var
 
         agent = _SimpleAgent(llm=_make_llm())
         await agent.runtime.execute_code("x = 1", validate=False)
@@ -689,7 +689,7 @@ class TestBlockStdinVarLifecycle:
 
     async def test_reset_after_execute_code_exception(self):
         """_block_stdin_var is False even after user code raises."""
-        from nooa.runtime.actor import _block_stdin_var
+        from aster.runtime.actor import _block_stdin_var
 
         agent = _SimpleAgent(llm=_make_llm())
         result = await agent.runtime.execute_code(
@@ -700,7 +700,7 @@ class TestBlockStdinVarLifecycle:
 
     async def test_isolated_between_concurrent_tasks(self):
         """Two concurrent execute_code calls each have their own stdin block state."""
-        from nooa.runtime.actor import _block_stdin_var
+        from aster.runtime.actor import _block_stdin_var
 
         agent_a = _SimpleAgent(llm=_make_llm())
         agent_b = _SimpleAgent(llm=_make_llm())

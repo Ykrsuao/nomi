@@ -16,11 +16,11 @@ from typing import Literal
 
 import pytest
 
-from nooa import Agent, strategy
-from nooa.atif import Trajectory, enable_atif
-from nooa.standalone import _atif_exporter_var
-from nooa.strategies import PredictStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse
+from aster import Agent, strategy
+from aster.atif import Trajectory, enable_atif
+from aster.standalone import _atif_exporter_var
+from aster.strategies import PredictStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse
 from tests.atif.normative import assert_atif_normative
 
 _DEFAULT = FakeLLMClient()
@@ -38,8 +38,8 @@ def _resp(content: str) -> LLMResponse:
 
 @pytest.fixture
 def _isolated_agent_init():
-    from nooa import atif as atif_module
-    from nooa.agent import Agent
+    from aster import atif as atif_module
+    from aster.agent import Agent
 
     orig_init = Agent.__init__
     orig_patched = atif_module.install._AGENT_INIT_PATCHED

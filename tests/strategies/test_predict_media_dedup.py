@@ -10,9 +10,9 @@ Image/Audio/File twice. Each effective input must be attached exactly once.
 
 from pydantic import BaseModel
 
-from nooa.media import Image, Media
-from nooa.runtime.media_capture import media_to_content_block
-from nooa.strategies.current_call import CurrentCall
+from aster.media import Image, Media
+from aster.runtime.media_capture import media_to_content_block
+from aster.strategies.current_call import CurrentCall
 
 
 class Result(BaseModel):

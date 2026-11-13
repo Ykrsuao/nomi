@@ -10,10 +10,10 @@ from types import SimpleNamespace
 import msgpack
 import pytest
 
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.errors import CellTimeoutError, WorkerDiedError
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.runtime.sandbox.protocol import frame
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.errors import CellTimeoutError, WorkerDiedError
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.runtime.sandbox.protocol import frame
 
 
 @pytest.mark.parametrize(

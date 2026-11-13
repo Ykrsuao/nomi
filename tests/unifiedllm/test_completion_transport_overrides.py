@@ -9,8 +9,8 @@ import httpx
 import pytest
 from litellm.llms.openai.openai import OpenAIChatCompletion
 
-from nooa.unifiedllm import CompletionClient, ResponsesClient, registry
-from nooa.unifiedllm.unifiedllm import _ClientHttp
+from aster.unifiedllm import CompletionClient, ResponsesClient, registry
+from aster.unifiedllm.unifiedllm import _ClientHttp
 
 
 def _chat_response(request: httpx.Request) -> httpx.Response:
@@ -85,7 +85,7 @@ async def test_completion_uses_per_call_route_without_changing_defaults(
     client_http = client._http
     assert client_http is not None
     # Only overridden routes may use LiteLLM's default pool. An unchanged route
-    # must use NOOA's owned client, not merely reach an equivalent mock transport.
+    # must use ASTER's owned client, not merely reach an equivalent mock transport.
     allow_default_pool = False
 
     def default_pool(*, is_async=False, **kwargs):

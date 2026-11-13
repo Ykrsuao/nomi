@@ -4,13 +4,13 @@ import subprocess
 
 import pytest
 
-from nooa.config.strategy_config import CodeActConfig
-from nooa.runtime.code_validator import (
+from aster.config.strategy_config import CodeActConfig
+from aster.runtime.code_validator import (
     UnifiedCodeValidator,
     ValidationContext,
     ValidationError,
 )
-from nooa.runtime.restrictions import (
+from aster.runtime.restrictions import (
     DEFAULT_BLOCKED_CALLS,
     DEFAULT_BLOCKED_MODULES,
     RestrictionsConfig,

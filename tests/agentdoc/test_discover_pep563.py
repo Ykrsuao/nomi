@@ -17,7 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Annotated
 
-from nooa.agentdoc._discover import discover_referenced_types
+from aster.agentdoc._discover import discover_referenced_types
 
 
 @dataclass

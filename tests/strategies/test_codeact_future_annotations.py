@@ -16,14 +16,14 @@ from typing import Annotated
 import pytest
 from pydantic import BaseModel, BeforeValidator
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.current_call import CurrentCall
-from nooa.strategies.generated_code import ReturnValueValidator
-from nooa.strategies.predict import PredictStrategy
-from nooa.strategies.pure_python import PurePythonStrategy
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.current_call import CurrentCall
+from aster.strategies.generated_code import ReturnValueValidator
+from aster.strategies.predict import PredictStrategy
+from aster.strategies.pure_python import PurePythonStrategy
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 # ---------------------------------------------------------------------------
 # Types defined in this module — stringified by PEP 563
@@ -160,7 +160,7 @@ class TestReturnValueValidatorPEP563:
         class FakeRuntime:
             @property
             def truncation_config(self):
-                from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+                from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
 
                 return DEFAULT_TRUNCATION_CONFIG
 
@@ -428,7 +428,7 @@ class TestGetTypeHintsFallback:
         class FakeRuntime:
             @property
             def truncation_config(self):
-                from nooa.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
+                from aster.config.truncation_config import DEFAULT_TRUNCATION_CONFIG
 
                 return DEFAULT_TRUNCATION_CONFIG
 

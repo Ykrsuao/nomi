@@ -6,8 +6,8 @@ These replace host reads/writes of the private ``agent._llm`` (e.g. the TUI
 ``/switch`` command and summarizer-budget syncing).
 """
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 _LLM_A = FakeLLMClient()
 _LLM_B = FakeLLMClient()
@@ -36,7 +36,7 @@ def test_instance_llm_reflected_by_property():
 def test_llm_accessors_hidden_from_llm_docs():
     # The accessors are public to host code but must stay out of doc(self)
     # so the refactor does not change what the LLM sees (behaviour parity).
-    from nooa.agentdoc._visibility import is_hidden_method
+    from aster.agentdoc._visibility import is_hidden_method
 
     assert is_hidden_method(Agent.set_llm)
     assert is_hidden_method(Agent.__dict__["llm"])

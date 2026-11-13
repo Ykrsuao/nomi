@@ -14,9 +14,9 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from nooa.config.model_config import ModelConfig
-from nooa.unifiedllm import CompletionClient, FakeLLMClient, ResponsesClient, get_llm_client
-from nooa.unifiedllm.reasoning import ReasoningConfig, apply_reasoning_level
+from aster.config.model_config import ModelConfig
+from aster.unifiedllm import CompletionClient, FakeLLMClient, ResponsesClient, get_llm_client
+from aster.unifiedllm.reasoning import ReasoningConfig, apply_reasoning_level
 
 LEVELS = {
     "low": {"reasoning": {"effort": "low", "context": "all_turns"}},
@@ -239,7 +239,7 @@ def test_framework_settings_cannot_leak_through_call_kwargs(overrides):
 
 
 def test_registry_declarations_reach_the_client(monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     config = {
         "model_name": "openai/test",
@@ -268,7 +268,7 @@ def test_registry_declarations_reach_the_client(monkeypatch):
     ],
 )
 def test_registry_route_override_drops_inherited_reasoning(monkeypatch, route):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     config = {
         "model_name": "openai/test",
@@ -298,7 +298,7 @@ def test_registry_route_override_drops_inherited_reasoning(monkeypatch, route):
 
 
 def test_registry_same_route_override_preserves_reasoning(monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     config = {
         "model_name": "openai/test",
@@ -332,8 +332,8 @@ async def test_fake_does_not_report_success_for_unknown_reasoning(asynchronous):
 
 async def test_model_configuration_skill_reasoning_example(tmp_path, monkeypatch):
     """Execute the shipped skill's registry and selection example without inference."""
-    from nooa.skill import _parse_skill_md
-    from nooa.unifiedllm import registry
+    from aster.skill import _parse_skill_md
+    from aster.unifiedllm import registry
 
     def unexpected_request(*args, **kwargs):
         pytest.fail("The skill example must not make live HTTP requests")
@@ -341,9 +341,9 @@ async def test_model_configuration_skill_reasoning_example(tmp_path, monkeypatch
     monkeypatch.setattr(httpx.Client, "send", unexpected_request)
     monkeypatch.setattr(httpx.AsyncClient, "send", unexpected_request)
     name, _, skill = _parse_skill_md(
-        Path(__file__).resolve().parents[2] / "skills/nooa-model-configuration"
+        Path(__file__).resolve().parents[2] / "skills/aster-model-configuration"
     )
-    assert name == "nooa-model-configuration"
+    assert name == "aster-model-configuration"
     declarations = re.findall(r"```yaml\n(.*?)```", skill, re.DOTALL)
     assert len(declarations) == 1, "Provide one executable reasoning registry example"
     config = yaml.safe_load(declarations[0])["models"]["my-route"]

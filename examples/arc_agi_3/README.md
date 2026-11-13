@@ -1,16 +1,16 @@
 # ARC-AGI-3 solving agent
 
-A worked example of building a capable agent with **nooa**: a single agent that
+A worked example of building a capable agent with **aster**: a single agent that
 plays [ARC-AGI-3](https://arcprize.org/arc-agi/3) interactive grid games —
 discovering each game's hidden rules by experimenting, then solving every level.
 
 It shows a realistic agent end-to-end:
 
-- **One `nooa` agent** (`solver_agent.py`) whose generation methods *are* its
+- **One `aster` agent** (`solver_agent.py`) whose generation methods *are* its
   capabilities — it reads the grid, forms hypotheses, writes reusable Python
   helpers (its "world model"), records what it learns, and submits action batches.
 - **Two knowledge variants** you can compare head-to-head:
-  - `memory` — the nooa long-term **memory** system (`self.memory.recall/remember/reflect`).
+  - `memory` — the aster long-term **memory** system (`self.memory.recall/remember/reflect`).
   - `mdfiles` — plain Markdown **knowledge files** the agent reads/writes.
 - **In-process isolation** so the game it is solving cannot leak into its context
   (an `open()` jail + code restrictions + path redaction), plus an optional OS
@@ -21,7 +21,7 @@ It shows a realistic agent end-to-end:
 ## How it fits together
 
 ```
-run_multi.py ──┬─ run_solver.py ── launcher.py ── solver_agent.py   (the nooa agent)
+run_multi.py ──┬─ run_solver.py ── launcher.py ── solver_agent.py   (the aster agent)
    (fleet)     │        │                              ▲  │
                │        └── harness.py ── arc_agi_3/ ──┘  │  ipc/states.jsonl  (harness → agent)
                │            (the game side)               ▼  ipc/actions.jsonl (agent → harness)
@@ -114,22 +114,25 @@ sessions live on a private socket so they don't clutter `tmux ls`.
 Each run creates a container directory:
 
 ```
-results/arc_agi_3/nemo_solver/<timestamp>_<config-name>/
+results/arc_agi_3/aster_solver/<timestamp>_<config-name>/
 ├── manifest.json          # run metadata (model, parallelism, scorecard id, …)
 ├── status.json            # live per-game status (the viewer reads this)
 ├── scorecard.json         # competition scorecard summary (written at the end)
 └── <game>/<variant>/<ts>_<game>_<variant>/
     ├── gameplay.json       # steps, levels completed, outcome
     ├── ipc/                # states.jsonl / actions.jsonl (the agent↔harness channel)
-    ├── agent_logs/…/events.jsonl   # llm_call / repl_execute / round / RHAE events
-    ├── team_nemo/shared/   # the agent's workspace: helpers/, knowledge/, memory.sqlite
+    ├── agent_logs/aster/team_leader/events.jsonl   # llm_call / repl_execute / RHAE
+    ├── team_aster/shared/   # the agent's workspace: helpers/, knowledge/, memory.sqlite
     └── traces/             # JSONL traces
 ```
+
+Viewers and analysis scripts also read earlier result layouts. New runs and
+regenerated message dumps use only the Aster paths above; historical files stay intact.
 
 Watch a run live (also launched automatically by `run_multi`):
 
 ```bash
-python examples/arc_agi_3/viewer.py results/arc_agi_3/nemo_solver/<container>
+python examples/arc_agi_3/viewer.py results/arc_agi_3/aster_solver/<container>
 ```
 
 The dashboard shows, per game: state, level/step, wall time, **`$` cost**, LLM call
@@ -154,7 +157,7 @@ default action after prolonged agent silence.
 
 | File | Role |
 |---|---|
-| `solver_agent.py` | the nooa agent (generation methods, world-model helpers, isolation) |
+| `solver_agent.py` | the aster agent (generation methods, world-model helpers, isolation) |
 | `launcher.py` | wires the agent into the runtime + memory skill, starts the session |
 | `harness.py` | the game side of the IPC loop (drives `arc_agi_3/`) |
 | `arc_agi_3/` | vendored wrapper over the public ARC-AGI-3 SDK (`environment`, `rhae`, …) |

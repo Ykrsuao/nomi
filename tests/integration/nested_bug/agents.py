@@ -6,9 +6,9 @@ This agent demonstrates the bug where nested agent calls cause tool_call_id
 ordering issues in the message history.
 """
 
-from nooa import Agent, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact import CodeActStrategy
+from aster import Agent, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact import CodeActStrategy
 
 
 class NestedBugAgent(Agent):

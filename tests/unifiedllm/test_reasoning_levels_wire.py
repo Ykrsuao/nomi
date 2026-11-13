@@ -11,7 +11,7 @@ import litellm
 import pytest
 import yaml
 
-from nooa.unifiedllm import RetryConfig, get_llm_client
+from aster.unifiedllm import RetryConfig, get_llm_client
 
 CONFIG_PATH = Path(__file__).resolve().parents[2] / "examples/reasoning_levels/llm_config.yaml"
 MODELS = yaml.safe_load(CONFIG_PATH.read_text())["models"]
@@ -23,7 +23,7 @@ MODELS = yaml.safe_load(CONFIG_PATH.read_text())["models"]
 async def test_context_reserve_matches_serialized_reply_cap(
     style, selection, asynchronous, monkeypatch
 ):
-    from nooa.unifiedllm import CompletionClient, ResponsesClient
+    from aster.unifiedllm import CompletionClient, ResponsesClient
 
     bodies = []
 
@@ -77,8 +77,8 @@ async def test_context_reserve_matches_serialized_reply_cap(
 
 @pytest.mark.parametrize("alias", MODELS)
 async def test_live_probe_uses_registry_configuration_without_route_assumptions(alias, monkeypatch):
-    from nooa import secrets
-    from nooa.unifiedllm import registry
+    from aster import secrets
+    from aster.unifiedllm import registry
 
     monkeypatch.setattr(secrets, "load_secrets_into_env", lambda: None)
     monkeypatch.setenv("MODEL_API_KEY", "test")
@@ -148,7 +148,7 @@ def _reply(alias):
     [(alias, level) for alias, model in MODELS.items() for level in model["reasoning_levels"]],
 )
 async def test_declared_settings_survive_the_sdk(alias, level, monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     monkeypatch.setattr(registry, "ensure_loaded", lambda: None)
     monkeypatch.setattr(registry, "MODELS", MODELS)
@@ -179,7 +179,7 @@ async def test_declared_settings_survive_the_sdk(alias, level, monkeypatch):
 
 
 async def test_selected_level_replaces_extra_body_default_on_wire(monkeypatch):
-    from nooa.unifiedllm import registry
+    from aster.unifiedllm import registry
 
     monkeypatch.setattr(registry, "ensure_loaded", lambda: None)
     monkeypatch.setattr(registry, "MODELS", MODELS)

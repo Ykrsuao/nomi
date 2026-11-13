@@ -6,8 +6,8 @@ import math  # noqa: F401
 from collections import Counter  # noqa: F401
 from datetime import datetime  # agentdoc: hide  # noqa: F401
 
-from nooa import Agent
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.unifiedllm import FakeLLMClient
 
 
 class AgentHideFromImport(Agent, llm=FakeLLMClient()):

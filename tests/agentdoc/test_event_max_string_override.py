@@ -9,10 +9,10 @@ existing behavior of PythonOutput.stdout/stderr.
 
 import pytest
 
-from nooa.agentdoc import pformat
-from nooa.config.truncation_config import TruncationConfig
-from nooa.context_blocks.formatter import XMLBlockFormatter
-from nooa.events import LLMResponse, Notification, PythonOutput, ResultStatus, Summary, Task
+from aster.agentdoc import pformat
+from aster.config.truncation_config import TruncationConfig
+from aster.context_blocks.formatter import XMLBlockFormatter
+from aster.events import LLMResponse, Notification, PythonOutput, ResultStatus, Summary, Task
 
 LONG_STRING = "x" * 20_000
 MAX_STRING = 100  # Aggressively low to verify the override works
@@ -127,7 +127,7 @@ class TestNotificationValue:
     def test_value_renders_with_default_limits_and_stays_reachable(self):
         """Notification.value is an object payload: the default renderer shows it
         like any other field, and the full object stays on the event."""
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         payload = {"kind": "review-request", "files": ["a.py", "b.py"]}
         event = Notification(

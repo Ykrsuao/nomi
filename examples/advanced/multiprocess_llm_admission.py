@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Share one LLM concurrency ceiling and call cap across spawned processes.
 
-Set ``NOOA_LLM_MODEL`` to a configured model alias before running this example.
+Set ``ASTER_LLM_MODEL`` to a configured model alias before running this example.
 The parent owns the broker; children receive only serializable connection
 settings and construct their own UnifiedLLM clients.
 """
@@ -13,7 +13,7 @@ import asyncio
 import multiprocessing
 import os
 
-from nooa.unifiedllm import (
+from aster.unifiedllm import (
     AdmissionBroker,
     AdmissionControl,
     AdmissionControlConfig,
@@ -45,9 +45,9 @@ def child_process(
 
 
 def main() -> None:
-    model = os.environ.get("NOOA_LLM_MODEL")
+    model = os.environ.get("ASTER_LLM_MODEL")
     if not model:
-        raise SystemExit("Set NOOA_LLM_MODEL to a configured model alias")
+        raise SystemExit("Set ASTER_LLM_MODEL to a configured model alias")
 
     context = multiprocessing.get_context("spawn")
     with AdmissionBroker(

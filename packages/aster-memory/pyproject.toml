@@ -1,0 +1,42 @@
+[project]
+name = "aster-memory"
+# Version is derived from git tags at build time by uv-dynamic-versioning.
+dynamic = ["version"]
+description = "Long-term memory system for ASTER agents — persistent recall backed by vector search"
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "aster",
+    "pydantic>=2.14",
+    "numpy>=1.24.0",
+]
+
+# Optional ANN vector backends (sqlite-vec, chromadb) are imported lazily by
+# vector_backends.py and deliberately NOT declared as an extra: `uv sync
+# --all-extras` in CI would otherwise install the heavy chromadb stack that
+# the numpy default backend makes unnecessary.
+
+
+[project.entry-points."aster.skills"]
+"aster.memory" = "aster_memory.memory_skill:MemorySkill"
+
+[tool.uv.sources]
+aster = { workspace = true }
+
+[build-system]
+requires = ["hatchling>=1.26.0", "uv-dynamic-versioning>=0.14.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
+metadata = false
+fallback-version = "0.0.6"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aster_memory"]

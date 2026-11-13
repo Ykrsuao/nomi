@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from nooa.unifiedllm.unifiedllm import (
+from aster.unifiedllm.unifiedllm import (
     _is_anthropic_model,
 )
 

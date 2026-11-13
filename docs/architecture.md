@@ -1,6 +1,6 @@
-# How NOOA runs an agent method
+# How Aster runs an agent method
 
-NOOA keeps two kinds of execution in one Python class:
+Aster keeps two kinds of execution in one Python class:
 
 - A method with a real body runs as regular Python.
 - An asynchronous method ending in `...` delegates its implementation to an
@@ -141,7 +141,7 @@ and external tools visible in one timeline. See [Tracing](concepts/tracing.md).
 
 ## What remains ordinary Python
 
-NOOA intentionally leaves application architecture in the language:
+Aster intentionally leaves application architecture in the language:
 
 - use `if`, `for`, exceptions, and `asyncio` for control flow;
 - use Pydantic and validators for local data contracts;

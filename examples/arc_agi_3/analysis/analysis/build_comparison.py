@@ -18,7 +18,7 @@ window so the comparison is apples-to-apples (same number of minutes of fleet ti
 
 Run (needs matplotlib -> the progressive-learning venv):
     progressive-learning/.venv/bin/python \
-        results/arc_agi_3/nemo_solver/20260711_193827_competition_memory_visual_wm/analysis/build_comparison.py
+        results/arc_agi_3/aster_solver/20260711_193827_competition_memory_visual_wm/analysis/build_comparison.py
 
 Outputs (into this analysis/ dir): rhae_over_time.png, budget_over_time.png, comparison_summary.json
 """
@@ -26,11 +26,13 @@ Outputs (into this analysis/ dir): rhae_over_time.png, budget_over_time.png, com
 from __future__ import annotations
 
 import argparse
-import glob
 import json
 import os
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from _run_layout import fleet_event_paths  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[4]  # examples/arc_agi_3/analysis/analysis -> repo
 # arc_agi_3.rhae lives in the progressive-learning checkout; allow an override.
@@ -68,7 +70,7 @@ PRICE = {"input": 5.0, "output": 30.0, "cached": 0.50}
 GRID_S = 20.0  # time-grid resolution (seconds)
 
 
-def _events(path: str, cutoff_abs: float | None):
+def _events(path: str | Path, cutoff_abs: float | None):
     """Chronological events for one game; stop early once past cutoff_abs (unix s)."""
     out = []
     for line in open(path, errors="ignore"):
@@ -87,8 +89,8 @@ def _events(path: str, cutoff_abs: float | None):
     return out
 
 
-def _game_event_files(run: Path):
-    return sorted(glob.glob(f"{run}/*/memory/*/agent_logs/nemo/team_leader/events.jsonl"))
+def _game_event_files(run: Path) -> list[Path]:
+    return fleet_event_paths(run)
 
 
 def run_start(run: Path) -> float:

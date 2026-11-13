@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-"""Tests for the typed file-config API under ``nooa.config``.
+"""Tests for the typed file-config API under ``aster.config``.
 
 ``resolved_config()`` / ``ModelConfig`` / ``Secrets`` are the typed boundary
-over the layered YAML files (the programmatic ``nooa config show``).
+over the layered YAML files (the programmatic ``aster config show``).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from nooa.config import (
+from aster.config import (
     ModelConfig,
     ResolvedConfig,
     Secrets,
@@ -26,12 +26,12 @@ def _isolate(tmp_path, monkeypatch):
     user.mkdir()
     proj = tmp_path / "proj"
     proj.mkdir()
-    monkeypatch.setenv("NEMO_OO_USER_DIR", str(user))
-    monkeypatch.setenv("NEMO_OO_PROJECT_DIR", str(proj))
-    for v in ("NEMO_OO_SETTINGS", "NEMO_OO_SECRETS", "NEMO_OO_LLM_CONFIG"):
+    monkeypatch.setenv("ASTER_USER_DIR", str(user))
+    monkeypatch.setenv("ASTER_PROJECT_DIR", str(proj))
+    for v in ("ASTER_SETTINGS", "ASTER_SECRETS", "ASTER_LLM_CONFIG"):
         monkeypatch.delenv(v, raising=False)
     # Stub bundled providers empty so the registry view is deterministic.
-    monkeypatch.setattr("nooa.llm_config.bundled_config_paths", lambda: [])
+    monkeypatch.setattr("aster.llm_config.bundled_config_paths", lambda: [])
     return user
 
 
@@ -103,8 +103,8 @@ class TestResolvedConfig:
 class TestGetModelConfig:
     def test_known_alias(self, _isolate):
         (_isolate / "llm_config.yaml").write_text("models:\n  a:\n    model_name: openai/m\n")
-        from nooa.llm_config import llm_config_chain
-        from nooa.unifiedllm import reload_registry
+        from aster.llm_config import llm_config_chain
+        from aster.unifiedllm import reload_registry
 
         reload_registry(*llm_config_chain())
         mc = get_model_config("a")
@@ -112,7 +112,7 @@ class TestGetModelConfig:
         assert mc.model_name == "openai/m"
 
     def test_unknown_alias_returns_none(self, _isolate):
-        from nooa.unifiedllm import reload_registry
+        from aster.unifiedllm import reload_registry
 
         reload_registry()  # empty (bundled stubbed, no files)
         assert get_model_config("does-not-exist") is None
@@ -124,8 +124,8 @@ def test_model_layers_replace_whole_alias_without_stale_media(
 ):
     import yaml
 
-    from nooa.llm_config import llm_config_chain
-    from nooa.unifiedllm import get_llm_client, reload_registry
+    from aster.llm_config import llm_config_chain
+    from aster.unifiedllm import get_llm_client, reload_registry
 
     (_isolate / "llm_config.yaml").write_text(
         yaml.safe_dump(
@@ -134,7 +134,7 @@ def test_model_layers_replace_whole_alias_without_stale_media(
     )
     override = tmp_path / "override.yaml"
     override.write_text(yaml.safe_dump({"models": {"shared": upper}}))
-    monkeypatch.setenv("NEMO_OO_LLM_CONFIG", str(override))
+    monkeypatch.setenv("ASTER_LLM_CONFIG", str(override))
     reload_registry(*llm_config_chain())
     resolved = resolved_config()
     if upper is None:

@@ -4,23 +4,23 @@
 
 import json
 
-from nooa.context_blocks.events import (
+from aster.context_blocks.events import (
     AssistantEvent,
     ToolCallEvent,
     ToolResult,
     UserEvent,
 )
-from nooa.context_blocks.formatter import OpenAIProviderFormatter
-from nooa.context_blocks.models import (
+from aster.context_blocks.formatter import OpenAIProviderFormatter
+from aster.context_blocks.models import (
     BlockMetadata,
     DynamicContext,
     ResolvedBlock,
     Role,
 )
-from nooa.context_blocks.renderer import render_context
-from nooa.context_blocks.renderers.cached import CachedBlockFormatter
-from nooa.events import LLMResponse
-from nooa.unifiedllm import CacheBoundary
+from aster.context_blocks.renderer import render_context
+from aster.context_blocks.renderers.cached import CachedBlockFormatter
+from aster.events import LLMResponse
+from aster.unifiedllm import CacheBoundary
 
 
 def _static_block(key: str, content: str, expr: str | None = None) -> ResolvedBlock:
@@ -247,7 +247,7 @@ class TestCachedRendererEndToEndOpenAI:
             provider_formatter=OpenAIProviderFormatter(),
         ).output
 
-        from nooa.llm_types import AssistantReasoning, AssistantText
+        from aster.llm_types import AssistantReasoning, AssistantText
 
         turn = LLMResponse(
             parts=(

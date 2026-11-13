@@ -24,8 +24,8 @@ async def test_journal_file_is_stripped_and_import_reconstructs_messages(tmp_pat
     import litellm
     from opentelemetry import trace as otel_trace
 
-    from nooa.tracing import enable_tracing, exporters, flush_traces, set_session
-    from nooa.tracing._context_sideband import JournalPayload, set_journal_payload
+    from aster.tracing import enable_tracing, exporters, flush_traces, set_session
+    from aster.tracing._context_sideband import JournalPayload, set_journal_payload
 
     enable_tracing(exporters=[exporters.journal_file(tmp_path)])
     session_id = "portable-journal"
@@ -59,10 +59,10 @@ async def test_journal_file_is_stripped_and_import_reconstructs_messages(tmp_pat
         callback.log_success_event(kwargs, response, now, now)
     flush_traces()
 
-    artifact = tmp_path / f"{session_id}.nooa.jsonl"
+    artifact = tmp_path / f"{session_id}.aster.jsonl"
     assert artifact.exists()
     bodies = [json.loads(line) for line in artifact.read_text().splitlines()]
-    records = [body["nooaJournal"] for body in bodies if "nooaJournal" in body]
+    records = [body["asterJournal"] for body in bodies if "asterJournal" in body]
     assert {record["type"] for record in records} == {"manifest", "blocks", "call"}
     assert sum(input_text in line for line in artifact.read_text().splitlines()) == 1
 
@@ -87,8 +87,8 @@ async def test_journal_file_is_stripped_and_import_reconstructs_messages(tmp_pat
     backend = HeadlessOtlpBackend()
     endpoint = backend.start()
     try:
+        from aster_cli.commands.import_traces import command
         from click.testing import CliRunner
-        from nooa_cli.commands.import_traces import command
 
         result = CliRunner().invoke(command, [str(artifact), "--endpoint", endpoint])
         assert result.exit_code == 0, result.output
@@ -111,8 +111,8 @@ def test_journal_file_records_failed_call_input(tmp_path: Path):
     import litellm
     from opentelemetry import trace as otel_trace
 
-    from nooa.tracing import enable_tracing, exporters, flush_traces, set_session
-    from nooa.tracing._context_sideband import JournalPayload, set_journal_payload
+    from aster.tracing import enable_tracing, exporters, flush_traces, set_session
+    from aster.tracing._context_sideband import JournalPayload, set_journal_payload
 
     enable_tracing(exporters=[exporters.journal_file(tmp_path)])
     session_id = "failed-portable-journal"
@@ -141,12 +141,12 @@ def test_journal_file_records_failed_call_input(tmp_path: Path):
         callback.log_failure_event(kwargs, RuntimeError("provider failed"), now, now)
     flush_traces()
 
-    artifact = tmp_path / f"{session_id}.nooa.jsonl"
+    artifact = tmp_path / f"{session_id}.aster.jsonl"
     bodies = [json.loads(line) for line in artifact.read_text().splitlines()]
     calls = [
-        body["nooaJournal"]["call"]
+        body["asterJournal"]["call"]
         for body in bodies
-        if body.get("nooaJournal", {}).get("type") == "call"
+        if body.get("asterJournal", {}).get("type") == "call"
     ]
     assert calls == [
         {
@@ -164,16 +164,16 @@ def test_journal_file_records_failed_call_input(tmp_path: Path):
 
 
 def test_harbor_import_posts_journal_with_trial_session(monkeypatch, tmp_path: Path):
-    from nooa_cli.commands import import_harbor
+    from aster_cli.commands import import_harbor
 
-    artifact = tmp_path / "trace.nooa.jsonl"
+    artifact = tmp_path / "trace.aster.jsonl"
     artifact.write_text(
         "\n".join(
             [
                 json.dumps(
                     {
-                        "nooaJournal": {
-                            "format": "nooa.message_journal",
+                        "asterJournal": {
+                            "format": "aster.message_journal",
                             "version": 1,
                             "type": "call",
                             "session_id": "original",
@@ -215,8 +215,8 @@ def test_harbor_import_posts_journal_with_trial_session(monkeypatch, tmp_path: P
 def test_http_and_file_journal_callbacks_coexist_in_either_order(tmp_path: Path, file_first: bool):
     import litellm
 
-    from nooa.tracing import exporters
-    from nooa.tracing._litellm_journal import (
+    from aster.tracing import exporters
+    from aster.tracing._litellm_journal import (
         FileMessageJournalCallback,
         MessageJournalCallback,
     )

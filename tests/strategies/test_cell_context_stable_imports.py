@@ -14,8 +14,8 @@ from types import ModuleType
 
 import pytest
 
-from nooa import CodeActV2
-from nooa.config import CodeActConfig
+from aster import CodeActV2
+from aster.config import CodeActConfig
 
 LIB = "stable_import_lib"
 LIB_SRC = "class Thing: pass\nclass Helper: pass\ndef util(): pass\n"

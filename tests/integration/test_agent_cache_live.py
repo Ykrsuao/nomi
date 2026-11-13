@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Real CodeActV2 cache matrix, opt-in; local HTTP/negative controls stay offline.
 
-NOOA_RUN_AGENT_CACHE_LIVE=1 NVIDIA_INFERENCE_API_KEY=... uv run pytest \
+ASTER_RUN_AGENT_CACHE_LIVE=1 NVIDIA_INFERENCE_API_KEY=... uv run pytest \
     -m integration -s tests/integration/test_agent_cache_live.py
 
 Live tests use a pytest-scoped, forwarding HTTP observer: only model/tools/static
@@ -15,9 +15,9 @@ may contain provider-native state, and must not be published as test artifacts.
 
 from __future__ import annotations
 
-from nooa import Agent, Context, hidden, strategy
-from nooa.config import CodeActConfig
-from nooa.strategies.codeact_v2 import CodeActV2
+from aster import Agent, Context, hidden, strategy
+from aster.config import CodeActConfig
+from aster.strategies.codeact_v2 import CodeActV2
 
 with hidden:
     import ast
@@ -32,13 +32,13 @@ with hidden:
     import litellm
     import pytest
 
-    from nooa.events import PythonOutput
-    from nooa.llm_types import LLMResponse, LLMUsage
-    from nooa.storage import SQLiteStorageManager
-    from nooa.unifiedllm import CacheBoundary, CompletionClient, ResponsesClient
-    from nooa.unifiedllm.http_config import HttpConfig
-    from nooa.unifiedllm.retry_config import RetryConfig
-    from nooa.unifiedllm.unifiedllm import _ClientHttp, _extract_usage
+    from aster.events import PythonOutput
+    from aster.llm_types import LLMResponse, LLMUsage
+    from aster.storage import SQLiteStorageManager
+    from aster.unifiedllm import CacheBoundary, CompletionClient, ResponsesClient
+    from aster.unifiedllm.http_config import HttpConfig
+    from aster.unifiedllm.retry_config import RetryConfig
+    from aster.unifiedllm.unifiedllm import _ClientHttp, _extract_usage
 
 
 @hidden
@@ -268,7 +268,7 @@ async def _run_agent(case, client, database):
 @pytest.fixture(autouse=True)
 def _no_auto_trace_export(monkeypatch):
     # These tests must not export prompts/native state to an ambient dev viewer.
-    import nooa.agent as agent_module
+    import aster.agent as agent_module
 
     monkeypatch.setattr(agent_module, "_auto_tracing_attempted", True)
 
@@ -276,8 +276,8 @@ def _no_auto_trace_export(monkeypatch):
 @pytest.mark.integration
 @pytest.mark.timeout(1500)
 @pytest.mark.skipif(
-    os.getenv("NOOA_RUN_AGENT_CACHE_LIVE") != "1",
-    reason="set NOOA_RUN_AGENT_CACHE_LIVE=1 to spend inference tokens",
+    os.getenv("ASTER_RUN_AGENT_CACHE_LIVE") != "1",
+    reason="set ASTER_RUN_AGENT_CACHE_LIVE=1 to spend inference tokens",
 )
 @pytest.mark.asyncio
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c.name)

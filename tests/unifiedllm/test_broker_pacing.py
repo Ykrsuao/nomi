@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 
-from nooa.unifiedllm import (
+from aster.unifiedllm import (
     AdmissionBroker,
     AdmissionCallCapError,
     AdmissionTimeoutError,

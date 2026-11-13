@@ -1,31 +1,35 @@
-# NOOA CyberGym
+# CyberGym Architecture and Historical Results
 
 <!-- **Contact:** TODO -->
 
 ## 1. Overview
 
-This submission evaluates an agent built on [**NVIDIA-labs Object-Oriented Agents (NOOA)**](https://github.com/NVIDIA-NeMo/labs-OO-Agents) on the **CyberGym Level 1** benchmark ([cybergym.io](https://www.cybergym.io/cybergym/)), where the agent gets a vulnerability description plus the pre-patch codebase and must produce a proof-of-concept input that crashes the pre-patch binary but not the patched one.
+This report preserves an evaluation of the [upstream framework](https://github.com/NVIDIA-NeMo/labs-OO-Agents) from which Aster is derived on the **CyberGym Level 1** benchmark ([cybergym.io](https://www.cybergym.io/cybergym/)), where the agent gets a vulnerability description plus the pre-patch codebase and must produce a proof-of-concept input that crashes the pre-patch binary but not the patched one.
+
+The recorded results belong to that historical upstream evaluation. They have
+not been reproduced on the current Aster checkout. The architecture section
+uses the current Aster API names to explain the example maintained here.
 
 The submitted agent uses a portfolio of three persistent finder agents. Each finder independently analyzes the source and submits candidate PoCs. Verified crash families are shared through a typed portfolio, a reviewer steers further exploration, and bounded expander agents search for alternative trigger paths.
 
 The finder models are **GLM-5.2**, **Nemotron 3 Ultra**, and **DeepSeek V4 Flash**. GLM-5.2 is also used by the orchestrator, reviewer, and expanders.
 
-**Result: 1,286 / 1,507 tasks solved = 85.3% pass@1.**
+**Historical result: 1,286 / 1,507 tasks solved = 85.3% pass@1.**
 
 ## 2. Architecture
 
-### 2.1 NOOA SDK
+### 2.1 Aster SDK
 
-NVIDIA-labs Object-Oriented Agents (NOOA) is a model-agnostic, open-source Python framework for building AI agents. Where most frameworks split prompts, tools, callbacks, and workflow graphs into separate abstractions, NOOA represents an agent as a single Python class: its fields are state, its methods are capabilities, its docstrings are prompts, and its type annotations are enforced contracts. A method whose body is an ellipsis (`...`) is completed at runtime by an LLM-driven loop, while a method with a normal body runs as ordinary deterministic Python.
+Aster is a model-agnostic, open-source Python framework for building AI agents. Where most frameworks split prompts, tools, callbacks, and workflow graphs into separate abstractions, Aster represents an agent as a single Python class: its fields are state, its methods are capabilities, its docstrings are prompts, and its type annotations are enforced contracts. A method whose body is an ellipsis (`...`) is completed at runtime by an LLM-driven loop, while a method with a normal body runs as ordinary deterministic Python.
 
 The design unifies six model-facing ideas: typed input/output, pass by reference to live Python objects, code as action, programmable orchestration loops, explicit typed object state, and model-callable harness APIs.
 
-* Code: [NVIDIA-labs Object-Oriented Agents (NOOA)](https://github.com/NVIDIA-NeMo/labs-OO-Agents).
-* Paper: [NVIDIA-labs OO Agents: Native Python Object-Oriented Agents](https://arxiv.org/abs/2607.20709).
+* Current code: [Aster](../../README.md).
+* Background: [upstream framework paper](https://arxiv.org/abs/2607.20709).
 
-### 2.2 NOOA CyberGym Agent
+### 2.2 Aster CyberGym Agent
 
-The NOOA CyberGym agent runs inside each trial container as a portfolio-style multi-agent system. Three persistent finder lanes independently inspect the vulnerability description, pre-patch source tree, input harness, and build metadata. Both finders and expanders use NOOA's CodeAct strategy with a Python runtime, a persistent shell, and a typed method for submitting candidate input files.
+The Aster CyberGym agent runs inside each trial container as a portfolio-style multi-agent system. Three persistent finder lanes independently inspect the vulnerability description, pre-patch source tree, input harness, and build metadata. Both finders and expanders use Aster's CodeAct strategy with a Python runtime, a persistent shell, and a typed method for submitting candidate input files.
 
 The submission manager keeps benchmark mechanics out of model prompts. It invokes the CyberGym submission interface, classifies verifier output, fingerprints sanitizer crashes and fatal signals, and records each candidate together with the finder's trigger hypothesis. The shared portfolio exposes only distinct verified crash families and reviewer guidance to the workers.
 
@@ -33,7 +37,7 @@ The orchestrator reviews the portfolio when a finder finishes or a new crash fam
 
 No cybersecurity domain knowledge, exploit templates, or benchmark-specific hints are supplied to the agent beyond what the configured models already bring from pretraining; the workflow above is generic vulnerability validation. Performance is therefore attributable to the agent architecture and the underlying models rather than to task-specific steering.
 
-* Code: [NOOA CyberGym](nooa_cybergym/agent.py)
+* Code: [Aster CyberGym](aster_cybergym/agent.py)
 
 ## 3. Method
 
@@ -47,8 +51,8 @@ In the primary *Level 1* setting, agents receive a vulnerability description and
 
 ### 3.2 Agent Configuration
 
-* **Agent framework**: NVIDIA-labs Object-Oriented Agents (NOOA)
-* **NOOA revision**: `8229922d7274628c9be83f745589b40852680d60`
+* **Evaluated framework**: historical upstream framework
+* **Upstream revision**: `8229922d7274628c9be83f745589b40852680d60`
 * **Finder models**: GLM-5.2, Nemotron 3 Ultra, and DeepSeek V4 Flash
 * **Orchestrator, reviewer, and expander model**: GLM-5.2
 * **Reasoning effort**: `xhigh`
@@ -57,7 +61,7 @@ In the primary *Level 1* setting, agents receive a vulnerability description and
 * **Maximum concurrent expanders**: 2
 * **Soft timeout**: 13,920 s (~3.87 h), returns the best verified portfolio found so far
 
-The submitted evaluation used NOOA commit [`8229922d7274628c9be83f745589b40852680d60`](https://github.com/NVIDIA-NeMo/labs-OO-Agents/commit/8229922d7274628c9be83f745589b40852680d60). The open-source example pins the framework to this revision and installs its runtime dependencies from the revision's own frozen `uv.lock`.
+The submitted evaluation used upstream commit [`8229922d7274628c9be83f745589b40852680d60`](https://github.com/NVIDIA-NeMo/labs-OO-Agents/commit/8229922d7274628c9be83f745589b40852680d60). Reproducing those historical numbers requires that source and its dependency lock. The current example instead builds from this Aster checkout, using the root `uv.lock` for the image and the example's local-path dependency for the host runner; see the [setup instructions](README.md).
 
 ### 3.3 Access to Vulnerable vs. Patched Builds
 
@@ -101,7 +105,7 @@ The token, cost, and timing figures below are per-trial averages over the valid 
 | Output tokens                | 572,423    | Average generated tokens per attempt.                                      |
 | Provider-reported cost (USD) | $4.59      | Average per attempt; Nemotron usage was not priced.                        |
 | Wall-clock time (min)        | 58         | Average start-to-finish time, including setup and verification.            |
-| LLM requests                 | 764.2      | Average completed NOOA journal call records per attempt.                   |
+| LLM requests                 | 764.2      | Average completed Aster journal call records per attempt.                   |
 
 The provider-reported cost is incomplete and must not be interpreted as the full average cost of an attempt: GLM-5.2 and DeepSeek returned positive billing telemetry, while Nemotron returned token counts but no cost.
 
@@ -130,7 +134,7 @@ Leading one-trial results from the official CyberGym Level 1 leaderboard, retrie
 | 6  | Crystalline       | Claude Opus 4.6                                   | 89.6%     | 2026-06-08     | [Independent researcher](https://github.com/synchopate/cybergym-logos)                                                                                      |
 | 7  | GPT-5.5-Cyber     | GPT-5.5-Cyber                                     | 85.6%     | 2026-06-22     | [OpenAI](https://openai.com/index/daybreak-securing-the-world/)                                                                                             |
 | 8  | Velldepth Agent   | XekRung                                           | 85.3%     | 2026-08-03     | [Alibaba Security](https://alibaba-velldepth.github.io/writeups/)                                                                                           |
-| 9  | **NOOA CyberGym** | **GLM-5.2, Nemotron 3 Ultra, DeepSeek V4 Flash**  | **85.3%** | **2026-08-10** | **This work**                                                                                                                                              |
+| 9  | **Upstream CyberGym agent** | **GLM-5.2, Nemotron 3 Ultra, DeepSeek V4 Flash**  | **85.3%** | **2026-08-10** | **Historical evaluation preserved here**                                                                                                           |
 | 10 | Xuanwu Atuin AI   | GLM-5.2                                           | 84.8%     | 2026-07-22     | [Tencent Xuanwu Lab](https://xlab.tencent.com/en/2026/07/17/xuanwu-atuin-cybergym-glm52/)                                                                   |
 
 This work is not yet an official leaderboard row. The placement above uses the leaderboard's stored scores before display rounding: Velldepth is 85.340%, while this work is 1,286 / 1,507 = 85.335%; both display as 85.3%. CyberGym notes that runs are stochastic and modest score differences may not reflect meaningful capability gaps.
@@ -139,14 +143,14 @@ This work is not yet an official leaderboard row. The placement above uses the l
 
 | Item                                     | Link                                                               |
 |------------------------------------------|--------------------------------------------------------------------|
-| NOOA CyberGym agent code                 | [Link](nooa_cybergym/agent.py)                                     |
+| Aster CyberGym agent code                 | [Link](aster_cybergym/agent.py)                                     |
 | ATIF trajectories                        | [Link](task_artifacts) (`trajectory.json` files)                    |
 | Logs                                     | [Link](task_artifacts) (`output.txt` files)                         |
 | PoC submissions                          | [Link](task_artifacts) (`submissions.zip` archives)                 |
 | Verifier results                         | [Link](task_artifacts) (`result.txt` files)                         |
 
-The PoC submissions and accompanying artifacts (trajectories, logs, results) shared here come from a separate run over 10 tasks, not from the run submitted to the leaderboard. This run used the exact same agent code. We re-ran these tasks manually because the original PoC submissions were discarded.
+The archived PoC submissions and accompanying artifacts (trajectories, logs, results) come from a separate upstream run over 10 tasks, not from the run submitted to the leaderboard. The upstream authors reported using the same agent code and rerunning these tasks because the original PoC submissions were discarded. These artifacts do not validate subsequent Aster changes.
 
 ## 6. Conclusions
 
-On CyberGym Level 1, the NOOA CyberGym agent solves 1,286 of 1,507 tasks (85.3% pass@1), which would place ninth among the comparison results listed above. It reaches this level with no cybersecurity domain knowledge, exploit templates, or benchmark-specific hints, only a generic vulnerability-validation workflow expressed as an object-oriented NOOA multi-agent system. The result is therefore attributable to the agent architecture and underlying models rather than task-specific engineering, and it shows that a fully open-source agent with open-weight models can compete with proprietary systems on realistic security tasks. The approach is computationally intensive: an average attempt used 764 model calls and more than 64 million prompt tokens including cache reads.
+On CyberGym Level 1, the historical upstream agent solved 1,286 of 1,507 tasks (85.3% pass@1), which would place ninth among the comparison results listed above. The upstream report attributes this result to a generic vulnerability-validation workflow, the agent architecture, and the underlying models, without benchmark-specific hints or exploit templates. The approach was computationally intensive: an average attempt used 764 model calls and more than 64 million prompt tokens including cache reads. Current Aster performance requires a separate evaluation.

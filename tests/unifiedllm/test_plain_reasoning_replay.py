@@ -6,12 +6,12 @@ from unittest.mock import patch
 
 from litellm.types.utils import Choices, Message, ModelResponse
 
-from nooa.context_blocks.formatter import (
+from aster.context_blocks.formatter import (
     OpenAIProviderFormatter,
     XMLBlockFormatter,
 )
-from nooa.context_blocks.models import ResolvedBlock, Role
-from nooa.unifiedllm import CompletionClient, LLMResponse, ResponsesClient
+from aster.context_blocks.models import ResolvedBlock, Role
+from aster.unifiedllm import CompletionClient, LLMResponse, ResponsesClient
 
 
 def _render(response: LLMResponse) -> list[dict]:

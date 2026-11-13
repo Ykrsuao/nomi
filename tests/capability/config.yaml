@@ -1,6 +1,6 @@
-# NVIDIA OO Agents Capability Tests - eval_pipeline Configuration
+# Aster Capability Tests - eval_pipeline Configuration
 #
-# This experiment tests nooa core capabilities:
+# This experiment tests aster core capabilities:
 # 1. Scale awareness - when to answer directly vs write code
 # 2. Generation methods - when to use `...` for LLM judgment
 # 3. REPL exploration - using introspection for complex state
@@ -26,7 +26,7 @@
 
 name: capability
 no_cache: true
-description: "NVIDIA OO Agents capability tests for prompt optimization"
+description: "Aster capability tests for prompt optimization"
 
 # =============================================================================
 # OPTIMIZATION SETTINGS - Parameters for the optimization loop
@@ -61,10 +61,10 @@ target_files:
 # =============================================================================
 # MODELS — resolved from the unifiedllm registry.
 #
-# NVIDIA-internal aliases (claude-haiku-azure, nemotron3-nano-30b, gpt-5.2, etc.)
-# ship in the nemo-oo-agents-nvidia package; install it (or the [nvidia]
-# extra) and the aliases resolve automatically. Run
-# `nooa config show` to inspect which YAML files are loading.
+# Configure the aliases below with `uv run aster connect` or in
+# .aster/llm_config.yaml, using model IDs and endpoints available to you.
+# Run `uv run aster config show` to inspect which YAML files are loading.
+# The historical NVIDIA-gateway aliases are not bundled with Aster.
 #
 # Any model name supported by litellm also works as-is.
 # =============================================================================

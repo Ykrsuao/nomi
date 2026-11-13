@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nooa.runtime.stream_wrappers import (
+from aster.runtime.stream_wrappers import (
     BlockedStdinWrapper,
     ContextVarStream,
     _block_stdin_var,

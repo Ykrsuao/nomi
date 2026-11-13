@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for Event types used in event pipeline."""
 
-from nooa.events import (
+from aster.events import (
     Error,
     Feedback,
     LLMResponse,
@@ -10,7 +10,7 @@ from nooa.events import (
     Reasoning,
     Task,
 )
-from nooa.runtime.event_manager import EventManager
+from aster.runtime.event_manager import EventManager
 
 
 class TestEventTypes:
@@ -186,7 +186,7 @@ class TestExecutionResult:
 
     def test_execution_result_success(self):
         """ExecutionResult for successful execution."""
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         result = ExecutionResult(
             stdout="Hello\n",
@@ -199,7 +199,7 @@ class TestExecutionResult:
 
     def test_execution_result_error(self):
         """ExecutionResult with error."""
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         result = ExecutionResult(
             stdout="",
@@ -210,7 +210,7 @@ class TestExecutionResult:
 
     def test_has_method(self):
         """has_method() checks if method was defined."""
-        from nooa.events import ExecutionResult
+        from aster.events import ExecutionResult
 
         result = ExecutionResult(
             stdout="",

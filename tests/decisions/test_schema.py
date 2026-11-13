@@ -7,14 +7,14 @@ from typing import Annotated, Literal
 import pytest
 from pydantic import BaseModel
 
-from nooa.decisions import ChoiceDecision, Criteria, Instructions, Threshold
-from nooa.decisions.client import (
+from aster.decisions import ChoiceDecision, Criteria, Instructions, Threshold
+from aster.decisions.client import (
     BooleanAnswer,
     ChoiceAnswer,
     DecisionResponse,
     ScoreAnswer,
 )
-from nooa.decisions.schema import compile_decision_schema, render_decision_state
+from aster.decisions.schema import compile_decision_schema, render_decision_state
 
 
 class Department(Enum):

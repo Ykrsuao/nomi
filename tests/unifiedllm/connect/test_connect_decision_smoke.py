@@ -11,8 +11,8 @@ import httpx
 import pytest
 import yaml
 
-from nooa.unifiedllm import connect
-from nooa.unifiedllm.connect._media import png_fixture
+from aster.unifiedllm import connect
+from aster.unifiedllm.connect._media import png_fixture
 from tests.unifiedllm.connect.connect_http import mock_http
 
 ENDPOINT = "https://fixture.test/v1/decisions"
@@ -249,7 +249,7 @@ async def test_timeout_and_http_failure_are_bounded_no_retries(monkeypatch):
 
 @pytest.mark.parametrize("style", ["openai", "systemone"])
 def test_save_reload_and_route_reset_safe(monkeypatch, tmp_path, style):
-    from nooa.unifiedllm.registry import client_from_config
+    from aster.unifiedllm.registry import client_from_config
 
     plan = proposal(style, image=True)
     entry = {**plan.entry, "media_inputs": ["image"]}
@@ -339,7 +339,7 @@ async def test_rejected_key_stops_later_decision_cases(monkeypatch, status):
 
 
 def test_routing_preview_matches_actual_schema_recipe():
-    from nooa.unifiedllm.connect._decision import planned_body
+    from aster.unifiedllm.connect._decision import planned_body
 
     plan = proposal()
     assert plan.probes[0].body == {"model": "fixture", **planned_body("routing")}

@@ -4,9 +4,9 @@
 
 import pytest
 
-from nooa.agentdoc import doc, pformat
-from nooa.agentdoc.ext import DocConfig
-from nooa.agentdoc.introspect import methods, variables
+from aster.agentdoc import doc, pformat
+from aster.agentdoc.ext import DocConfig
+from aster.agentdoc.introspect import methods, variables
 
 
 # Test fixtures
@@ -147,7 +147,7 @@ class TestDoc:
 
     def test_doc_instance_respects_instance_hidden_dynamic_field(self):
         """Instance-only fields hidden with spec() must not leak from doc()."""
-        from nooa.agentdoc import spec
+        from aster.agentdoc import spec
 
         class Documented:
             pass
@@ -164,7 +164,7 @@ class TestDoc:
 
     def test_doc_instance_respects_instance_hidden_declared_field(self):
         """Instance visibility overrides also apply to declared fields."""
-        from nooa.agentdoc import spec
+        from aster.agentdoc import spec
 
         class Documented:
             visible: str = "class-secret"
@@ -369,7 +369,7 @@ class TestMethods:
 
     def test_methods_respects_hidden_decorator(self):
         """methods() must honour @hidden, not just the _ prefix."""
-        from nooa.agentdoc import hidden
+        from aster.agentdoc import hidden
 
         class Service:
             def public_api(self) -> str:
@@ -953,7 +953,7 @@ class TestLargeValueTruncation:
 
     def test_doc_on_huge_builtin_with_max_length(self):
         """doc() on raw containers respects explicit max_length, shows head+tail."""
-        from nooa.agentdoc._pformat import _pformat_to_str
+        from aster.agentdoc._pformat import _pformat_to_str
 
         huge_list = list(range(100_000))
         result = _pformat_to_str(huge_list, max_length=10, max_string=500, max_depth=3)
@@ -1097,7 +1097,7 @@ class TestLargeValueTruncation:
 
     def test_plain_class_with_repr_uses_repr_not_fields(self):
         """Plain class with __repr__ should use repr, not extract fields."""
-        from nooa.agentdoc import pformat
+        from aster.agentdoc import pformat
 
         class ToolLike:
             def __init__(self):
@@ -1165,7 +1165,7 @@ class TestPformatMatchesRich:
         the matrix data showed the slice-keys form (head + tail with the
         total length up front) is ~25-30 pp easier for LLMs to read.
         """
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         data = "x" * 100
         our_output = _pformat(data, max_string=10)
@@ -1183,7 +1183,7 @@ class TestPformatMatchesRich:
     )
     def test_list_truncation_shows_head_and_tail(self):
         """List truncation uses head+tail format (diverges intentionally from Rich head-only)."""
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         data = list(range(20))
         max_length = 5
@@ -1206,7 +1206,7 @@ class TestPformatMatchesRich:
     )
     def test_dict_truncation_shows_head_and_tail(self):
         """Dict truncation uses head+tail format (diverges intentionally from Rich head-only)."""
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         data = {f"k{i}": i for i in range(20)}
         max_length = 3
@@ -1227,7 +1227,7 @@ class TestPformatAdditionalTypes:
 
     def test_tuple_truncation(self):
         """Tuple truncation uses the slice-keys marker with tuple parens."""
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         data = tuple(range(20))
         result = _pformat(data, max_length=5)
@@ -1239,7 +1239,7 @@ class TestPformatAdditionalTypes:
 
     def test_set_truncation(self):
         """Set truncation uses the items wrapper (no positional anchor)."""
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         data = set(range(20))
         result = _pformat(data, max_length=5)
@@ -1249,7 +1249,7 @@ class TestPformatAdditionalTypes:
 
     def test_frozenset_truncation(self):
         """Frozenset truncation uses the items wrapper."""
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         data = frozenset(range(20))
         result = _pformat(data, max_length=5)
@@ -1264,7 +1264,7 @@ class TestPformatTypes:
         """pformat() on Pydantic type shows Python class syntax."""
         from pydantic import BaseModel
 
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         class UserModel(BaseModel):
             name: str
@@ -1280,7 +1280,7 @@ class TestPformatTypes:
         """pformat() on dataclass type shows decorator and fields."""
         from dataclasses import dataclass
 
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         @dataclass
         class Point:
@@ -1298,7 +1298,7 @@ class TestPformatTypes:
         """pformat() truncates fields with max_length."""
         from pydantic import BaseModel
 
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         class BigModel(BaseModel):
             f1: str
@@ -1320,7 +1320,7 @@ class TestPformatTypes:
         """pformat() on Enum shows members."""
         import enum
 
-        from nooa.agentdoc._pformat import _pformat_to_str as _pformat
+        from aster.agentdoc._pformat import _pformat_to_str as _pformat
 
         class Color(enum.Enum):
             RED = 1
@@ -1431,7 +1431,7 @@ class TestRichApiCompatibility:
         import sys
         from io import StringIO
 
-        from nooa.agentdoc import pprint
+        from aster.agentdoc import pprint
 
         data = [1, 2, 3, 4, 5]
 
@@ -1498,7 +1498,7 @@ class TestDocSubclassUnhide:
         """Field hidden in parent but re-declared in child should appear in doc()."""
         from typing import Annotated
 
-        from nooa.agentdoc._visibility import hidden
+        from aster.agentdoc._visibility import hidden
 
         class Parent:
             x: Annotated[str, hidden] = "secret"
@@ -1514,7 +1514,7 @@ class TestDocSubclassUnhide:
     def test_parent_hidden_field_absent_from_parent_doc(self):
         from typing import Annotated
 
-        from nooa.agentdoc._visibility import hidden
+        from aster.agentdoc._visibility import hidden
 
         class Parent:
             x: Annotated[str, hidden] = "secret"
@@ -1526,7 +1526,7 @@ class TestDocSubclassUnhide:
         """Field hidden in both parent and child remains hidden."""
         from typing import Annotated
 
-        from nooa.agentdoc._visibility import hidden
+        from aster.agentdoc._visibility import hidden
 
         class Parent:
             x: Annotated[str, hidden] = "secret"
@@ -1543,7 +1543,7 @@ class TestHiddenProperty:
 
     def test_hidden_property_not_in_doc_instance(self):
         """@property @hidden must not appear in doc(instance)."""
-        from nooa.agentdoc import hidden
+        from aster.agentdoc import hidden
 
         class MyClass:
             @property
@@ -1562,7 +1562,7 @@ class TestHiddenProperty:
 
     def test_hidden_property_not_in_doc_class(self):
         """@property @hidden must not appear in doc(Class)."""
-        from nooa.agentdoc import hidden
+        from aster.agentdoc import hidden
 
         class MyClass:
             @property

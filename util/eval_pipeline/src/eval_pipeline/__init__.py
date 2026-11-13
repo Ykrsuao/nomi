@@ -6,7 +6,7 @@ This package provides a high-level API for evaluating agents:
 
 Example (Python - recommended):
     from eval_pipeline import Evaluator, ExactMatchScorer
-    from nooa.unifiedllm import CompletionClient
+    from aster.unifiedllm import CompletionClient
 
     # Create evaluator with your LLM clients
     evaluator = Evaluator(
@@ -47,7 +47,7 @@ CLI usage:
 # Config loading
 from .config import EvalConfig, evaluator_from_config, load_config
 
-# Eval types (canonical schema for .noo-eval.jsonl files)
+# Eval types (canonical schema for .aster-eval.jsonl files)
 from .eval_parser import EvalFileParser, EvalParseError, get_experiment_status
 from .eval_types import (
     SUPPORTED_VERSIONS,

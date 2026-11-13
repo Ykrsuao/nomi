@@ -7,13 +7,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from nooa import Agent, hidden, strategy
-from nooa.config import CodeActConfig
-from nooa.context_blocks import ToolCallEvent
-from nooa.events import Error, PythonOutput
-from nooa.strategies.codeact import CodeActStrategy
-from nooa.strategies.codeact_v2 import CodeActV2
-from nooa.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
+from aster import Agent, hidden, strategy
+from aster.config import CodeActConfig
+from aster.context_blocks import ToolCallEvent
+from aster.events import Error, PythonOutput
+from aster.strategies.codeact import CodeActStrategy
+from aster.strategies.codeact_v2 import CodeActV2
+from aster.unifiedllm import FakeLLMClient, LLMResponse, ToolCall
 
 
 class Notes:
@@ -219,7 +219,7 @@ async def test_invalid_json_arguments_show_expected_shape():
 )
 async def test_rejected_todo_arguments_reach_model_as_tool_feedback(arguments):
     """Valid JSON with an imagined todo schema must not disappear silently."""
-    from nooa.tools.todo import TodoManager
+    from aster.tools.todo import TodoManager
 
     llm = FakeLLMClient(
         scripted_responses=[
@@ -257,7 +257,7 @@ async def test_rejected_todo_arguments_reach_model_as_tool_feedback(arguments):
 @pytest.mark.asyncio
 async def test_retry_exhaustion_retains_feedback_for_every_rejected_todo_call():
     """The final rejection must have an error result even at the retry limit."""
-    from nooa.errors import GenerationError
+    from aster.errors import GenerationError
 
     llm = FakeLLMClient(
         scripted_responses=[

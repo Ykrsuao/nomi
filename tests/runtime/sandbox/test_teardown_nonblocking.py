@@ -13,10 +13,10 @@ import time
 
 import pytest
 
-from nooa import Agent
-from nooa.runtime.sandbox.config import SandboxConfig
-from nooa.runtime.sandbox.executor import SandboxedExecutor
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.runtime.sandbox.config import SandboxConfig
+from aster.runtime.sandbox.executor import SandboxedExecutor
+from aster.unifiedllm import FakeLLMClient
 
 
 class _Agent(Agent, llm=FakeLLMClient()):

@@ -4,11 +4,11 @@
 
 import pytest
 
-from nooa import Agent
-from nooa.context_blocks import DynamicContext
-from nooa.context_blocks.exceptions import DynamicNotResolvedError, ProtectedBlockError
-from nooa.runtime.context import ContextApi
-from nooa.unifiedllm import FakeLLMClient
+from aster import Agent
+from aster.context_blocks import DynamicContext
+from aster.context_blocks.exceptions import DynamicNotResolvedError, ProtectedBlockError
+from aster.runtime.context import ContextApi
+from aster.unifiedllm import FakeLLMClient
 
 _llm = FakeLLMClient()
 

@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import litellm
 import pytest
 
-from nooa.unifiedllm import ResponsesClient, RetryConfig
+from aster.unifiedllm import ResponsesClient, RetryConfig
 
 
 def make_mock_responses_response(content: str = "ok"):
@@ -134,7 +134,7 @@ class TestResponsesClientSyncRetry:
             response = client.call(messages=[{"role": "user", "content": "hi"}])
 
         assert [call.id for call in response.tool_calls] == ["call-1", "call-2"]
-        from nooa.unifiedllm.response_parts import project_turn
+        from aster.unifiedllm.response_parts import project_turn
 
         assert project_turn(response, response.replay_scope) == [
             reasoning_1,

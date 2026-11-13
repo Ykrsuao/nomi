@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from nooa.media import Audio, File, Image, Media, Video
-from nooa.runtime.media_capture import (
+from aster.media import Audio, File, Image, Media, Video
+from aster.runtime.media_capture import (
     _media_buffer_var,
     _MediaBuffer,
     _try_auto_convert,
